@@ -1,10 +1,10 @@
 [package]
 name = "web-view"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Boscop"]
 readme = "README.md"
 license = "MIT"
-repository = "https://github.com/Boscop/webview-rs"
+repository = "https://github.com/Boscop/web-view"
 description = "Rust bindings for webview, a tiny cross-platform library to render web-based GUIs for desktop applications"
 keywords = ["web", "gui", "desktop", "electron", "webkit"]
 categories = ["gui", "web-programming", "api-bindings", "rendering", "visualization"]

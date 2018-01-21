@@ -1,4 +1,4 @@
-# webview-rs examples
+# web-view examples
 
 ## minimal
 Just displays the wikipedia homepage.

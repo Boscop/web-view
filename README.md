@@ -1,4 +1,4 @@
-# webview-rs
+# web-view
 
 This library provides Rust bindings for the [webview](https://github.com/zserge/webview) library to allow easy creation of cross-platform Rust desktop apps with GUIs based on web technologies.
 
@@ -41,7 +41,7 @@ Contributions and feedback welcome :)
 ---
 
 ### Ideas for apps:
-- Rust IDE (by porting [xi-electron](https://github.com/acheronfail/xi-electron) to webview-rs)
+- Rust IDE (by porting [xi-electron](https://github.com/acheronfail/xi-electron) to web-view)
 - Data visualization / plotting lib for Rust, to make Rust more useful for data science
 - Crypto coin wallet
 - IRC client, or client for other chat protocols
