@@ -4,7 +4,7 @@ This library provides Rust bindings for the [webview](https://github.com/zserge/
 
 It supports two-way bindings for communication between the Rust backend and JavaScript frontend.
 
-It uses Cocoa/WebKit on macOS, gtk-webkit2 on Linux and MSHTML (IE10/11) on Windows.
+It uses Cocoa/WebKit on macOS, gtk-webkit2 on Linux and MSHTML (IE10/11) on Windows, so your app will be **much** leaner than with Electron.
 
 For usage info please check out [the examples](../../tree/master/examples) and the [original readme](https://github.com/zserge/webview/blob/master/README.md).
 

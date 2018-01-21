@@ -2,6 +2,9 @@
 name = "webview"
 version = "0.1.0"
 authors = ["Boscop"]
+license = "MIT"
+description = "Rust bindings for webview, a tiny cross-platform library to render web-based GUIs for desktop applications"
+repository = "https://github.com/Boscop/webview-rs"
 
 [dependencies]
 fnv = "1.0"
