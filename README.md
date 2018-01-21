@@ -36,6 +36,7 @@ Contributions and feedback welcome :)
 - Add an example that uses Elm or Rust compiled to asm.js
 - Add a PureScript example that does two-way communication with the backend
 - Contribute to the original webview library: E.g. [add HDPI support on Windows](https://github.com/zserge/webview/issues/54)
+- Make it possible to create the webview window as a child window of a given parent window handle. This would allow webview to be used for the GUIs of [VST audio plugins in Rust](https://github.com/rust-dsp/rust-vst).
 
 ---
 
