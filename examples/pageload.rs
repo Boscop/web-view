@@ -1,9 +1,9 @@
 // #![windows_subsystem = "windows"]
 
-extern crate url;
+extern crate urlencoding;
 extern crate webview;
 
-use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
+use urlencoding::encode;
 use webview::*;
 
 fn main() {
@@ -12,8 +12,7 @@ fn main() {
 	let debug = true;
 	let init_cb = |_| {};
 	let userdata = ();
-	let encoded: String = utf8_percent_encode(HTML, PATH_SEGMENT_ENCODE_SET).collect();
-	let url = "data:text/html,".to_string() + &encoded;
+	let url = "data:text/html,".to_string() + &encode(HTML);
 	run("pageload example", &url, Some(size), resizable, debug, init_cb, |_, _, _| {}, userdata);
 }
 

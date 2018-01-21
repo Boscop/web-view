@@ -1,11 +1,11 @@
 // #![windows_subsystem = "windows"]
 
-extern crate url;
+extern crate urlencoding;
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
 extern crate webview;
 
-use url::percent_encoding::{utf8_percent_encode, PATH_SEGMENT_ENCODE_SET};
+use urlencoding::encode;
 use webview::*;
 
 fn main() {
@@ -31,8 +31,7 @@ fn main() {
 		styles = inline_style(include_str!("todo/styles.css")),
 		scripts = inline_script(include_str!("todo/picodom.js")) + &inline_script(include_str!("todo/app.js")),
 	);
-	let encoded: String = utf8_percent_encode(&html, PATH_SEGMENT_ENCODE_SET).collect();
-	let url = "data:text/html,".to_string() + &encoded;
+	let url = "data:text/html,".to_string() + &encode(&html);
 	let size = (320, 480);
 	let resizable = false;
 	let debug = true;
