@@ -1,11 +1,11 @@
-extern crate gcc;
+extern crate cc;
 extern crate pkg_config;
 
 use std::env;
 
 fn main() {
-	let mut build = gcc::Build::new();
-	build.cpp(true).file("webview-c/lib.cpp").include("webview-c");
+	let mut build = cc::Build::new();
+	build.file("webview-c/lib.c").include("webview-c");
 	if env::var("DEBUG").is_err() {
 		build.define("NDEBUG", None);
 	} else {
@@ -23,6 +23,10 @@ fn main() {
 		build.define("WEBVIEW_GTK", None);
 	} else if target.contains("apple") {
 		build.define("WEBVIEW_COCOA", None);
+		build.flag("-x");
+		build.flag("objective-c");
+		println!("cargo:rustc-link-lib=framework=Cocoa");
+		println!("cargo:rustc-link-lib=framework=WebKit");
 	} else {
 		panic!("unsupported target");
 	}

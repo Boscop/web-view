@@ -13,5 +13,5 @@ serde_derive = "1.0"
 serde_json = "1.0"
 
 [build-dependencies]
-gcc = "0.3"
+cc = "1"
 pkg-config = "0.3"
