@@ -5,7 +5,7 @@ use std::env;
 
 fn main() {
 	let mut build = gcc::Build::new();
-	build.cpp(true).file("webview-c/lib.c").include("webview-c");
+	build.cpp(true).file("webview-c/lib.cpp").include("webview-c");
 	if env::var("DEBUG").is_err() {
 		build.define("NDEBUG", None);
 	} else {
