@@ -6,7 +6,7 @@ It supports two-way bindings for communication between the Rust backend and Java
 
 It uses Cocoa/WebKit on macOS, gtk-webkit2 on Linux and MSHTML (IE10/11) on Windows.
 
-For usage info please check out [the examples](tree/master/examples) and the [original readme](https://github.com/zserge/webview/blob/master/README.md).
+For usage info please check out [the examples](../../tree/master/examples) and the [original readme](https://github.com/zserge/webview/blob/master/README.md).
 
 Contributions and feedback welcome :)
 
