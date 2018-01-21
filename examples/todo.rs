@@ -3,10 +3,10 @@
 extern crate urlencoding;
 #[macro_use] extern crate serde_derive;
 extern crate serde_json;
-extern crate webview;
+extern crate web_view;
 
 use urlencoding::encode;
-use webview::*;
+use web_view::*;
 
 fn main() {
 	let html = format!(r#"

@@ -1,10 +1,10 @@
 #![windows_subsystem = "windows"]
 
 extern crate urlencoding;
-extern crate webview;
+extern crate web_view;
 
 use urlencoding::encode;
-use webview::*;
+use web_view::*;
 
 fn main() {
 	let size = (320, 480);

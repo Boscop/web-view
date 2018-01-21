@@ -1,8 +1,8 @@
 // #![windows_subsystem = "windows"]
 
-extern crate webview;
+extern crate web_view;
 
-use webview::*;
+use web_view::*;
 
 fn main() {
 	let size = (800, 600);

@@ -1,5 +1,5 @@
 [package]
-name = "webview"
+name = "web-view"
 version = "0.1.0"
 authors = ["Boscop"]
 readme = "README.md"

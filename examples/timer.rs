@@ -2,12 +2,12 @@
 #![allow(deprecated)]
 
 extern crate urlencoding;
-extern crate webview;
+extern crate web_view;
 
 use std::thread::{spawn, sleep_ms};
 use std::sync::{Arc, Mutex};
 use urlencoding::encode;
-use webview::*;
+use web_view::*;
 
 fn main() {
 	let size = (800, 600);
