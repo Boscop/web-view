@@ -6,8 +6,8 @@ readme = "README.md"
 license = "MIT"
 repository = "https://github.com/Boscop/webview-rs"
 description = "Rust bindings for webview, a tiny cross-platform library to render web-based GUIs for desktop applications"
-keywords = ["webview", "web", "gui", "desktop", "electron", "webkit"]
-categories = ["gui", "web-programming", "api-bindings", "rendering", "visualization", "multimedia"]
+keywords = ["web", "gui", "desktop", "electron", "webkit"]
+categories = ["gui", "web-programming", "api-bindings", "rendering", "visualization"]
 
 [dependencies]
 fnv = "1.0"
