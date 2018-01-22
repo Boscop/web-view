@@ -1,7 +1,6 @@
 #define WEBVIEW_IMPLEMENTATION
 #include "webview.h"
 
-extern "C" {
 void wrapper_webview_free(struct webview* w) {
 	free(w);
 }
@@ -26,4 +25,4 @@ struct webview* wrapper_webview_new(const char* title, const char* url, int widt
 void* wrapper_webview_get_userdata(struct webview* w) {
 	return w->userdata;
 }
-}
+
