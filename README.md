@@ -1,4 +1,9 @@
-# web-view
+# web-view &emsp; [![Build Status]][travis] [![Latest Version]][crates.io]
+
+[Build Status]: https://api.travis-ci.org/Boscop/web-view.svg?branch=master
+[travis]: https://travis-ci.org/Boscop/web-view
+[Latest Version]: https://img.shields.io/crates/v/web-view.svg
+[crates.io]: https://crates.io/crates/web-view
 
 This library provides Rust bindings for the [webview](https://github.com/zserge/webview) library to allow easy creation of cross-platform Rust desktop apps with GUIs based on web technologies.
 
