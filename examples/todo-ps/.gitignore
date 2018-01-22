@@ -8,5 +8,6 @@
 /.purs*
 /.psa*
 .cache
-/dist/
+/dist/*
+!/dist/bundle.html
 /build/
