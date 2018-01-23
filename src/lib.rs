@@ -51,7 +51,7 @@ pub fn run<'a, T: 'a,
 struct HandlerData<'a, T: 'a> {
 	ext_cb: Box<FnMut(&mut WebView<'a, T>, &str, &mut T) + 'a>,
 	index: usize,
-	dispatched_cbs: HashMap<usize, Box<FnMut(&mut WebView<'a, T>, &mut T) + 'a>>,
+	dispatched_cbs: HashMap<usize, Box<FnMut(&mut WebView<'a, T>, &mut T) + Send + 'a>>,
 	user_data: T
 }
 
@@ -63,7 +63,7 @@ unsafe impl<T> Sync for MyUnique<T> {}
 
 impl<'a, T> MyUnique<WebView<'a, T>> {
 	#[inline(always)]
-	pub fn dispatch<F: FnMut(&mut WebView<'a, T>, &mut T) + 'a>(&self, f: F) {
+	pub fn dispatch<F: FnMut(&mut WebView<'a, T>, &mut T) + Send + 'a>(&self, f: F) {
 		unsafe { &mut *self.0 }.dispatch(f);
 	}
 }
@@ -83,7 +83,7 @@ impl<'a, T> WebView<'a, T> {
 		unsafe { webview_terminate(self.erase()) }
 	}
 
-	pub fn dispatch<F: FnMut(&mut WebView<'a, T>, &mut T) + 'a>(&'a mut self, f: F) {
+	pub fn dispatch<F: FnMut(&mut WebView<'a, T>, &mut T) + Send + 'a>(&'a mut self, f: F) {
 		let erased = self.erase();
 		let index = {
 			let data = self.get_userdata();
