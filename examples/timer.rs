@@ -18,16 +18,13 @@ fn main() {
 	let url = "data:text/html,".to_string() + &encode(HTML);
 	let counter_inner = counter.clone();
 	run("timer example", &url, Some(size), resizable, debug, move |webview| {
-		let counter_inner = counter_inner.clone();
 		spawn(move || {
 			loop {
 				{
 					let mut counter = counter_inner.lock().unwrap();
 					*counter += 1;
-					let counter_inner2 = counter_inner.clone();
-					webview.dispatch(move |webview, userdata| {
+					webview.dispatch(|webview, userdata| {
 						*userdata -= 1;
-						let counter = counter_inner2.lock().unwrap();
 						render(webview, *counter, *userdata);
 					});
 				}

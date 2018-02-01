@@ -12,10 +12,10 @@ use fnv::FnvHashMap as HashMap; // faster than std HashMap for small keys
 use ffi::*;
 
 pub fn run<'a, T: 'a,
-	I: FnMut(MyUnique<WebView<'a, T>>),
+	I: FnOnce(MyUnique<WebView<'a, T>>),
 	F: FnMut(&mut WebView<'a, T>, &str, &mut T) + 'a,
 >(
-	title: &str, url: &str, size: Option<(i32, i32)>, resizable: bool, debug: bool, mut init_cb: I, ext_cb: F, user_data: T
+	title: &str, url: &str, size: Option<(i32, i32)>, resizable: bool, debug: bool, init_cb: I, ext_cb: F, user_data: T
 ) -> (T, bool) {
 	let (width, height) = size.unwrap_or((800, 600));
 	let fullscreen = size.is_none();
@@ -63,7 +63,7 @@ unsafe impl<T> Sync for MyUnique<T> {}
 
 impl<'a, T> MyUnique<WebView<'a, T>> {
 	#[inline(always)]
-	pub fn dispatch<F: FnMut(&mut WebView<'a, T>, &mut T) + Send + 'a>(&self, f: F) {
+	pub fn dispatch<F: for<'b> FnMut(&mut WebView<'b, T>, &mut T) + Send /*+ 'a*/>(&self, f: F) {
 		unsafe { &mut *self.0 }.dispatch(f);
 	}
 }
@@ -83,7 +83,7 @@ impl<'a, T> WebView<'a, T> {
 		unsafe { webview_terminate(self.erase()) }
 	}
 
-	pub fn dispatch<F: FnMut(&mut WebView<'a, T>, &mut T) + Send + 'a>(&'a mut self, f: F) {
+	pub fn dispatch<F: for<'b> FnMut(&mut WebView<'b, T>, &mut T) + Send /*+ 'a*/>(&'a mut self, f: F) {
 		let erased = self.erase();
 		let index = {
 			let data = self.get_userdata();
