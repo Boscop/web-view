@@ -13,7 +13,7 @@ fn main() {
 	let size = (800, 600);
 	let resizable = true;
 	let debug = true;
-	let userdata = 0;
+	let initial_userdata = 0;
 	let counter = Arc::new(Mutex::new(0));
 	let url = "data:text/html,".to_string() + &encode(HTML);
 	let counter_inner = counter.clone();
@@ -44,7 +44,7 @@ fn main() {
 			}
 			_ => unimplemented!()
 		}
-	}, userdata);
+	}, initial_userdata);
 }
 
 fn render<'a, T>(webview: &mut WebView<'a, T>, counter: u32, userdata: i32) {
