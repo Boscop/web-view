@@ -4,7 +4,7 @@ extern crate pkg_config;
 use std::env;
 
 fn main() {
-	let mut build = cc::Build::new();
+	let mut build = cc::Build::new().flag_if_supported("-std=c11");
 	build.file("webview-c/lib.c").include("webview-c");
 	if env::var("DEBUG").is_err() {
 		build.define("NDEBUG", None);
