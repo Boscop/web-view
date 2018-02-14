@@ -15,6 +15,9 @@ fn main() {
 	let target = env::var("TARGET").unwrap();
 	if target.contains("windows") {
 		build.define("WEBVIEW_WINAPI", None);
+		for &lib in &["ole32", "comctl32", "oleaut32", "uuid"] {
+			println!("cargo:rustc-link-lib={}", lib);
+		}
 	} else if target.contains("linux") || target.contains("bsd") {
 		let webkit = pkg_config::Config::new().atleast_version("2.8").probe("webkit2gtk-4.0").unwrap();
 
