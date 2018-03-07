@@ -5,6 +5,30 @@ pub enum CWebView {} // opaque type, only used in ffi pointers
 type ErasedExternalInvokeFn = extern "system" fn(webview: *mut CWebView, arg: *const c_char);
 type ErasedDispatchFn = extern "system" fn(webview: *mut CWebView, arg: *mut c_void);
 
+#[repr(C)]
+pub enum DialogType {
+	Open  = 0,
+	Save  = 1,
+	Alert = 2,
+}
+
+bitflags! {
+#[repr(C)]
+pub struct DialogFlags: u32 {
+	#[allow(non_upper_case_globals)]
+	const File      = 0b0000;
+	#[allow(non_upper_case_globals)]
+	const Directory = 0b0001;
+	#[allow(non_upper_case_globals)]
+	const Info      = 0b0010;
+	#[allow(non_upper_case_globals)]
+	const Warning   = 0b0100;
+	#[allow(non_upper_case_globals)]
+	const Error     = 0b0110;
+	#[allow(non_upper_case_globals)]
+	const AlertMask = 0b0110;
+}}
+
 extern {
 	pub fn wrapper_webview_free(this: *mut CWebView);
 	pub fn wrapper_webview_new(title: *const c_char, url: *const c_char, width: c_int, height: c_int, resizable: c_int, debug: c_int, external_invoke_cb: Option<ErasedExternalInvokeFn>, userdata: *mut c_void) -> *mut CWebView;
@@ -16,4 +40,5 @@ extern {
 	pub fn webview_eval(this: *mut CWebView, js: *const c_char) -> c_int;
 	pub fn webview_inject_css(this: *mut CWebView, css: *const c_char) -> c_int;
 	pub fn webview_set_fullscreen(this: *mut CWebView, fullscreen: c_int);
+	pub fn webview_dialog(this: *mut CWebView, dialog_type: DialogType, dialog_flags: DialogFlags, title: *const c_char, arg: *const c_char, result: *mut c_char, result_size: usize);
 }

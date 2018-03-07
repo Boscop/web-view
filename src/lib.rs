@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate bitflags;
+
 extern crate fnv;
 
 mod ffi;
@@ -6,10 +9,13 @@ use std::os::raw::*;
 use std::ffi::{CString, CStr};
 use std::mem::transmute;
 use std::marker::PhantomData;
+use std::ptr;
 
 use fnv::FnvHashMap as HashMap; // faster than std HashMap for small keys
 
 use ffi::*;
+pub use ffi::DialogType;
+pub use ffi::DialogFlags;
 
 pub fn run<'a, T: 'a,
 	I: FnOnce(MyUnique<WebView<'a, T>>),
@@ -105,6 +111,21 @@ impl<'a, T> WebView<'a, T> {
 	pub fn inject_css(&mut self, css: &str) -> i32 {
 		let css = CString::new(css).unwrap();
 		unsafe { webview_inject_css(self.erase(), css.as_ptr()) }
+	}
+
+	pub fn dialog(&mut self, dtype: DialogType, dflags: DialogFlags, title: &str, arg: Option<&str>) -> String {
+		let title = CString::new(title).unwrap();
+		let arg = arg.map(|a| CString::new(a).unwrap());
+		let result_size = 4096; // I don't know why you'd ever have so long paths, maybe you're encoding data in it?
+		let result      = Vec::with_capacity(result_size).as_mut_ptr();
+		unsafe { webview_dialog(self.erase(), dtype, dflags, title.as_ptr(), arg.map_or(ptr::null(), |a| a.as_ptr()), result, result_size) };
+
+		let mut result = unsafe { Vec::from_raw_parts(result, result_size, result_size) };
+		let len = result.iter().position(|&c| c == 0).unwrap(); // if we don't find a null byte something has gone wrong anyways ¯\_(ツ)_/¯
+		result.truncate(len);
+		result.shrink_to_fit(); // the space allocated is probably an order of a magnitude larger than the path
+
+		unsafe { String::from_utf8_unchecked(transmute(result)) } // invalid UTF-8 is an OS bug
 	}
 }
 
