@@ -117,7 +117,9 @@ impl<'a, T> WebView<'a, T> {
 		let title = CString::new(title).unwrap();
 		let arg = arg.map(|a| CString::new(a).unwrap());
 		let result_size = 4096; // I don't know why you'd ever have so long paths, maybe you're encoding data in it?
-		let result      = Vec::with_capacity(result_size).as_mut_ptr();
+		let mut result  = Vec::with_capacity(result_size);
+		result.push(0); // If cancel is pressed nothing is written to the buffer.
+		let result = result.as_mut_ptr();
 		unsafe { webview_dialog(self.erase(), dtype, dflags, title.as_ptr(), arg.map_or(ptr::null(), |a| a.as_ptr()), result, result_size) };
 
 		let mut result = unsafe { Vec::from_raw_parts(result, result_size, result_size) };
