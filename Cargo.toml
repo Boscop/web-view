@@ -12,6 +12,7 @@ exclude = ["examples/todo-ps/dist/**/*"]
 
 [dependencies]
 fnv = "1.0"
+bitflags = "1"
 
 [dev-dependencies]
 urlencoding = "1.0"
