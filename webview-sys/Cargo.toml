@@ -14,6 +14,9 @@ links = "webview"
 name = "webview_sys"
 path = "lib.rs"
 
+[dependencies]
+bitflags = "1.0"
+
 [build-dependencies]
 cc = "1"
 pkg-config = "0.3"

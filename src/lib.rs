@@ -3,12 +3,44 @@ extern crate webview_sys as ffi;
 
 use std::os::raw::*;
 use std::ffi::{CString, CStr};
-use std::mem::transmute;
+use std::mem::{transmute, forget};
 use std::marker::PhantomData;
 
 use fnv::FnvHashMap as HashMap; // faster than std HashMap for small keys
 
 use ffi::*;
+
+/// Dialog alerts, should be specified in Dialog::Alert variant.
+pub enum Alert {
+	Info,
+	Warning,
+	Error,
+}
+
+/// Dialog variants that can be shown to user with WebView::dialog function.
+pub enum Dialog {
+	SaveFile,
+	OpenFile,
+	ChooseDirectory,
+	Alert(Alert),
+}
+
+impl Dialog {
+	fn parameters(self) -> (DialogType, DialogFlags) {
+		match self {
+			Dialog::SaveFile => (DialogType::Save, DialogFlags::FILE),
+			Dialog::OpenFile => (DialogType::Open, DialogFlags::FILE),
+			Dialog::ChooseDirectory => (DialogType::Open, DialogFlags::DIRECTORY),
+			Dialog::Alert(alert) => {
+				match alert {
+					Alert::Info => (DialogType::Alert, DialogFlags::INFO),
+					Alert::Warning => (DialogType::Alert, DialogFlags::WARNING),
+					Alert::Error => (DialogType::Alert, DialogFlags::ERROR),
+				}
+			},
+		}
+	}
+}
 
 pub fn run<'a, T: 'a,
 	I: FnOnce(MyUnique<WebView<'a, T>>),
@@ -104,6 +136,36 @@ impl<'a, T> WebView<'a, T> {
 	pub fn inject_css(&mut self, css: &str) -> i32 {
 		let css = CString::new(css).unwrap();
 		unsafe { webview_inject_css(self.erase(), css.as_ptr()) }
+	}
+
+	pub fn dialog(&mut self, dialog: Dialog, title: &str, arg: Option<&str>) -> String {
+		let (dtype, dflags) = dialog.parameters();
+		let title = CString::new(title).unwrap();
+		let arg = CString::new(arg.unwrap_or("")).unwrap();
+		let buffer_size = 4096;
+		let mut buffer  = Vec::with_capacity(buffer_size);
+		buffer.push(0); // If cancel is pressed nothing is written to the buffer.
+		let result = buffer.as_mut_ptr();
+		forget(buffer);
+
+		unsafe {
+			webview_dialog(
+				self.erase(),
+				dtype,
+				dflags,
+				title.as_ptr(),
+				arg.as_ptr(),
+				result,
+				buffer_size
+			);
+		}
+
+		let mut result = unsafe { Vec::from_raw_parts(result, buffer_size, buffer_size) };
+		let len = result.iter().position(|&c| c == 0).unwrap();
+		result.truncate(len);
+		result.shrink_to_fit(); // the space allocated is probably an order of a magnitude larger than the path
+
+		unsafe { String::from_utf8_unchecked(transmute(result)) } // invalid UTF-8 is an OS bug
 	}
 }
 
