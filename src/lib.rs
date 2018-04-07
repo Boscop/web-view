@@ -1,6 +1,5 @@
 extern crate fnv;
-
-mod ffi;
+extern crate webview_sys as ffi;
 
 use std::os::raw::*;
 use std::ffi::{CString, CStr};

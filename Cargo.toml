@@ -12,13 +12,10 @@ exclude = ["examples/todo-ps/dist/**/*"]
 
 [dependencies]
 fnv = "1.0"
+webview-sys = { path = "webview-sys", version = "0.1.0" }
 
 [dev-dependencies]
 urlencoding = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-
-[build-dependencies]
-cc = "1"
-pkg-config = "0.3"
