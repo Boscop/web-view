@@ -13,7 +13,7 @@ fn main() {
 	let userdata = ();
 	run(
 		"Minimal webview example",
-		"https://en.m.wikipedia.org/wiki/Main_Page",
+		Content::Url("https://en.m.wikipedia.org/wiki/Main_Page"),
 		Some(size),
 		resizable,
 		debug,

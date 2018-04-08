@@ -1,13 +1,13 @@
 extern crate fnv;
+extern crate urlencoding;
 extern crate webview_sys as ffi;
 
 use std::os::raw::*;
 use std::ffi::{CString, CStr};
 use std::mem::{transmute, forget};
 use std::marker::PhantomData;
-
 use fnv::FnvHashMap as HashMap; // faster than std HashMap for small keys
-
+use urlencoding::encode;
 use ffi::*;
 
 /// Dialog alerts, should be specified in Dialog::Alert variant.
@@ -42,16 +42,29 @@ impl Dialog {
 	}
 }
 
+/// Wrapper around content that can be displayed inside webview.
+/// Can be either Url or Html.
+/// Url fetches contents from address and displays it.
+/// Html displays strings contents.
+pub enum Content<T: AsRef<str>> {
+    Url(T),
+    Html(T),
+}
+
 pub fn run<'a, T: 'a,
 	I: FnOnce(MyUnique<WebView<'a, T>>),
 	F: FnMut(&mut WebView<'a, T>, &str, &mut T) + 'a,
+	C: AsRef<str>
 >(
-	title: &str, url: &str, size: Option<(i32, i32)>, resizable: bool, debug: bool, init_cb: I, ext_cb: F, user_data: T
+	title: &str, content: Content<C>, size: Option<(i32, i32)>, resizable: bool, debug: bool, init_cb: I, ext_cb: F, user_data: T
 ) -> (T, bool) {
 	let (width, height) = size.unwrap_or((800, 600));
 	let fullscreen = size.is_none();
 	let title = CString::new(title).unwrap();
-	let url = CString::new(url).unwrap();
+	let url = match content {
+		Content::Url(url) => CString::new(url.as_ref()).unwrap(),
+		Content::Html(html) => CString::new(format!("data:text/html,{}", encode(html.as_ref()))).unwrap(),
+	};
 	let mut handler_data = Box::new(HandlerData {
 		ext_cb: Box::new(ext_cb),
 		index: 0,

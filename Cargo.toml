@@ -11,11 +11,11 @@ categories = ["gui", "web-programming", "api-bindings", "rendering", "visualizat
 exclude = ["examples/todo-ps/dist/**/*"]
 
 [dependencies]
+urlencoding = "1.0"
 fnv = "1.0"
 webview-sys = { path = "webview-sys", version = "0.1.0" }
 
 [dev-dependencies]
-urlencoding = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"

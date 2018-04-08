@@ -1,12 +1,10 @@
 // #![windows_subsystem = "windows"]
 #![allow(deprecated)]
 
-extern crate urlencoding;
 extern crate web_view;
 
 use std::thread::{spawn, sleep_ms};
 use std::sync::{Arc, Mutex};
-use urlencoding::encode;
 use web_view::*;
 
 fn main() {
@@ -15,9 +13,8 @@ fn main() {
 	let debug = true;
 	let initial_userdata = 0;
 	let counter = Arc::new(Mutex::new(0));
-	let url = "data:text/html,".to_string() + &encode(HTML);
 	let counter_inner = counter.clone();
-	run("timer example", &url, Some(size), resizable, debug, move |webview| {
+	run("timer example", Content::Html(HTML), Some(size), resizable, debug, move |webview| {
 		spawn(move || {
 			loop {
 				{
