@@ -6,10 +6,9 @@ use std::path::Path;
 use std::process::Command;
 
 fn main() {
-	// Initialize nanovg submodule if user forgot to clone parent repository with --recursive.
-    if !Path::new("webview/.git").exists() {
-        let _ = Command::new("git").args(&["submodule", "update", "--init"])
-                                   .status();
+	// Initialize webview submodule if user forgot to clone parent repository with --recursive.
+	if !Path::new("webview/.git").exists() {
+		let _ = Command::new("git").args(&["submodule", "update", "--init"]).status();
 	}
 
 	let mut build = cc::Build::new();
