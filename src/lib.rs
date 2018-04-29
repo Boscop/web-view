@@ -4,7 +4,7 @@ extern crate webview_sys as ffi;
 
 use std::os::raw::*;
 use std::ffi::{CString, CStr};
-use std::mem::{transmute, forget};
+use std::mem::transmute;
 use std::marker::PhantomData;
 use fnv::FnvHashMap as HashMap; // faster than std HashMap for small keys
 use urlencoding::encode;
@@ -151,34 +151,32 @@ impl<'a, T> WebView<'a, T> {
 		unsafe { webview_inject_css(self.erase(), css.as_ptr()) }
 	}
 
-	pub fn dialog(&mut self, dialog: Dialog, title: &str, arg: Option<&str>) -> String {
+	pub fn dialog(&mut self, dialog: Dialog, title: &str, arg: &str) -> String {
 		let (dtype, dflags) = dialog.parameters();
-		let title = CString::new(title).unwrap();
-		let arg = CString::new(arg.unwrap_or("")).unwrap();
-		let buffer_size = 4096;
-		let mut buffer  = Vec::with_capacity(buffer_size);
-		buffer.push(0); // If cancel is pressed nothing is written to the buffer.
-		let result = buffer.as_mut_ptr();
-		forget(buffer);
+		let mut s = [0u8; 4096];
 
 		unsafe {
 			webview_dialog(
 				self.erase(),
 				dtype,
 				dflags,
-				title.as_ptr(),
-				arg.as_ptr(),
-				result,
-				buffer_size
+				CString::new(title).unwrap().as_ptr(),
+				CString::new(arg).unwrap().as_ptr(),
+				s.as_mut_ptr() as _,
+				s.len()
 			);
 		}
 
-		let mut result = unsafe { Vec::from_raw_parts(result, buffer_size, buffer_size) };
-		let len = result.iter().position(|&c| c == 0).unwrap();
-		result.truncate(len);
-		result.shrink_to_fit(); // the space allocated is probably an order of a magnitude larger than the path
+		read_str(&s)
+	}
+}
 
-		unsafe { String::from_utf8_unchecked(transmute(result)) } // invalid UTF-8 is an OS bug
+fn read_str(s: &[u8]) -> String {
+	use std::ffi::CStr;
+	let end = s.iter().position(|&b| b == 0).map_or(0, |i| i + 1);
+	match CStr::from_bytes_with_nul(&s[..end]) {
+		Ok(s) => s.to_string_lossy().into_owned(),
+		Err(_) => "".to_string()
 	}
 }
 
