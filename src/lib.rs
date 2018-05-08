@@ -2,6 +2,9 @@ extern crate fnv;
 extern crate urlencoding;
 extern crate webview_sys as ffi;
 
+pub mod escape;
+pub use escape::escape;
+
 use std::os::raw::*;
 use std::ffi::{CString, CStr};
 use std::mem::transmute;
