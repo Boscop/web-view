@@ -17,7 +17,7 @@ use std::fmt::Write;
 ///
 /// view.eval(&format!("callback({});", web_view::escape(string)));
 /// ```
-pub fn escape<'a>(string: &'a str) -> impl fmt::Display + 'a {
+pub fn escape(string: &str) -> Escaper {
     Escaper(string)
 }
 
