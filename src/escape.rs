@@ -49,7 +49,9 @@ impl<'a> fmt::Display for Escaper<'a> {
                     f.write_str(&string[..i])?;
                 }
 
-                f.write_str(match string[i..].chars().next().unwrap() { //TODO: This line is gross.
+                let mut chars = string[i..].chars();
+
+                f.write_str(match chars.next().unwrap() {
                     '\n' => "\\n",
                     '\r' => "\\r",
                     '\'' => "\\'",
@@ -59,7 +61,7 @@ impl<'a> fmt::Display for Escaper<'a> {
                     _ => unreachable!()
                 })?;
 
-                string = &string[i + 1..];
+                string = chars.as_str();
             } else {
                 f.write_str(string)?;
                 break;
@@ -70,4 +72,11 @@ impl<'a> fmt::Display for Escaper<'a> {
 
         Ok(())
     }
+}
+
+#[test]
+fn test() {
+    let plain = "ABC \n\r' abc \\  \u{2028}   \u{2029}123";
+    let escaped = escape(plain).to_string();
+    assert!(escaped == "'ABC \\n\\r\\' abc \\\\  \\u2028   \\u2029123'");
 }
