@@ -2,7 +2,7 @@ extern crate fnv;
 extern crate urlencoding;
 extern crate webview_sys as ffi;
 
-pub mod escape;
+mod escape;
 pub use escape::escape;
 
 use std::os::raw::*;
