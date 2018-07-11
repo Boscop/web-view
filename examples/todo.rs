@@ -43,6 +43,7 @@ fn main() {
 			markTask { index, done } => tasks[index].done = done,
 			clearDoneTasks => tasks.retain(|t| !t.done),
 		}
+		webview.set_title(&format!("Rust Todo App ({} Tasks)", tasks.len()));
 		render(webview, tasks);
 	}, userdata);
 	println!("final state: {:?}", tasks);
