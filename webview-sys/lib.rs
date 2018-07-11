@@ -36,6 +36,7 @@ extern {
 	pub fn webview_dispatch(this: *mut CWebView, f: Option<ErasedDispatchFn>, arg: *mut c_void);
 	pub fn webview_eval(this: *mut CWebView, js: *const c_char) -> c_int;
 	pub fn webview_inject_css(this: *mut CWebView, css: *const c_char) -> c_int;
+	pub fn webview_set_title(this: *mut CWebView, title: *const c_char);
 	pub fn webview_set_fullscreen(this: *mut CWebView, fullscreen: c_int);
 	pub fn webview_set_color(this: *mut CWebView, red: u8, green: u8, blue: u8, alpha: u8);
 	pub fn webview_dialog(this: *mut CWebView, dialog_type: DialogType, flags: DialogFlags, title: *const c_char, arg: *const c_char, result: *mut c_char, result_size: usize);

@@ -158,6 +158,11 @@ impl<'a, T> WebView<'a, T> {
 		unsafe { webview_set_color(self.erase(), red, green, blue, alpha) }
 	}
 
+	pub fn set_title(&mut self, title: &str) {
+		let title = CString::new(title).unwrap();
+		unsafe { webview_set_title(self.erase(), title.as_ptr()) }
+	}
+
 	pub fn dialog(&mut self, dialog: Dialog, title: &str, arg: &str) -> String {
 		let (dtype, dflags) = dialog.parameters();
 		let mut s = [0u8; 4096];
