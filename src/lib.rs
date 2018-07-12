@@ -154,7 +154,12 @@ impl<'a, T> WebView<'a, T> {
 		unsafe { webview_inject_css(self.erase(), css.as_ptr()) }
 	}
 
-	pub fn set_color(&mut self, red: u8, green: u8, blue: u8, alpha: u8) {
+	pub fn set_title(&mut self, title: &str) {
+		let title = CString::new(title).unwrap();
+		unsafe { webview_set_title(self.erase(), title.as_ptr()) }
+  }
+
+  pub fn set_color(&mut self, red: u8, green: u8, blue: u8, alpha: u8) {
 		unsafe { webview_set_color(self.erase(), red, green, blue, alpha) }
 	}
 
