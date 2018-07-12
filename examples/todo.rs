@@ -32,7 +32,9 @@ fn main() {
 	let size = (320, 480);
 	let resizable = false;
 	let debug = true;
-	let init_cb = |_webview| {};
+	let init_cb = |webview: MyUnique<WebView<Vec<Task>>>| {
+		webview.dispatch(|wv, _| wv.set_color(156, 39, 176, 255));
+	};
 	let userdata = vec![];
 	let (tasks, _) = run("Rust Todo App", Content::Html(html), Some(size), resizable, debug, init_cb, |webview, arg, tasks: &mut Vec<Task>| {
 		use Cmd::*;
