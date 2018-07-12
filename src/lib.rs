@@ -154,6 +154,10 @@ impl<'a, T> WebView<'a, T> {
 		unsafe { webview_inject_css(self.erase(), css.as_ptr()) }
 	}
 
+	pub fn set_color(&mut self, red: u8, green: u8, blue: u8, alpha: u8) {
+		unsafe { webview_set_color(self.erase(), red, green, blue, alpha) }
+	}
+
 	pub fn dialog(&mut self, dialog: Dialog, title: &str, arg: &str) -> String {
 		let (dtype, dflags) = dialog.parameters();
 		let mut s = [0u8; 4096];
