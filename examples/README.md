@@ -28,6 +28,17 @@ $ npm run prod
 ```
 Finally use cargo to build the rust executable, which includes `bundle.html` using `include_str!()`.
 
+## elm-counter
+
+(This assumes you're using Elm 0.19.0)
+
+```
+$ npm install -g elm
+$ cd elm-counter
+$ elm make --optimize src/Main.elm
+$ cargo run --example elm-counter
+```
+
 ---
 
 Note: For some reason (at least on Windows), if I try to `cargo run` the examples directly, they don't show the window, but it works with `cargo build --example <name> && target\debug\examples\<name>`
