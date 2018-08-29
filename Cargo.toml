@@ -8,7 +8,7 @@ repository = "https://github.com/Boscop/web-view"
 description = "Rust bindings for webview, a tiny cross-platform library to render web-based GUIs for desktop applications"
 keywords = ["web", "gui", "desktop", "electron", "webkit"]
 categories = ["gui", "web-programming", "api-bindings", "rendering", "visualization"]
-exclude = ["examples/todo-ps/dist/**/*"]
+exclude = ["examples/todo-ps/dist/**/*", "examples/elm-counter/index.html"]
 
 [dependencies]
 urlencoding = "1.0"
