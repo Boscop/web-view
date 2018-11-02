@@ -1,55 +1,68 @@
-// #![windows_subsystem = "windows"]
-#![allow(deprecated)]
+//#![windows_subsystem = "windows"]
 
 extern crate web_view;
 
-use std::thread::{spawn, sleep_ms};
-use std::sync::{Arc, Mutex};
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
+};
 use web_view::*;
 
 fn main() {
-	let size = (800, 600);
-	let resizable = true;
-	let debug = true;
-	let initial_userdata = 0;
-	let counter = Arc::new(Mutex::new(0));
-	let counter_inner = counter.clone();
-	run("timer example", Content::Html(HTML), Some(size), resizable, debug, move |webview| {
-		spawn(move || {
-			loop {
-				{
-					let mut counter = counter_inner.lock().unwrap();
-					*counter += 1;
-					webview.dispatch(|webview, userdata| {
-						*userdata -= 1;
-						render(webview, *counter, *userdata);
-					});
-				}
-				sleep_ms(1000);
-			}
-		});
-	}, move |webview, arg, userdata| {
-		match arg {
-			"reset" => {
-				*userdata += 10;
-				let mut counter = counter.lock().unwrap();
-				*counter = 0;
-				render(webview, *counter, *userdata);
-			}
-			"exit" => {
-				webview.terminate();
-			}
-			_ => unimplemented!()
-		}
-	}, initial_userdata);
+    let counter = Arc::new(Mutex::new(0));
+
+    let counter_inner = counter.clone();
+    let mut webview = WebViewBuilder::new()
+        .title("Timer example")
+        .content(Content::Html(HTML))
+        .size(800, 600)
+        .resizable(true)
+        .debug(true)
+        .user_data(0)
+        .invoke_handler(|webview, arg| match arg {
+            "reset" => {
+                *webview.user_data_mut() += 10;
+                let mut counter = counter.lock().unwrap();
+                *counter = 0;
+                render(webview, *counter);
+            }
+            "exit" => {
+                webview.terminate();
+            }
+            _ => unimplemented!(),
+        })
+        .build()
+        .unwrap();
+
+    let handle = webview.handle();
+    thread::spawn(move || loop {
+        {
+            let mut counter = counter_inner.lock().unwrap();
+            *counter += 1;
+            let count = *counter;
+            handle
+                .dispatch(move |webview| {
+                    *webview.user_data_mut() -= 1;
+                    render(webview, count);
+                })
+                .unwrap();
+        }
+        thread::sleep(Duration::from_secs(1));
+    });
+
+    webview.run().unwrap();
 }
 
-fn render<'a, T>(webview: &mut WebView<'a, T>, counter: u32, userdata: i32) {
-	println!("counter: {}, userdata: {}", counter, userdata);
-	webview.eval(&format!("updateTicks({}, {})", counter, userdata));
+fn render(webview: &mut WebView<i32>, counter: u32) {
+    let user_data = *webview.user_data();
+    println!("counter: {}, userdata: {}", counter, user_data);
+    webview
+        .eval(&format!("updateTicks({}, {})", counter, user_data))
+        .unwrap();
 }
 
-const HTML: &'static str = r#"
+const HTML: &str = r#"
 <!doctype html>
 <html>
 	<body>
