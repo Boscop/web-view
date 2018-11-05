@@ -43,6 +43,7 @@ use std::{
 use urlencoding::encode;
 
 /// Dialog alert variants.
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Alert {
     Info,
     Warning,
@@ -52,6 +53,7 @@ pub enum Alert {
 /// Dialog variants that can be displayed with [`WebView::dialog()`].
 ///
 /// [`WebView::dialog()`]: struct.WebView.html#method.dialog
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum Dialog {
     SaveFile,
     OpenFile,
@@ -82,6 +84,7 @@ impl Dialog {
 /// - `Html` - A string containing literal HTML.
 ///
 /// [`WebView`]: struct.WebView.html
+#[derive(Debug)]
 pub enum Content<T: AsRef<str>> {
     Url(T),
     Html(T),
