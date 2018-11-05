@@ -1,4 +1,10 @@
-use std::ffi::NulError;
+use std::{
+    ffi::NulError,
+    fmt::{Debug, Display},
+};
+
+pub trait CustomError: Display + Debug + Send + Sync + 'static {}
+impl<T: Display + Debug + Send + Sync + 'static> CustomError for T {}
 
 /// A WebView error.
 #[derive(Debug, Fail)]
@@ -22,6 +28,16 @@ pub enum Error {
     /// WebView was dropped.
     #[fail(display = "Closure could not be dispatched. WebView was likely dropped.")]
     Dispatch,
+    /// An user-specified error occurred. For use inside invoke and dispatch closures.
+    #[fail(display = "Error: {}", _0)]
+    Custom(Box<CustomError>),
+}
+
+impl Error {
+    /// Creates a custom error from a `T: Display + Debug + Send + Sync + 'static`.
+    pub fn custom<E: CustomError>(error: E) -> Error {
+        Error::Custom(Box::new(error))
+    }
 }
 
 /// A WebView result.

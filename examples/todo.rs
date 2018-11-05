@@ -55,11 +55,8 @@ fn main() {
                 tasks.len()
             };
 
-            webview
-                .set_title(&format!("Rust Todo App ({} Tasks)", tasks_len))
-                .unwrap();
-
-            render(webview);
+            webview.set_title(&format!("Rust Todo App ({} Tasks)", tasks_len))?;
+            render(webview)
         })
         .build()
         .unwrap();
@@ -71,13 +68,13 @@ fn main() {
     println!("final state: {:?}", res);
 }
 
-fn render(webview: &mut WebView<Vec<Task>>) {
+fn render(webview: &mut WebView<Vec<Task>>) -> WVResult {
     let render_tasks = {
         let tasks = webview.user_data();
         println!("{:#?}", tasks);
         format!("rpc.render({})", serde_json::to_string(tasks).unwrap())
     };
-    webview.eval(&render_tasks).unwrap();
+    webview.eval(&render_tasks)
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -28,7 +28,7 @@ mod color;
 mod errors;
 mod escape;
 pub use color::Color;
-pub use errors::{Error, WVResult};
+pub use errors::{CustomError, Error, WVResult};
 pub use escape::escape;
 
 use boxfnonce::SendBoxFnOnce;
@@ -98,7 +98,7 @@ pub enum Content<T: AsRef<str>> {
 ///         .resizable(true)
 ///         .debug(true)
 ///         .user_data(())
-///         .invoke_handler(|_webview, _arg| {})
+///         .invoke_handler(|_webview, _arg| Ok(()))
 ///         .build()
 ///         .unwrap()
 ///         .run()
@@ -109,7 +109,7 @@ pub enum Content<T: AsRef<str>> {
 /// [`WebView`]: struct.WebView.html
 pub struct WebViewBuilder<'a, T, I, C>
 where
-    I: FnMut(&mut WebView<T>, &str) + 'a,
+    I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
     C: AsRef<str>,
 {
     pub title: &'a str,
@@ -124,7 +124,7 @@ where
 
 impl<'a, T, I, C> Default for WebViewBuilder<'a, T, I, C>
 where
-    I: FnMut(&mut WebView<T>, &str) + 'a,
+    I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
     C: AsRef<str>,
 {
     fn default() -> Self {
@@ -148,7 +148,7 @@ where
 
 impl<'a, T, I, C> WebViewBuilder<'a, T, I, C>
 where
-    I: FnMut(&mut WebView<T>, &str) + 'a,
+    I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
     C: AsRef<str>,
 {
     /// Alias for [`WebViewBuilder::default()`].
@@ -199,6 +199,12 @@ where
 
     /// Sets the invoke handler callback. This will be called when a message is received from
     /// JavaScript.
+    ///
+    /// # Errors
+    ///
+    /// If the closure returns an `Err`, it will be returned on the next call to [`step()`].
+    ///
+    /// [`step()`]: struct.WebView.html#method.step
     pub fn invoke_handler(mut self, invoke_handler: I) -> Self {
         self.invoke_handler = Some(invoke_handler);
         self
@@ -247,7 +253,8 @@ where
 struct UserData<'a, T> {
     inner: T,
     live: Arc<RwLock<()>>,
-    invoke_handler: Box<FnMut(&mut WebView<T>, &str) + 'a>,
+    invoke_handler: Box<FnMut(&mut WebView<T>, &str) -> WVResult + 'a>,
+    result: WVResult,
 }
 
 /// An owned webview instance.
@@ -274,12 +281,13 @@ impl<'a, T> WebView<'a, T> {
         invoke_handler: I,
     ) -> WVResult<WebView<'a, T>>
     where
-        I: FnMut(&mut WebView<T>, &str) + 'a,
+        I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
     {
         let user_data = Box::new(UserData {
             inner: user_data,
             live: Arc::new(RwLock::new(())),
             invoke_handler: Box::new(invoke_handler),
+            result: Ok(()),
         });
         let user_data_ptr = Box::into_raw(user_data);
 
@@ -440,7 +448,13 @@ impl<'a, T> WebView<'a, T> {
     pub fn step(&mut self) -> Option<WVResult> {
         unsafe {
             match webview_loop(self.inner, 1) {
-                0 => Some(Ok(())),
+                0 => {
+                    let closure_result = &mut self.user_data_wrapper_mut().result;
+                    match closure_result {
+                        Ok(_) => Some(Ok(())),
+                        e => Some(mem::replace(e, Ok(()))),
+                    }
+                }
                 _ => None,
             }
         }
@@ -501,11 +515,14 @@ impl<T> Handle<T> {
     ///
     /// Returns [`Error::Dispatch`] if the [`WebView`] has been dropped.
     ///
+    /// If the closure returns an `Err`, it will be returned on the next call to [`step()`].
+    ///
     /// [`WebView`]: struct.WebView.html
     /// [`Error::Dispatch`]: enum.Error.html#variant.Dispatch
+    /// [`step()`]: struct.WebView.html#method.step
     pub fn dispatch<F>(&self, f: F) -> WVResult
     where
-        F: FnOnce(&mut WebView<T>) + Send + 'static,
+        F: FnOnce(&mut WebView<T>) -> WVResult + Send + 'static,
     {
         // Abort if WebView has been dropped. Otherwise, keep it alive until closure has been
         // dispatched.
@@ -539,8 +556,12 @@ fn read_str(s: &[u8]) -> String {
 extern "system" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_void) {
     unsafe {
         let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
-        let callback = Box::<SendBoxFnOnce<'static, (&mut WebView<T>,)>>::from_raw(arg as _);
-        callback.call(&mut handle);
+        let result = {
+            let callback =
+                Box::<SendBoxFnOnce<'static, (&mut WebView<T>,), WVResult>>::from_raw(arg as _);
+            callback.call(&mut handle)
+        };
+        handle.user_data_wrapper_mut().result = result;
     }
 }
 
@@ -548,7 +569,7 @@ extern "system" fn ffi_invoke_handler<T>(webview: *mut CWebView, arg: *const c_c
     unsafe {
         let arg = CStr::from_ptr(arg).to_string_lossy().to_string();
         let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
-        let user_data_ptr = handle.user_data_wrapper_ptr();
-        ((*user_data_ptr).invoke_handler)(&mut *handle, &arg);
+        let result = ((*handle.user_data_wrapper_ptr()).invoke_handler)(&mut *handle, &arg);
+        handle.user_data_wrapper_mut().result = result;
     }
 }

@@ -12,7 +12,7 @@ fn main() {
         .resizable(true)
         .debug(true)
         .user_data(())
-        .invoke_handler(|_webview, _arg| {})
+        .invoke_handler(|_webview, _arg| Ok(()))
         .build()
         .unwrap()
         .run()

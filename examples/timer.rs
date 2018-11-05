@@ -20,17 +20,20 @@ fn main() {
         .resizable(true)
         .debug(true)
         .user_data(0)
-        .invoke_handler(|webview, arg| match arg {
-            "reset" => {
-                *webview.user_data_mut() += 10;
-                let mut counter = counter.lock().unwrap();
-                *counter = 0;
-                render(webview, *counter);
-            }
-            "exit" => {
-                webview.terminate();
-            }
-            _ => unimplemented!(),
+        .invoke_handler(|webview, arg| {
+            match arg {
+                "reset" => {
+                    *webview.user_data_mut() += 10;
+                    let mut counter = counter.lock().unwrap();
+                    *counter = 0;
+                    render(webview, *counter)?;
+                }
+                "exit" => {
+                    webview.terminate();
+                }
+                _ => unimplemented!(),
+            };
+            Ok(())
         })
         .build()
         .unwrap();
@@ -44,7 +47,7 @@ fn main() {
             handle
                 .dispatch(move |webview| {
                     *webview.user_data_mut() -= 1;
-                    render(webview, count);
+                    render(webview, count)
                 })
                 .unwrap();
         }
@@ -54,12 +57,10 @@ fn main() {
     webview.run().unwrap();
 }
 
-fn render(webview: &mut WebView<i32>, counter: u32) {
+fn render(webview: &mut WebView<i32>, counter: u32) -> WVResult {
     let user_data = *webview.user_data();
     println!("counter: {}, userdata: {}", counter, user_data);
-    webview
-        .eval(&format!("updateTicks({}, {})", counter, user_data))
-        .unwrap();
+    webview.eval(&format!("updateTicks({}, {})", counter, user_data))
 }
 
 const HTML: &str = r#"
