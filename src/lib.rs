@@ -42,14 +42,16 @@ use std::{
 };
 use urlencoding::encode;
 
-/// Dialog alerts, should be specified in Dialog::Alert variant.
+/// Dialog alert variants.
 pub enum Alert {
     Info,
     Warning,
     Error,
 }
 
-/// Dialog variants that can be shown to user with WebView::dialog function.
+/// Dialog variants that can be displayed with [`WebView::dialog()`].
+///
+/// [`WebView::dialog()`]: struct.WebView.html#method.dialog
 pub enum Dialog {
     SaveFile,
     OpenFile,
@@ -72,10 +74,14 @@ impl Dialog {
     }
 }
 
-/// Wrapper around content that can be displayed inside webview.
-/// Can be either Url or Html.
-/// Url fetches contents from address and displays it.
-/// Html displays strings contents.
+/// Content displayable inside a [`WebView`].
+///
+/// # Variants
+///
+/// - `Url` - Content to be fetched from a URL.
+/// - `Html` - A string containing literal HTML.
+///
+/// [`WebView`]: struct.WebView.html
 pub enum Content<T: AsRef<str>> {
     Url(T),
     Html(T),
