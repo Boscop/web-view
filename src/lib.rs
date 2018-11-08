@@ -331,7 +331,7 @@ impl<'a, T> WebView<'a, T> {
     /// Creates a thread-safe [`Handle`] to the `WebView`, from which closures can be dispatched.
     ///
     /// [`Handle`]: struct.Handle.html
-    pub fn handle(&mut self) -> Handle<T> {
+    pub fn handle(&self) -> Handle<T> {
         Handle {
             inner: self.inner,
             live: Arc::downgrade(&self.user_data_wrapper().live),
