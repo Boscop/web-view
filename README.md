@@ -17,6 +17,11 @@ Contributions and feedback welcome :)
 
 <p align="center"><img alt="screenshot" src="https://i.imgur.com/Z3c2zwD.png"></p>
 
+## Notes:
+Requires Rust 1.30 stable or newer.
+
+---
+
 ## Suggestions:
 - If you like type safety, write your frontend in [Elm](http://elm-lang.org/) or [PureScript](http://www.purescript.org/)<sup>[*](#n1)</sup>, or use a Rust frontend framework that compiles to asm.js, like [yew](https://github.com/DenisKolodin/yew).
 - Use [parcel](https://parceljs.org/) to bundle & minify your frontend code.
@@ -35,7 +40,6 @@ Contributions and feedback welcome :)
 - Create an issue for any question you have
 - Docs
 - Feedback on this library's API and code
-- Some functions don't have FFI yet, e.g. `webview_dialog`
 - Test it on non-windows platforms, report any issues you find
 - Showcase your app
 - Add an example that uses Elm or Rust compiled to asm.js
