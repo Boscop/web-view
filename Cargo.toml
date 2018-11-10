@@ -1,6 +1,6 @@
 [package]
 name = "web-view"
-version = "0.2.1"
+version = "0.3.0"
 authors = ["Boscop"]
 readme = "README.md"
 license = "MIT"
@@ -12,8 +12,12 @@ exclude = ["examples/todo-ps/dist/**/*", "examples/elm-counter/index.html"]
 
 [dependencies]
 urlencoding = "1.0"
-fnv = "1.0"
 webview-sys = { path = "webview-sys", version = "0.1.0" }
+boxfnonce = "0.1"
+
+[features]
+default = ["V1_30"]
+V1_30 = []
 
 [dev-dependencies]
 serde = "1.0"

@@ -1,5 +1,4 @@
-use std::fmt;
-use std::fmt::Write;
+use std::fmt::{self, Write};
 
 /// Escape a string to pass it into JavaScript.
 ///
@@ -28,11 +27,11 @@ pub fn escape(string: &str) -> Escaper {
 
 pub struct Escaper<'a>(&'a str);
 
-const SPECIAL: &'static [char] = &[
-    '\n', // U+000A (LINE FEED)
-    '\r', // U+000D (CARRIAGE RETURN)
-    '\'', // U+0027 (APOSTROPHE)
-    '\\', // U+005C (REVERSE SOLIDUS)
+const SPECIAL: &[char] = &[
+    '\n',       // U+000A (LINE FEED)
+    '\r',       // U+000D (CARRIAGE RETURN)
+    '\'',       // U+0027 (APOSTROPHE)
+    '\\',       // U+005C (REVERSE SOLIDUS)
     '\u{2028}', // U+2028 (LINE SEPARATOR)
     '\u{2029}', // U+2029 (PARAGRAPH SEPARATOR)
 ];
@@ -43,7 +42,7 @@ impl<'a> fmt::Display for Escaper<'a> {
 
         f.write_char('\'')?;
 
-        while string.len() != 0 {
+        while !string.is_empty() {
             if let Some(i) = string.find(SPECIAL) {
                 if i > 0 {
                     f.write_str(&string[..i])?;
@@ -58,7 +57,7 @@ impl<'a> fmt::Display for Escaper<'a> {
                     '\\' => "\\\\",
                     '\u{2028}' => "\\u2028",
                     '\u{2029}' => "\\u2029",
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 })?;
 
                 string = chars.as_str();

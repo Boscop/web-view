@@ -1,13 +1,14 @@
-// #![windows_subsystem = "windows"]
+//#![windows_subsystem = "windows"]
 
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_json;
 extern crate web_view;
 
 use web_view::*;
 
 fn main() {
-	let html = format!(r#"
+    let html = format!(r#"
 		<!doctype html>
 		<html>
 			<head>
@@ -29,54 +30,73 @@ fn main() {
 		styles = inline_style(include_str!("todo/styles.css")),
 		scripts = inline_script(include_str!("todo/picodom.js")) + &inline_script(include_str!("todo/app.js")),
 	);
-	let size = (320, 480);
-	let resizable = false;
-	let debug = true;
-	let init_cb = |webview: MyUnique<WebView<Vec<Task>>>| {
-		webview.dispatch(|wv, _| wv.set_color(156, 39, 176, 255));
-	};
-	let userdata = vec![];
-	let (tasks, _) = run("Rust Todo App", Content::Html(html), Some(size), resizable, debug, init_cb, |webview, arg, tasks: &mut Vec<Task>| {
-		use Cmd::*;
-		match serde_json::from_str(arg).unwrap() {
-			init => (),
-			log { text } => println!("{}", text),
-			addTask { name } => tasks.push(Task { name, done: false }),
-			markTask { index, done } => tasks[index].done = done,
-			clearDoneTasks => tasks.retain(|t| !t.done),
-		}
-		webview.set_title(&format!("Rust Todo App ({} Tasks)", tasks.len()));
-		render(webview, tasks);
-	}, userdata);
-	println!("final state: {:?}", tasks);
+
+    let mut webview = WebViewBuilder::new()
+        .title("Rust Todo App")
+        .content(Content::Html(html))
+        .size(320, 480)
+        .resizable(false)
+        .debug(true)
+        .user_data(vec![])
+        .invoke_handler(|webview, arg| {
+            use Cmd::*;
+
+            let tasks_len = {
+                let tasks = webview.user_data_mut();
+
+                match serde_json::from_str(arg).unwrap() {
+                    Init => (),
+                    Log { text } => println!("{}", text),
+                    AddTask { name } => tasks.push(Task { name, done: false }),
+                    MarkTask { index, done } => tasks[index].done = done,
+                    ClearDoneTasks => tasks.retain(|t| !t.done),
+                }
+
+                tasks.len()
+            };
+
+            webview.set_title(&format!("Rust Todo App ({} Tasks)", tasks_len))?;
+            render(webview)
+        })
+        .build()
+        .unwrap();
+
+    webview.set_color((156, 39, 176));
+
+    let res = webview.run().unwrap();
+
+    println!("final state: {:?}", res);
 }
 
-fn render<'a, T>(webview: &mut WebView<'a, T>, tasks: &[Task]) {
-	println!("{:#?}", tasks);
-	webview.eval(&format!("rpc.render({})", serde_json::to_string(tasks).unwrap()));
+fn render(webview: &mut WebView<Vec<Task>>) -> WVResult {
+    let render_tasks = {
+        let tasks = webview.user_data();
+        println!("{:#?}", tasks);
+        format!("rpc.render({})", serde_json::to_string(tasks).unwrap())
+    };
+    webview.eval(&render_tasks)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Task {
-	name: String,
-	done: bool,
+    name: String,
+    done: bool,
 }
 
-#[allow(non_camel_case_types)]
 #[derive(Deserialize)]
-#[serde(tag = "cmd")]
+#[serde(tag = "cmd", rename_all = "camelCase")]
 pub enum Cmd {
-	init,
-	log { text: String },
-	addTask { name: String },
-	markTask { index: usize, done: bool },
-	clearDoneTasks,
+    Init,
+    Log { text: String },
+    AddTask { name: String },
+    MarkTask { index: usize, done: bool },
+    ClearDoneTasks,
 }
 
 fn inline_style(s: &str) -> String {
-	format!(r#"<style type="text/css">{}</style>"#, s)
+    format!(r#"<style type="text/css">{}</style>"#, s)
 }
 
 fn inline_script(s: &str) -> String {
-	format!(r#"<script type="text/javascript">{}</script>"#, s)
+    format!(r#"<script type="text/javascript">{}</script>"#, s)
 }
