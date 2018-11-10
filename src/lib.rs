@@ -479,11 +479,7 @@ impl<'a, T> WebView<'a, T> {
     }
 
     /// Consumes the `WebView` and returns ownership of the user data.
-    pub fn into_inner(mut self) -> T {
-        unsafe { self._into_inner() }
-    }
-
-    unsafe fn _into_inner(&mut self) -> T {
+    pub fn into_inner(self) -> T {
         let _lock = self
             .user_data_wrapper()
             .live
@@ -491,9 +487,7 @@ impl<'a, T> WebView<'a, T> {
             .expect("A dispatch channel thread panicked while holding mutex to WebView.");
 
         let user_data_ptr = self.user_data_wrapper_ptr();
-        webview_exit(self.inner);
-        wrapper_webview_free(self.inner);
-        let user_data = *Box::from_raw(user_data_ptr);
+        let user_data = unsafe { *Box::from_raw(user_data_ptr) };
         user_data.inner
     }
 }
@@ -501,7 +495,8 @@ impl<'a, T> WebView<'a, T> {
 impl<'a, T> Drop for WebView<'a, T> {
     fn drop(&mut self) {
         unsafe {
-            self._into_inner();
+            webview_exit(self.inner);
+            wrapper_webview_free(self.inner);
         }
     }
 }
