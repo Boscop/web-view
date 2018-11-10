@@ -11,10 +11,13 @@ categories = ["gui", "web-programming", "api-bindings", "rendering", "visualizat
 exclude = ["examples/todo-ps/dist/**/*", "examples/elm-counter/index.html"]
 
 [dependencies]
-failure = "0.1"
 urlencoding = "1.0"
 webview-sys = { path = "webview-sys", version = "0.1.0" }
 boxfnonce = "0.1"
+
+[features]
+default = ["V1_30"]
+V1_30 = []
 
 [dev-dependencies]
 serde = "1.0"

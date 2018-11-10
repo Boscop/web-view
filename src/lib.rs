@@ -18,17 +18,15 @@
 //! [the examples]: https://github.com/Boscop/web-view/tree/master/examples
 //! [original readme]: https://github.com/zserge/webview/blob/master/README.md
 
-#[macro_use]
-extern crate failure;
 extern crate boxfnonce;
 extern crate urlencoding;
 extern crate webview_sys as ffi;
 
 mod color;
-mod errors;
+mod error;
 mod escape;
 pub use color::Color;
-pub use errors::{CustomError, Error, WVResult};
+pub use error::{CustomError, Error, WVResult};
 pub use escape::escape;
 
 use boxfnonce::SendBoxFnOnce;
