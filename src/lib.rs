@@ -13,6 +13,9 @@
 //! It uses Cocoa/WebKit on macOS, gtk-webkit2 on Linux and MSHTML (IE10/11) on Windows, so your app
 //! will be **much** leaner than with Electron.
 //!
+//! To use a custom version of webview, define an environment variable WEBVIEW_DIR with the path to
+//! its source directory.
+//!
 //! For usage info please check out [the examples] and the [original readme].
 //!
 //! [the examples]: https://github.com/Boscop/web-view/tree/master/examples

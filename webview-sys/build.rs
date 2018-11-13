@@ -1,23 +1,33 @@
 extern crate cc;
 extern crate pkg_config;
 
-use std::{env, path::Path, process::Command};
+use std::{
+    env,
+    path::{Path, PathBuf},
+    process::Command,
+};
 
 fn main() {
-    // Initialize webview submodule if user forgot to clone parent repository with --recursive.
-    if !Path::new("webview/.git").exists() {
-        let _ = Command::new("git")
-            .args(&["submodule", "update", "--init"])
-            .status();
-    }
+    let webview_path: PathBuf = match env::var("WEBVIEW_DIR") {
+        Ok(path) => path.into(),
+        Err(_) => {
+            // Initialize webview submodule if user forgot to clone parent repository with --recursive.
+            if !Path::new("webview/.git").exists() {
+                let _ = Command::new("git")
+                    .args(&["submodule", "update", "--init"])
+                    .status();
+            }
+            "webview".into()
+        }
+    };
 
     let mut build = cc::Build::new();
 
-    build.include("webview");
-    build.file("webview.c");
-
-    build.flag_if_supported("-std=c11");
-    build.flag_if_supported("-Wno-everything");
+    build
+        .include(&webview_path)
+        .file("webview.c")
+        .flag_if_supported("-std=c11")
+        .flag_if_supported("-Wno-everything");
 
     if env::var("DEBUG").is_err() {
         build.define("NDEBUG", None);
@@ -43,9 +53,10 @@ fn main() {
         }
         build.define("WEBVIEW_GTK", None);
     } else if target.contains("apple") {
-        build.define("WEBVIEW_COCOA", None);
-        build.flag("-x");
-        build.flag("objective-c");
+        build
+            .define("WEBVIEW_COCOA", None)
+            .flag("-x")
+            .flag("objective-c");
         println!("cargo:rustc-link-lib=framework=Cocoa");
         println!("cargo:rustc-link-lib=framework=WebKit");
     } else {
