@@ -5,7 +5,7 @@ extern crate web_view;
 use web_view::*;
 
 fn main() {
-    WebViewBuilder::new()
+    web_view::builder()
         .title("Rust / Elm - Counter App")
         .content(Content::Html(include_str!("elm-counter/index.html")))
         .size(320, 480)
