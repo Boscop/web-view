@@ -260,6 +260,20 @@ where
     }
 }
 
+/// Constructs a new builder for a [`WebView`].
+///
+/// Alias for [`WebViewBuilder::default()`].
+///
+/// [`WebView`]: struct.Webview.html
+/// [`WebViewBuilder::default()`]: struct.WebviewBuilder.html#impl-Default
+pub fn builder<'a, T, I, C>() -> WebViewBuilder<'a, T, I, C>
+where
+    I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
+    C: AsRef<str>,
+{
+    WebViewBuilder::new()
+}
+
 struct UserData<'a, T> {
     inner: T,
     live: Arc<RwLock<()>>,
