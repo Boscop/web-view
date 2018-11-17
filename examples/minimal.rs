@@ -5,7 +5,7 @@ extern crate web_view;
 use web_view::*;
 
 fn main() {
-    WebViewBuilder::new()
+    web_view::builder()
         .title("Minimal webview example")
         .content(Content::Url("https://en.m.wikipedia.org/wiki/Main_Page"))
         .size(800, 600)

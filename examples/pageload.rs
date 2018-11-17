@@ -5,7 +5,7 @@ extern crate web_view;
 use web_view::*;
 
 fn main() {
-    WebViewBuilder::new()
+    web_view::builder()
         .title("Page load example")
         .content(Content::Html(HTML))
         .size(800, 600)

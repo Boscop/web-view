@@ -31,7 +31,7 @@ fn main() {
 		scripts = inline_script(include_str!("todo/picodom.js")) + &inline_script(include_str!("todo/app.js")),
 	);
 
-    let mut webview = WebViewBuilder::new()
+    let mut webview = web_view::builder()
         .title("Rust Todo App")
         .content(Content::Html(html))
         .size(320, 480)
