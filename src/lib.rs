@@ -26,9 +26,11 @@ extern crate urlencoding;
 extern crate webview_sys as ffi;
 
 mod color;
+mod dialog;
 mod error;
 mod escape;
 pub use color::Color;
+pub use dialog::DialogBuilder;
 pub use error::{CustomError, Error, WVResult};
 pub use escape::escape;
 
@@ -42,40 +44,6 @@ use std::{
     sync::{Arc, RwLock, Weak},
 };
 use urlencoding::encode;
-
-/// Dialog alert variants.
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum Alert {
-    Info,
-    Warning,
-    Error,
-}
-
-/// Dialog variants that can be displayed with [`WebView::dialog()`].
-///
-/// [`WebView::dialog()`]: struct.WebView.html#method.dialog
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum Dialog {
-    SaveFile,
-    OpenFile,
-    ChooseDirectory,
-    Alert(Alert),
-}
-
-impl Dialog {
-    fn parameters(self) -> (DialogType, DialogFlags) {
-        match self {
-            Dialog::SaveFile => (DialogType::Save, DialogFlags::FILE),
-            Dialog::OpenFile => (DialogType::Open, DialogFlags::FILE),
-            Dialog::ChooseDirectory => (DialogType::Open, DialogFlags::DIRECTORY),
-            Dialog::Alert(alert) => match alert {
-                Alert::Info => (DialogType::Alert, DialogFlags::INFO),
-                Alert::Warning => (DialogType::Alert, DialogFlags::WARNING),
-                Alert::Error => (DialogType::Alert, DialogFlags::ERROR),
-            },
-        }
-    }
-}
 
 /// Content displayable inside a [`WebView`].
 ///
@@ -446,33 +414,9 @@ impl<'a, T> WebView<'a, T> {
         unsafe { webview_set_fullscreen(self.inner, fullscreen as _) };
     }
 
-    /// Opens a new dialog window.
-    ///
-    /// # Errors
-    ///
-    /// If `title` or `arg` contain a nul byte, returns [`Error::NulByte`].
-    ///
-    /// [`Error::NulByte`]: enum.Error.html#variant.NulByte
-    pub fn dialog(&mut self, dialog: Dialog, title: &str, arg: &str) -> WVResult<String> {
-        let (dtype, dflags) = dialog.parameters();
-        let mut s = [0u8; 4096];
-
-        let title_cstr = CString::new(title)?;
-        let arg_cstr = CString::new(arg)?;
-
-        unsafe {
-            webview_dialog(
-                self.inner,
-                dtype,
-                dflags,
-                title_cstr.as_ptr(),
-                arg_cstr.as_ptr(),
-                s.as_mut_ptr() as _,
-                s.len(),
-            );
-        }
-
-        Ok(read_str(&s))
+    /// Returns a builder for opening a new dialog window.
+    pub fn dialog<'b>(&'b mut self) -> DialogBuilder<'a, 'b, T> {
+        DialogBuilder::new(self)
     }
 
     /// Iterates the event loop. Returns `None` if the view has been closed or terminated.
