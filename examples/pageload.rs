@@ -13,8 +13,6 @@ fn main() {
         .debug(true)
         .user_data(())
         .invoke_handler(|_webview, _arg| Ok(()))
-        .build()
-        .unwrap()
         .run()
         .unwrap();
 }

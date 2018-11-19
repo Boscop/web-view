@@ -117,7 +117,7 @@ pub enum Content<T: AsRef<str>> {
 /// ```
 ///
 /// [`WebView`]: struct.WebView.html
-pub struct WebViewBuilder<'a, T, I, C>
+pub struct WebViewBuilder<'a, T: 'a, I, C>
 where
     I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
     C: AsRef<str>,
@@ -132,7 +132,7 @@ where
     pub user_data: Option<T>,
 }
 
-impl<'a, T, I, C> Default for WebViewBuilder<'a, T, I, C>
+impl<'a, T: 'a, I, C> Default for WebViewBuilder<'a, T, I, C>
 where
     I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
     C: AsRef<str>,
@@ -156,7 +156,7 @@ where
     }
 }
 
-impl<'a, T, I, C> WebViewBuilder<'a, T, I, C>
+impl<'a, T: 'a, I, C> WebViewBuilder<'a, T, I, C>
 where
     I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
     C: AsRef<str>,
@@ -257,6 +257,13 @@ where
             user_data,
             invoke_handler,
         )
+    }
+
+    /// Validates provided arguments and runs a new WebView to completion, returning the user data.
+    ///
+    /// Equivalent to `build()?.run()`.
+    pub fn run(self) -> WVResult<T> {
+        self.build()?.run()
     }
 }
 
