@@ -54,7 +54,7 @@ use urlencoding::encode;
 ///
 /// [`WebView`]: struct.WebView.html
 #[derive(Debug)]
-pub enum Content<T: AsRef<str>> {
+pub enum Content<T> {
     Url(T),
     Html(T),
 }
@@ -85,11 +85,7 @@ pub enum Content<T: AsRef<str>> {
 /// ```
 ///
 /// [`WebView`]: struct.WebView.html
-pub struct WebViewBuilder<'a, T: 'a, I, C>
-where
-    I: FnMut(&mut WebView<T>, &str) -> WVResult + 'a,
-    C: AsRef<str>,
-{
+pub struct WebViewBuilder<'a, T: 'a, I, C> {
     pub title: &'a str,
     pub content: Option<Content<C>>,
     pub width: i32,
