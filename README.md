@@ -57,7 +57,3 @@ Requires Rust 1.30 stable or newer.
 - Midi song editor, VJ controller
 - Rust project template wizard: Generate new Rust projects from templates with user-friendly steps
 - GUI for [pijul](https://pijul.org/)
-
----
-
-Note: The API can still change. Currently there is only one function (`run()`) that takes all args, but maybe a builder would be better..
