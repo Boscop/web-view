@@ -27,7 +27,7 @@ fn main() {
         .include(&webview_path)
         .file("webview.c")
         .flag_if_supported("-std=c11")
-        .flag_if_supported("-Wno-everything");
+        .flag_if_supported("-w");
 
     if env::var("DEBUG").is_err() {
         build.define("NDEBUG", None);
