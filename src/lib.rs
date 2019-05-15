@@ -528,7 +528,7 @@ fn read_str(s: &[u8]) -> String {
     }
 }
 
-extern "system" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_void) {
+extern "C" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_void) {
     unsafe {
         let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
         let result = {
@@ -540,7 +540,7 @@ extern "system" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_v
     }
 }
 
-extern "system" fn ffi_invoke_handler<T>(webview: *mut CWebView, arg: *const c_char) {
+extern "C" fn ffi_invoke_handler<T>(webview: *mut CWebView, arg: *const c_char) {
     unsafe {
         let arg = CStr::from_ptr(arg).to_string_lossy().to_string();
         let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
