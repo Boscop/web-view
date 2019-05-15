@@ -12,8 +12,8 @@ use std::os::raw::*;
 
 pub enum CWebView {} // opaque type, only used in ffi pointers
 
-type ErasedExternalInvokeFn = extern "system" fn(webview: *mut CWebView, arg: *const c_char);
-type ErasedDispatchFn = extern "system" fn(webview: *mut CWebView, arg: *mut c_void);
+type ErasedExternalInvokeFn = extern "C" fn(webview: *mut CWebView, arg: *const c_char);
+type ErasedDispatchFn = extern "C" fn(webview: *mut CWebView, arg: *mut c_void);
 
 #[repr(C)]
 pub enum DialogType {
