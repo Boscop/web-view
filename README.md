@@ -57,3 +57,8 @@ Requires Rust 1.30 stable or newer.
 - Midi song editor, VJ controller
 - Rust project template wizard: Generate new Rust projects from templates with user-friendly steps
 - GUI for [pijul](https://pijul.org/)
+
+## Showcase
+*Feel free to open a PR if you want your app to be listed here!*  
+
+- [Juggernaut](https://github.com/ShashankaNataraj/Juggernaut) - The unstoppable programmers editor
