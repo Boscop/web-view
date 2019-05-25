@@ -62,3 +62,4 @@ Requires Rust 1.30 stable or newer.
 *Feel free to open a PR if you want your app to be listed here!*  
 
 - [Juggernaut](https://github.com/ShashankaNataraj/Juggernaut) - The unstoppable programmers editor
+- [FrakeGPS](https://github.com/frafra/frakegps) - Simulate a simple GPS device
