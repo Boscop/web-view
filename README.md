@@ -63,3 +63,4 @@ Requires Rust 1.30 stable or newer.
 
 - [Juggernaut](https://github.com/ShashankaNataraj/Juggernaut) - The unstoppable programmers editor
 - [FrakeGPS](https://github.com/frafra/frakegps) - Simulate a simple GPS device
+- [Compactor](https://github.com/Freaky/Compactor) - Windows 10 filesystem compression utility
