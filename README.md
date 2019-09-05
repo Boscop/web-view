@@ -59,8 +59,9 @@ Requires Rust 1.30 stable or newer.
 - GUI for [pijul](https://pijul.org/)
 
 ## Showcase
-*Feel free to open a PR if you want your app to be listed here!*  
+*Feel free to open a PR if you want your project to be listed here!*  
 
 - [Juggernaut](https://github.com/ShashankaNataraj/Juggernaut) - The unstoppable programmers editor
 - [FrakeGPS](https://github.com/frafra/frakegps) - Simulate a simple GPS device
 - [Compactor](https://github.com/Freaky/Compactor) - Windows 10 filesystem compression utility
+- [neutrino](https://github.com/alexislozano/neutrino/) - A GUI frontend in Rust based on web-view
