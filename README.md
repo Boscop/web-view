@@ -57,6 +57,7 @@ Requires Rust 1.30 stable or newer.
 - Midi song editor, VJ controller
 - Rust project template wizard: Generate new Rust projects from templates with user-friendly steps
 - GUI for [pijul](https://pijul.org/)
+- Implement [Gooey](https://github.com/chriskiehl/Gooey) alternative with [web-view](https://github.com/Boscop/web-view) and [clap-rs](https://github.com/clap-rs/clap)
 
 ## Showcase
 *Feel free to open a PR if you want your project to be listed here!*  
