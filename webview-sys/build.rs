@@ -55,6 +55,7 @@ fn main() {
     } else if target.contains("apple") {
         build
             .define("WEBVIEW_COCOA", None)
+            .define("OBJC_OLD_DISPATCH_PROTOTYPES", "1")
             .flag("-x")
             .flag("objective-c");
         println!("cargo:rustc-link-lib=framework=Cocoa");
