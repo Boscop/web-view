@@ -1,30 +1,13 @@
 extern crate cc;
 extern crate pkg_config;
 
-use std::{
-    env,
-    path::{Path, PathBuf},
-    process::Command,
-};
+use std::env;
 
 fn main() {
-    let webview_path: PathBuf = match env::var("WEBVIEW_DIR") {
-        Ok(path) => path.into(),
-        Err(_) => {
-            // Initialize webview submodule if user forgot to clone parent repository with --recursive.
-            if !Path::new("webview/.git").exists() {
-                let _ = Command::new("git")
-                    .args(&["submodule", "update", "--init"])
-                    .status();
-            }
-            "webview".into()
-        }
-    };
-
     let mut build = cc::Build::new();
 
     build
-        .include(&webview_path)
+        .include("webview.h")
         .file("webview.c")
         .flag_if_supported("-std=c11")
         .flag_if_supported("-w");

@@ -1,3 +1,0 @@
-[submodule "webview-sys/webview"]
-	path = webview-sys/webview
-	url = https://github.com/Freaky/webview.git
