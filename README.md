@@ -66,3 +66,4 @@ Requires Rust 1.30 stable or newer.
 - [FrakeGPS](https://github.com/frafra/frakegps) - Simulate a simple GPS device
 - [Compactor](https://github.com/Freaky/Compactor) - Windows 10 filesystem compression utility
 - [neutrino](https://github.com/alexislozano/neutrino/) - A GUI frontend in Rust based on web-view
+- [SOUNDSENSE-RS](https://github.com/prixt/soundsense-rs) - Sound-engine tool for Dwarf Fortress
