@@ -1,0 +1,37 @@
+#red-body {
+    background-color: red;
+}
+
+#green-body {
+    background-color: green;
+}
+
+#blue-body {
+    background-color: blue;
+}
+
+#index-body {
+    background: rgb(63,94,251);
+    background: radial-gradient(circle, rgba(63,94,251,1) 0%, rgba(252,70,107,1) 100%);
+}
+
+/*
+ * Following rules hide the button that corresponds
+ * to given page
+ */
+
+#red-body > .red {
+    visibility: hidden;
+}
+
+#green-body > .green {
+    visibility: hidden;
+}
+
+#blue-body > .blue {
+    visibility: hidden;
+}
+
+#index-body > .index {
+    visibility: hidden;
+}
