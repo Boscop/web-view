@@ -39,6 +39,9 @@ $ elm make --optimize src/Main.elm
 $ cargo run --example elm-counter
 ```
 
+## actix
+Uses [rust-embed](https://github.com/pyros2097/rust-embed) and [actix-web](https://github.com/actix/actix-web) to embed files directly in binary and serve them to web-view.
+
 ---
 
 Note: For some reason (at least on Windows), if I try to `cargo run` the examples directly, they don't show the window, but it works with `cargo build --example <name> && target\debug\examples\<name>`
