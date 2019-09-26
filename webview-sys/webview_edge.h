@@ -65,6 +65,9 @@ WEBVIEW_API void webview_eval(webview_t w, const char* js);
 
 WEBVIEW_API int webview_loop(webview_t w, int blocking);
 
+WEBVIEW_API void* webview_get_userdata(webview_t w);
+WEBVIEW_API void webview_set_userdata(webview_t w, void* user_data);
+
 #ifdef __cplusplus
 }
 #endif
@@ -559,10 +562,13 @@ private:
 
 class webview : public browser_engine {
 public:
+    void* user_data;
+
     webview(bool debug = false, void* wnd = nullptr)
         : browser_engine(
             std::bind(&webview::on_message, this, std::placeholders::_1), debug, wnd)
     {
+        user_data = nullptr;
     }
 
     void* window() { return (void*)m_window; }
@@ -700,6 +706,15 @@ WEBVIEW_API void webview_eval(webview_t w, const char* js)
 
 WEBVIEW_API int webview_loop(webview_t w, int blocking) {
 	return static_cast<webview::webview*>(w)->loop(blocking);
+}
+
+WEBVIEW_API void* webview_get_userdata(webview_t w) {
+    return static_cast<webview::webview*>(w)->user_data;
+}
+
+WEBVIEW_API void webview_set_userdata(webview_t w, void* user_data)
+{
+    static_cast<webview::webview*>(w)->user_data = user_data;
 }
 
 #endif /* WEBVIEW_HEADER */
