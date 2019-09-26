@@ -534,11 +534,13 @@ public:
 
     void navigate(const char* url)
     {
-        Uri uri(winrt::to_hstring(url));
-        // TODO: if url starts with 'data:text/html,' prefix then use it as a
-        // string
-        m_webview.Navigate(uri);
-        // m_webview.NavigateToString(winrt::to_hstring(url));
+        std::string html = html_from_uri(url);
+        if (html != "") {
+            m_webview.NavigateToString(winrt::to_hstring(html.c_str()));
+        } else {
+            Uri uri(winrt::to_hstring(url));
+            m_webview.Navigate(uri);
+        }
     }
     void init(const char* js) { init_js = init_js + "(function(){" + js + "})();"; }
     void eval(const char* js)
@@ -575,12 +577,7 @@ public:
 
     void navigate(const char* url)
     {
-        std::string html = html_from_uri(url);
-        if (html != "") {
-            browser_engine::navigate(("data:text/html," + url_encode(html)).c_str());
-        } else {
-            browser_engine::navigate(url);
-        }
+        browser_engine::navigate(url);
     }
 
     using binding_t = std::function<std::string(std::string)>;
