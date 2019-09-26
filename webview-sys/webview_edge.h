@@ -63,6 +63,8 @@ WEBVIEW_API void webview_navigate(webview_t w, const char* url);
 WEBVIEW_API void webview_init(webview_t w, const char* js);
 WEBVIEW_API void webview_eval(webview_t w, const char* js);
 
+WEBVIEW_API int webview_loop(webview_t w, int blocking);
+
 #ifdef __cplusplus
 }
 #endif
@@ -397,22 +399,51 @@ public:
 
     void run()
     {
-        MSG msg;
-        BOOL res;
-        while ((res = GetMessage(&msg, nullptr, 0, 0)) != -1) {
-            if (msg.hwnd) {
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-                continue;
-            }
-            if (msg.message == WM_APP) {
-                auto f = (dispatch_fn_t*)(msg.lParam);
-                (*f)();
-                delete f;
-            } else if (msg.message == WM_QUIT) {
-                return;
-            }
+        // MSG msg;
+        // BOOL res;
+        // while ((res = GetMessage(&msg, nullptr, 0, 0)) != -1) {
+        //     if (msg.hwnd) {
+        //         TranslateMessage(&msg);
+        //         DispatchMessage(&msg);
+        //         continue;
+        //     }
+        //     if (msg.message == WM_APP) {
+        //         auto f = (dispatch_fn_t*)(msg.lParam);
+        //         (*f)();
+        //         delete f;
+        //     } else if (msg.message == WM_QUIT) {
+        //         return;
+        //     }
+        // }
+        while (this->loop(true) == 0) {
+
         }
+    }
+
+    int loop(int blocking)
+    {
+        MSG msg;
+
+        if (blocking) {
+            if (GetMessage(&msg, nullptr, 0, 0) < 0) return 0;
+        } else {
+            if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE) == 0) return 0;
+        }
+
+        if (msg.hwnd) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+            return 0;
+        }
+        if (msg.message == WM_APP) {
+            auto f = (dispatch_fn_t*)(msg.lParam);
+            (*f)();
+            delete f;
+        } else if (msg.message == WM_QUIT) {
+            return -1;
+        }
+
+        return 0;
     }
 
     void terminate() { PostQuitMessage(0); }
@@ -665,6 +696,10 @@ WEBVIEW_API void webview_init(webview_t w, const char* js)
 WEBVIEW_API void webview_eval(webview_t w, const char* js)
 {
     static_cast<webview::webview*>(w)->eval(js);
+}
+
+WEBVIEW_API int webview_loop(webview_t w, int blocking) {
+	return static_cast<webview::webview*>(w)->loop(blocking);
 }
 
 #endif /* WEBVIEW_HEADER */

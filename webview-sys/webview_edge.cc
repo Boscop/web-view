@@ -22,6 +22,10 @@ void* wrapper_webview_get_userdata(webview_t w) {
 	return nullptr;
 }
 
+void webview_exit(webview_t w) {
+	webview_terminate(w);
+}
+
 #ifdef __cplusplus
 }
 #endif
