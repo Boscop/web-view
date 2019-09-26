@@ -14,6 +14,9 @@ links = "webview"
 name = "webview_sys"
 path = "lib.rs"
 
+[features]
+edge = []
+
 [dependencies]
 bitflags = "1.0"
 

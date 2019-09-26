@@ -18,6 +18,7 @@ boxfnonce = "0.1"
 [features]
 default = ["V1_30"]
 V1_30 = []
+edge = ["webview-sys/edge"]
 
 [dev-dependencies]
 serde = "1.0"
