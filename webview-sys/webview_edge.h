@@ -61,7 +61,7 @@ WEBVIEW_API void webview_get_bounds(
 
 WEBVIEW_API void webview_navigate(webview_t w, const char* url);
 WEBVIEW_API void webview_init(webview_t w, const char* js);
-WEBVIEW_API void webview_eval(webview_t w, const char* js);
+WEBVIEW_API int webview_eval(webview_t w, const char* js);
 
 WEBVIEW_API int webview_loop(webview_t w, int blocking);
 
@@ -696,9 +696,10 @@ WEBVIEW_API void webview_init(webview_t w, const char* js)
     static_cast<webview::webview*>(w)->init(js);
 }
 
-WEBVIEW_API void webview_eval(webview_t w, const char* js)
+WEBVIEW_API int webview_eval(webview_t w, const char* js)
 {
     static_cast<webview::webview*>(w)->eval(js);
+    return 0;
 }
 
 WEBVIEW_API int webview_loop(webview_t w, int blocking) {
