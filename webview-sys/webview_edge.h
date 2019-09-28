@@ -502,10 +502,11 @@ using namespace Windows::Foundation;
 using namespace Windows::Web::UI;
 using namespace Windows::Web::UI::Interop;
 
-class browser_engine : public browser_window {
+class webview : public browser_window {
 public:
-    browser_engine(msg_cb_t cb, bool debug, void* window)
-        : browser_window(cb, window)
+    webview(webview_external_invoke_cb_t invoke_cb, bool debug, void* window)
+        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), window)
+        , invoke_cb(invoke_cb)
     {
         init_apartment(winrt::apartment_type::single_threaded);
         m_process = WebViewControlProcess();
@@ -551,7 +552,16 @@ public:
             L"eval", single_threaded_vector<hstring>({ winrt::to_hstring(js) }));
     }
 
+    void* window() { return (void*)m_window; }
+
+    void* get_user_data() { return this->user_data; }
+    void set_user_data(void* user_data) { this->user_data = user_data; }
 private:
+    void on_message(const char* msg)
+    {
+        this->invoke_cb(this, msg);
+    }
+
     void resize()
     {
         RECT r;
@@ -562,39 +572,16 @@ private:
     WebViewControlProcess m_process;
     WebViewControl m_webview = nullptr;
     std::string init_js = "";
-};
 
-class webview : public browser_engine {
-public:
-    void* user_data;
+    void* user_data = nullptr;
     webview_external_invoke_cb_t invoke_cb;
-
-    webview(bool debug, webview_external_invoke_cb_t invoke_cb, void* wnd = nullptr)
-        : browser_engine(
-            std::bind(&webview::on_message, this, std::placeholders::_1), debug, wnd)
-        , invoke_cb(invoke_cb)
-    {
-        user_data = nullptr;
-    }
-
-    void* window() { return (void*)m_window; }
-
-    void navigate(const char* url)
-    {
-        browser_engine::navigate(url);
-    }
-private:
-    void on_message(const char* msg)
-    {
-        this->invoke_cb(this, msg);
-    }
 };
 
 } // namespace webview
 
-WEBVIEW_API webview_t webview_create(int debug, webview_external_invoke_cb_t invoke_cb, void* wnd)
+WEBVIEW_API webview_t webview_create(webview_external_invoke_cb_t invoke_cb, int debug, void* wnd)
 {
-    return new webview::webview(debug, invoke_cb, wnd);
+    return new webview::webview(invoke_cb, debug, wnd);
 }
 
 WEBVIEW_API void webview_destroy(webview_t w)
@@ -659,12 +646,12 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
 }
 
 WEBVIEW_API void* webview_get_userdata(webview_t w) {
-    return static_cast<webview::webview*>(w)->user_data;
+    return static_cast<webview::webview*>(w)->get_user_data();
 }
 
 WEBVIEW_API void webview_set_userdata(webview_t w, void* user_data)
 {
-    static_cast<webview::webview*>(w)->user_data = user_data;
+    static_cast<webview::webview*>(w)->set_user_data(user_data);
 }
 
 #endif /* WEBVIEW_HEADER */
