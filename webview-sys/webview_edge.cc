@@ -24,11 +24,6 @@ void webview_exit(webview_t w) {
 	webview_terminate(w);
 }
 
-void webview_dialog(webview_t w, int dlgtype, int flags, const char *title, const char *arg, char *result, size_t resultsz)
-{
-	// TODO
-}
-
 static int webview_js_encode(const char *s, char *esc, size_t n) {
   int r = 1; /* At least one byte for trailing zero */
   for (; *s; s++) {
