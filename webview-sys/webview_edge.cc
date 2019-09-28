@@ -9,10 +9,9 @@ void wrapper_webview_free(webview_t w) {
 }
 
 webview_t wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
-	webview_t w = webview_create(external_invoke_cb, debug, nullptr);
+	webview_t w = webview_create(external_invoke_cb, width, height, resizable, debug);
 	webview_set_userdata(w, userdata);
 	webview_set_title(w, title);
-	webview_set_bounds(w, 50, 50, width, height, 0);
 	webview_navigate(w, url);
 	return w;
 }
