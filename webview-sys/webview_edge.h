@@ -583,48 +583,11 @@ public:
     {
         browser_engine::navigate(url);
     }
-
-    using binding_t = std::function<std::string(std::string)>;
-
-    void bind(const char* name, binding_t f)
-    {
-        auto js = "(function() { var name = '" + std::string(name) + "';" + R"(
-      window[name] = function() {
-        var me = window[name];
-        var errors = me['errors'];
-        var callbacks = me['callbacks'];
-        if (!callbacks) {
-          callbacks = {};
-          me['callbacks'] = callbacks;
-        }
-        if (!errors) {
-          errors = {};
-          me['errors'] = errors;
-        }
-        var seq = (me['lastSeq'] || 0) + 1;
-        me['lastSeq'] = seq;
-        var promise = new Promise(function(resolve, reject) {
-          callbacks[seq] = resolve;
-          errors[seq] = reject;
-        });
-        window.external.invoke(JSON.stringify({
-          name: name,
-          seq:seq,
-          args: Array.prototype.slice.call(arguments),
-        }));
-        return promise;
-      }
-    })())";
-        init(js.c_str());
-        bindings[name] = new binding_t(f);
-    }
-
 private:
     void on_message(const char* msg)
     {
         this->invoke_cb(this, msg);
     }
-    std::map<std::string, binding_t*> bindings;
 };
 
 } // namespace webview
