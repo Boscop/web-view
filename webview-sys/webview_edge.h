@@ -58,11 +58,6 @@ WEBVIEW_API void* webview_get_window(webview_t w);
 
 WEBVIEW_API void webview_set_title(webview_t w, const char* title);
 
-WEBVIEW_API void webview_set_bounds(
-    webview_t w, int x, int y, int width, int height, int flags);
-WEBVIEW_API void webview_get_bounds(
-    webview_t w, int* x, int* y, int* width, int* height, int* flags);
-
 WEBVIEW_API void webview_navigate(webview_t w, const char* url);
 WEBVIEW_API void webview_init(webview_t w, const char* js);
 WEBVIEW_API int webview_eval(webview_t w, const char* js);
@@ -77,6 +72,9 @@ WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen);
 
 // Set rgba color of the window's title bar
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+
+// Inject css into webview's page
+WEBVIEW_API int webview_inject_css(webview_t w, const char *css);
 
 WEBVIEW_API void webview_dialog(webview_t w,
                                 enum webview_dialog_type dlgtype, int flags,
@@ -454,22 +452,6 @@ public:
 
     void run()
     {
-        // MSG msg;
-        // BOOL res;
-        // while ((res = GetMessage(&msg, nullptr, 0, 0)) != -1) {
-        //     if (msg.hwnd) {
-        //         TranslateMessage(&msg);
-        //         DispatchMessage(&msg);
-        //         continue;
-        //     }
-        //     if (msg.message == WM_APP) {
-        //         auto f = (dispatch_fn_t*)(msg.lParam);
-        //         (*f)();
-        //         delete f;
-        //     } else if (msg.message == WM_QUIT) {
-        //         return;
-        //     }
-        // }
         while (this->loop(true) == 0) {
 
         }
@@ -509,7 +491,7 @@ public:
 
     void set_title(const char* title) { SetWindowText(m_window, title); }
 
-    void set_size(int width, int height, bool resizable)
+    void set_size(int width, int height)
     {
         RECT r;
         r.left = 50;
@@ -724,19 +706,6 @@ WEBVIEW_API void webview_set_title(webview_t w, const char* title)
     static_cast<webview::webview*>(w)->set_title(title);
 }
 
-WEBVIEW_API void webview_set_bounds(
-    webview_t w, int x, int y, int width, int height, int flags)
-{
-    // TODO: x, y, flags
-    static_cast<webview::webview*>(w)->set_size(width, height, true);
-}
-
-WEBVIEW_API void webview_get_bounds(
-    webview_t w, int* x, int* y, int* width, int* height, int* flags)
-{
-    // TODO
-}
-
 WEBVIEW_API void webview_navigate(webview_t w, const char* url)
 {
     static_cast<webview::webview*>(w)->navigate(url);
@@ -774,6 +743,51 @@ WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen)
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
     static_cast<webview::webview*>(w)->set_color(r, g, b, a);
+}
+
+#define CSS_INJECT_FUNCTION                                                    \
+  "(function(e){var "                                                          \
+  "t=document.createElement('style'),d=document.head||document."               \
+  "getElementsByTagName('head')[0];t.setAttribute('type','text/"               \
+  "css'),t.styleSheet?t.styleSheet.cssText=e:t.appendChild(document."          \
+  "createTextNode(e)),d.appendChild(t)})"
+
+static int webview_js_encode(const char *s, char *esc, size_t n) {
+  int r = 1; /* At least one byte for trailing zero */
+  for (; *s; s++) {
+    const unsigned char c = *s;
+    if (c >= 0x20 && c < 0x80 && strchr("<>\\'\"", c) == NULL) {
+      if (n > 0) {
+        *esc++ = c;
+        n--;
+      }
+      r++;
+    } else {
+      if (n > 0) {
+        snprintf(esc, n, "\\x%02x", (int)c);
+        esc += 4;
+        n -= 4;
+      }
+      r += 4;
+    }
+  }
+  return r;
+}
+
+WEBVIEW_API int webview_inject_css(webview_t w, const char *css) {
+  int n = webview_js_encode(css, NULL, 0);
+  char *esc = (char *)calloc(1, sizeof(CSS_INJECT_FUNCTION) + n + 4);
+  if (esc == NULL) {
+    return -1;
+  }
+  char *js = (char *)calloc(1, n);
+  webview_js_encode(css, js, n);
+  snprintf(esc, sizeof(CSS_INJECT_FUNCTION) + n + 4, "%s(\"%s\")",
+           CSS_INJECT_FUNCTION, js);
+  int r = webview_eval(w, esc);
+  free(js);
+  free(esc);
+  return r;
 }
 
 #include <shobjidl.h>
