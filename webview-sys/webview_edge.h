@@ -34,8 +34,10 @@ extern "C" {
 
 typedef void* webview_t;
 
+typedef void (*webview_external_invoke_cb_t)(webview_t w, const char* arg);
+
 // Create a new webview instance
-WEBVIEW_API webview_t webview_create(int debug, void* wnd);
+WEBVIEW_API webview_t webview_create(int debug, webview_external_invoke_cb_t invoke_cb, void* wnd);
 
 // Destroy a webview
 WEBVIEW_API void webview_destroy(webview_t w);
@@ -565,10 +567,12 @@ private:
 class webview : public browser_engine {
 public:
     void* user_data;
+    webview_external_invoke_cb_t invoke_cb;
 
-    webview(bool debug = false, void* wnd = nullptr)
+    webview(bool debug, webview_external_invoke_cb_t invoke_cb, void* wnd = nullptr)
         : browser_engine(
             std::bind(&webview::on_message, this, std::placeholders::_1), debug, wnd)
+        , invoke_cb(invoke_cb)
     {
         user_data = nullptr;
     }
@@ -618,31 +622,16 @@ public:
 private:
     void on_message(const char* msg)
     {
-        auto seq = json_parse(msg, "seq", 0);
-        auto name = json_parse(msg, "name", 0);
-        auto args = json_parse(msg, "args", 0);
-        auto fn = bindings[name];
-        if (fn == nullptr) {
-            return;
-        }
-        std::async(std::launch::async, [=]() {
-            auto result = (*fn)(args);
-            dispatch([=]() {
-                eval(("var b = window['" + name + "'];b['callbacks'][" + seq + "]("
-                    + result + ");b['callbacks'][" + seq + "] = undefined;b['errors']["
-                    + seq + "] = undefined;")
-                         .c_str());
-            });
-        });
+        this->invoke_cb(this, msg);
     }
     std::map<std::string, binding_t*> bindings;
 };
 
 } // namespace webview
 
-WEBVIEW_API webview_t webview_create(int debug, void* wnd)
+WEBVIEW_API webview_t webview_create(int debug, webview_external_invoke_cb_t invoke_cb, void* wnd)
 {
-    return new webview::webview(debug, wnd);
+    return new webview::webview(debug, invoke_cb, wnd);
 }
 
 WEBVIEW_API void webview_destroy(webview_t w)
