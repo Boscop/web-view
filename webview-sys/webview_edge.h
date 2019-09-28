@@ -28,6 +28,8 @@
 #define WEBVIEW_API extern
 #endif
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -73,6 +75,9 @@ WEBVIEW_API void webview_set_userdata(webview_t w, void* user_data);
 // Enable or disable window fullscreen
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen);
 
+// Set rgba color of the window's title bar
+WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+
 #ifdef __cplusplus
 }
 #endif
@@ -99,11 +104,13 @@ WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen);
 #define WIN32_LEAN_AND_MEAN
 #include <objbase.h>
 #include <windows.h>
+#include <wingdi.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Web.UI.Interop.h>
 
 #pragma comment(lib, "windowsapp")
 #pragma comment(lib, "user32.lib")
+#pragma comment(lib, "gdi32")
 
 namespace webview {
 using dispatch_fn_t = std::function<void()>;
@@ -536,6 +543,12 @@ public:
         }
     }
 
+    void set_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+    {
+        HBRUSH brush = CreateSolidBrush(RGB(r, g, b));
+        SetClassLongPtr(this->m_window, GCLP_HBRBACKGROUND, (LONG_PTR)brush);
+    }
+
     // protected:
     virtual void resize() {}
     HWND m_window;
@@ -727,6 +740,11 @@ WEBVIEW_API void webview_set_userdata(webview_t w, void* user_data)
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen)
 {
     static_cast<webview::webview*>(w)->set_fullscreen(fullscreen);
+}
+
+WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+{
+    static_cast<webview::webview*>(w)->set_color(r, g, b, a);
 }
 
 #endif /* WEBVIEW_HEADER */

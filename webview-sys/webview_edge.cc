@@ -24,11 +24,6 @@ void webview_exit(webview_t w) {
 	webview_terminate(w);
 }
 
-void webview_set_color(webview_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-	// TODO
-}
-
 void webview_dialog(webview_t w, int dlgtype, int flags, const char *title, const char *arg, char *result, size_t resultsz)
 {
 	// TODO
