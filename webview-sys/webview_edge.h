@@ -78,9 +78,28 @@ WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen);
 // Set rgba color of the window's title bar
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
+WEBVIEW_API void webview_dialog(webview_t w,
+                                enum webview_dialog_type dlgtype, int flags,
+                                const char *title, const char *arg,
+                                char *result, size_t resultsz);
+
 #ifdef __cplusplus
 }
 #endif
+
+enum webview_dialog_type {
+  WEBVIEW_DIALOG_TYPE_OPEN = 0,
+  WEBVIEW_DIALOG_TYPE_SAVE = 1,
+  WEBVIEW_DIALOG_TYPE_ALERT = 2
+};
+
+#define WEBVIEW_DIALOG_FLAG_FILE (0 << 0)
+#define WEBVIEW_DIALOG_FLAG_DIRECTORY (1 << 0)
+
+#define WEBVIEW_DIALOG_FLAG_INFO (1 << 1)
+#define WEBVIEW_DIALOG_FLAG_WARNING (2 << 1)
+#define WEBVIEW_DIALOG_FLAG_ERROR (3 << 1)
+#define WEBVIEW_DIALOG_FLAG_ALERT_MASK (3 << 1)
 
 #ifndef WEBVIEW_HEADER
 
@@ -662,6 +681,16 @@ private:
 
 } // namespace webview
 
+static inline char *webview_from_utf16(WCHAR *ws) {
+  int n = WideCharToMultiByte(CP_UTF8, 0, ws, -1, NULL, 0, NULL, NULL);
+  char *s = (char *)GlobalAlloc(GMEM_FIXED, n);
+  if (s == NULL) {
+    return NULL;
+  }
+  WideCharToMultiByte(CP_UTF8, 0, ws, -1, s, n, NULL, NULL);
+  return s;
+}
+
 WEBVIEW_API webview_t webview_create(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, int resizable, int debug)
 {
     return new webview::webview(invoke_cb, title, width, height, resizable, debug);
@@ -745,6 +774,190 @@ WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen)
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
 {
     static_cast<webview::webview*>(w)->set_color(r, g, b, a);
+}
+
+#include <shobjidl.h>
+
+#ifdef __cplusplus
+#define iid_ref(x) &(x)
+#define iid_unref(x) *(x)
+#else
+#define iid_ref(x) (x)
+#define iid_unref(x) (x)
+#endif
+
+/* These are missing parts from MinGW */
+#ifndef __IFileDialog_INTERFACE_DEFINED__
+#define __IFileDialog_INTERFACE_DEFINED__
+enum _FILEOPENDIALOGOPTIONS {
+  FOS_OVERWRITEPROMPT = 0x2,
+  FOS_STRICTFILETYPES = 0x4,
+  FOS_NOCHANGEDIR = 0x8,
+  FOS_PICKFOLDERS = 0x20,
+  FOS_FORCEFILESYSTEM = 0x40,
+  FOS_ALLNONSTORAGEITEMS = 0x80,
+  FOS_NOVALIDATE = 0x100,
+  FOS_ALLOWMULTISELECT = 0x200,
+  FOS_PATHMUSTEXIST = 0x800,
+  FOS_FILEMUSTEXIST = 0x1000,
+  FOS_CREATEPROMPT = 0x2000,
+  FOS_SHAREAWARE = 0x4000,
+  FOS_NOREADONLYRETURN = 0x8000,
+  FOS_NOTESTFILECREATE = 0x10000,
+  FOS_HIDEMRUPLACES = 0x20000,
+  FOS_HIDEPINNEDPLACES = 0x40000,
+  FOS_NODEREFERENCELINKS = 0x100000,
+  FOS_DONTADDTORECENT = 0x2000000,
+  FOS_FORCESHOWHIDDEN = 0x10000000,
+  FOS_DEFAULTNOMINIMODE = 0x20000000,
+  FOS_FORCEPREVIEWPANEON = 0x40000000
+};
+typedef DWORD FILEOPENDIALOGOPTIONS;
+typedef enum FDAP { FDAP_BOTTOM = 0, FDAP_TOP = 1 } FDAP;
+DEFINE_GUID(IID_IFileDialog, 0x42f85136, 0xdb7e, 0x439c, 0x85, 0xf1, 0xe4, 0x07,
+            0x5d, 0x13, 0x5f, 0xc8);
+typedef struct IFileDialogVtbl {
+  BEGIN_INTERFACE
+  HRESULT(STDMETHODCALLTYPE *QueryInterface)
+  (IFileDialog *This, REFIID riid, void **ppvObject);
+  ULONG(STDMETHODCALLTYPE *AddRef)(IFileDialog *This);
+  ULONG(STDMETHODCALLTYPE *Release)(IFileDialog *This);
+  HRESULT(STDMETHODCALLTYPE *Show)(IFileDialog *This, HWND hwndOwner);
+  HRESULT(STDMETHODCALLTYPE *SetFileTypes)
+  (IFileDialog *This, UINT cFileTypes, const COMDLG_FILTERSPEC *rgFilterSpec);
+  HRESULT(STDMETHODCALLTYPE *SetFileTypeIndex)
+  (IFileDialog *This, UINT iFileType);
+  HRESULT(STDMETHODCALLTYPE *GetFileTypeIndex)
+  (IFileDialog *This, UINT *piFileType);
+  HRESULT(STDMETHODCALLTYPE *Advise)
+  (IFileDialog *This, IFileDialogEvents *pfde, DWORD *pdwCookie);
+  HRESULT(STDMETHODCALLTYPE *Unadvise)(IFileDialog *This, DWORD dwCookie);
+  HRESULT(STDMETHODCALLTYPE *SetOptions)
+  (IFileDialog *This, FILEOPENDIALOGOPTIONS fos);
+  HRESULT(STDMETHODCALLTYPE *GetOptions)
+  (IFileDialog *This, FILEOPENDIALOGOPTIONS *pfos);
+  HRESULT(STDMETHODCALLTYPE *SetDefaultFolder)
+  (IFileDialog *This, IShellItem *psi);
+  HRESULT(STDMETHODCALLTYPE *SetFolder)(IFileDialog *This, IShellItem *psi);
+  HRESULT(STDMETHODCALLTYPE *GetFolder)(IFileDialog *This, IShellItem **ppsi);
+  HRESULT(STDMETHODCALLTYPE *GetCurrentSelection)
+  (IFileDialog *This, IShellItem **ppsi);
+  HRESULT(STDMETHODCALLTYPE *SetFileName)(IFileDialog *This, LPCWSTR pszName);
+  HRESULT(STDMETHODCALLTYPE *GetFileName)(IFileDialog *This, LPWSTR *pszName);
+  HRESULT(STDMETHODCALLTYPE *SetTitle)(IFileDialog *This, LPCWSTR pszTitle);
+  HRESULT(STDMETHODCALLTYPE *SetOkButtonLabel)
+  (IFileDialog *This, LPCWSTR pszText);
+  HRESULT(STDMETHODCALLTYPE *SetFileNameLabel)
+  (IFileDialog *This, LPCWSTR pszLabel);
+  HRESULT(STDMETHODCALLTYPE *GetResult)(IFileDialog *This, IShellItem **ppsi);
+  HRESULT(STDMETHODCALLTYPE *AddPlace)
+  (IFileDialog *This, IShellItem *psi, FDAP fdap);
+  HRESULT(STDMETHODCALLTYPE *SetDefaultExtension)
+  (IFileDialog *This, LPCWSTR pszDefaultExtension);
+  HRESULT(STDMETHODCALLTYPE *Close)(IFileDialog *This, HRESULT hr);
+  HRESULT(STDMETHODCALLTYPE *SetClientGuid)(IFileDialog *This, REFGUID guid);
+  HRESULT(STDMETHODCALLTYPE *ClearClientData)(IFileDialog *This);
+  HRESULT(STDMETHODCALLTYPE *SetFilter)
+  (IFileDialog *This, IShellItemFilter *pFilter);
+  END_INTERFACE
+} IFileDialogVtbl;
+interface IFileDialog {
+  CONST_VTBL IFileDialogVtbl *lpVtbl;
+};
+DEFINE_GUID(IID_IFileOpenDialog, 0xd57c7288, 0xd4ad, 0x4768, 0xbe, 0x02, 0x9d,
+            0x96, 0x95, 0x32, 0xd9, 0x60);
+DEFINE_GUID(IID_IFileSaveDialog, 0x84bccd23, 0x5fde, 0x4cdb, 0xae, 0xa4, 0xaf,
+            0x64, 0xb8, 0x3d, 0x78, 0xab);
+#endif
+
+WEBVIEW_API void webview_dialog(webview_t w,
+                                enum webview_dialog_type dlgtype, int flags,
+                                const char *title, const char *arg,
+                                char *result, size_t resultsz) {
+  HWND hwnd = static_cast<webview::webview*>(w)->m_window;
+  if (dlgtype == WEBVIEW_DIALOG_TYPE_OPEN ||
+      dlgtype == WEBVIEW_DIALOG_TYPE_SAVE) {
+    IFileDialog *dlg = NULL;
+    IShellItem *res = NULL;
+    WCHAR *ws = NULL;
+    char *s = NULL;
+    FILEOPENDIALOGOPTIONS opts = 0, add_opts = 0;
+    if (dlgtype == WEBVIEW_DIALOG_TYPE_OPEN) {
+      if (CoCreateInstance(
+              iid_unref(&CLSID_FileOpenDialog), NULL, CLSCTX_INPROC_SERVER,
+              iid_unref(&IID_IFileOpenDialog), (void **)&dlg) != S_OK) {
+        goto error_dlg;
+      }
+      if (flags & WEBVIEW_DIALOG_FLAG_DIRECTORY) {
+        add_opts |= FOS_PICKFOLDERS;
+      }
+      add_opts |= FOS_NOCHANGEDIR | FOS_ALLNONSTORAGEITEMS | FOS_NOVALIDATE |
+                  FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST | FOS_SHAREAWARE |
+                  FOS_NOTESTFILECREATE | FOS_NODEREFERENCELINKS |
+                  FOS_FORCESHOWHIDDEN | FOS_DEFAULTNOMINIMODE;
+    } else {
+      if (CoCreateInstance(
+              iid_unref(&CLSID_FileSaveDialog), NULL, CLSCTX_INPROC_SERVER,
+              iid_unref(&IID_IFileSaveDialog), (void **)&dlg) != S_OK) {
+        goto error_dlg;
+      }
+      add_opts |= FOS_OVERWRITEPROMPT | FOS_NOCHANGEDIR |
+                  FOS_ALLNONSTORAGEITEMS | FOS_NOVALIDATE | FOS_SHAREAWARE |
+                  FOS_NOTESTFILECREATE | FOS_NODEREFERENCELINKS |
+                  FOS_FORCESHOWHIDDEN | FOS_DEFAULTNOMINIMODE;
+    }
+    if (dlg->GetOptions(&opts) != S_OK) {
+      goto error_dlg;
+    }
+    opts &= ~FOS_NOREADONLYRETURN;
+    opts |= add_opts;
+    if (dlg->SetOptions(opts) != S_OK) {
+      goto error_dlg;
+    }
+    if (dlg->Show(hwnd) != S_OK) {
+      goto error_dlg;
+    }
+    if (dlg->GetResult(&res) != S_OK) {
+      goto error_dlg;
+    }
+    if (res->GetDisplayName(SIGDN_FILESYSPATH, &ws) != S_OK) {
+      goto error_result;
+    }
+    s = webview_from_utf16(ws);
+    CoTaskMemFree(ws);
+    if (!s) goto error_result;
+    strncpy(result, s, resultsz);
+    GlobalFree(s);
+    result[resultsz - 1] = '\0';
+  error_result:
+    res->Release();
+  error_dlg:
+    dlg->Release();
+    return;
+  } else if (dlgtype == WEBVIEW_DIALOG_TYPE_ALERT) {
+#if 0
+    /* MinGW often doesn't contain TaskDialog, we'll use MessageBox for now */
+    WCHAR *wtitle = webview_to_utf16(title);
+    WCHAR *warg = webview_to_utf16(arg);
+    TaskDialog(hwnd, NULL, NULL, wtitle, warg, 0, NULL, NULL);
+    GlobalFree(warg);
+    GlobalFree(wtitle);
+#else
+    UINT type = MB_OK;
+    switch (flags & WEBVIEW_DIALOG_FLAG_ALERT_MASK) {
+    case WEBVIEW_DIALOG_FLAG_INFO:
+      type |= MB_ICONINFORMATION;
+      break;
+    case WEBVIEW_DIALOG_FLAG_WARNING:
+      type |= MB_ICONWARNING;
+      break;
+    case WEBVIEW_DIALOG_FLAG_ERROR:
+      type |= MB_ICONERROR;
+      break;
+    }
+    MessageBox(hwnd, arg, title, type);
+#endif
+  }
 }
 
 #endif /* WEBVIEW_HEADER */
