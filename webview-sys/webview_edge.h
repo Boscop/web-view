@@ -70,6 +70,9 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking);
 WEBVIEW_API void* webview_get_userdata(webview_t w);
 WEBVIEW_API void webview_set_userdata(webview_t w, void* user_data);
 
+// Enable or disable window fullscreen
+WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen);
+
 #ifdef __cplusplus
 }
 #endif
@@ -492,11 +495,57 @@ public:
             SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
     }
 
+    void set_fullscreen(bool fullscreen)
+    {
+        if (this->is_fullscreen == fullscreen) {
+            return;
+        }
+        if (!this->is_fullscreen) {
+            this->saved_style = GetWindowLong(this->m_window, GWL_STYLE);
+            this->saved_ex_style = GetWindowLong(this->m_window, GWL_EXSTYLE);
+            GetWindowRect(this->m_window, &this->saved_rect);
+        }
+        this->is_fullscreen = !!fullscreen;
+        if (fullscreen) {
+            MONITORINFO monitor_info;
+            SetWindowLong(this->m_window, GWL_STYLE,
+                        this->saved_style & ~(WS_CAPTION | WS_THICKFRAME));
+            SetWindowLong(this->m_window, GWL_EXSTYLE,
+                        this->saved_ex_style &
+                            ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE |
+                                WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
+            monitor_info.cbSize = sizeof(monitor_info);
+            GetMonitorInfo(MonitorFromWindow(this->m_window, MONITOR_DEFAULTTONEAREST),
+                        &monitor_info);
+            RECT r;
+            r.left = monitor_info.rcMonitor.left;
+            r.top = monitor_info.rcMonitor.top;
+            r.right = monitor_info.rcMonitor.right;
+            r.bottom = monitor_info.rcMonitor.bottom;
+            SetWindowPos(this->m_window, NULL, r.left, r.top, r.right - r.left,
+                        r.bottom - r.top,
+                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        } else {
+            SetWindowLong(this->m_window, GWL_STYLE, this->saved_style);
+            SetWindowLong(this->m_window, GWL_EXSTYLE, this->saved_ex_style);
+            SetWindowPos(this->m_window, NULL, this->saved_rect.left,
+                        this->saved_rect.top,
+                        this->saved_rect.right - this->saved_rect.left,
+                        this->saved_rect.bottom - this->saved_rect.top,
+                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        }
+    }
+
     // protected:
     virtual void resize() {}
     HWND m_window;
     DWORD m_main_thread = GetCurrentThreadId();
     msg_cb_t m_cb;
+
+    bool is_fullscreen = false;
+    DWORD saved_style = 0;
+    DWORD saved_ex_style = 0;
+    RECT saved_rect;
 };
 
 LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -673,6 +722,11 @@ WEBVIEW_API void* webview_get_userdata(webview_t w) {
 WEBVIEW_API void webview_set_userdata(webview_t w, void* user_data)
 {
     static_cast<webview::webview*>(w)->set_user_data(user_data);
+}
+
+WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen)
+{
+    static_cast<webview::webview*>(w)->set_fullscreen(fullscreen);
 }
 
 #endif /* WEBVIEW_HEADER */

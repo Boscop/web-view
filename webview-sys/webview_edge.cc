@@ -34,11 +34,6 @@ void webview_dialog(webview_t w, int dlgtype, int flags, const char *title, cons
 	// TODO
 }
 
-void webview_set_fullscreen(webview_t w, int fullscreen)
-{
-	// TODO
-}
-
 int webview_inject_css(webview_t w, const char *css)
 {
 	// TODO
