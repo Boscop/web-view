@@ -37,7 +37,7 @@ typedef void* webview_t;
 typedef void (*webview_external_invoke_cb_t)(webview_t w, const char* arg);
 
 // Create a new webview instance
-WEBVIEW_API webview_t webview_create(int debug, webview_external_invoke_cb_t invoke_cb, void* wnd);
+WEBVIEW_API webview_t webview_create(webview_external_invoke_cb_t invoke_cb, int width, int height, int resizable, int debug);
 
 // Destroy a webview
 WEBVIEW_API void webview_destroy(webview_t w);
@@ -378,24 +378,45 @@ inline std::string json_parse(std::string s, std::string key, int index)
 LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 class browser_window {
 public:
-    browser_window(msg_cb_t cb, void* window)
+    browser_window(msg_cb_t cb, int width, int height, bool resizable)
         : m_cb(cb)
     {
-        if (window == nullptr) {
-            WNDCLASSEX wc;
-            ZeroMemory(&wc, sizeof(WNDCLASSEX));
-            wc.cbSize = sizeof(WNDCLASSEX);
-            wc.hInstance = GetModuleHandle(nullptr);
-            wc.lpszClassName = "webview";
-            wc.lpfnWndProc = WebviewWndProc;
-            RegisterClassEx(&wc);
-            m_window = CreateWindow("webview", "", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
-                CW_USEDEFAULT, 640, 480, nullptr, nullptr, GetModuleHandle(nullptr),
-                nullptr);
-            SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
-        } else {
-            m_window = *(static_cast<HWND*>(window));
+        HINSTANCE hInstance = GetModuleHandle(nullptr);
+
+        WNDCLASSEX wc;
+        ZeroMemory(&wc, sizeof(WNDCLASSEX));
+        wc.cbSize = sizeof(WNDCLASSEX);
+        wc.hInstance = hInstance;
+        wc.lpfnWndProc = WebviewWndProc;
+        wc.lpszClassName = "webview";
+        RegisterClassEx(&wc);
+
+        DWORD style = WS_OVERLAPPEDWINDOW;
+        if (!resizable) {
+            style = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU;
         }
+
+        RECT clientRect;
+        RECT rect;
+        rect.left = 0;
+        rect.top = 0;
+        rect.right = width;
+        rect.bottom = height;
+        AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, 0);
+
+        GetClientRect(GetDesktopWindow(), &clientRect);
+        int left = (clientRect.right / 2) - ((rect.right - rect.left) / 2);
+        int top = (clientRect.bottom / 2) - ((rect.bottom - rect.top) / 2);
+        rect.right = rect.right - rect.left + left;
+        rect.left = left;
+        rect.bottom = rect.bottom - rect.top + top;
+        rect.top = top;
+
+        m_window = CreateWindowEx(0, "webview", "title", style, rect.left, rect.top,
+                     rect.right - rect.left, rect.bottom - rect.top,
+                     HWND_DESKTOP, NULL, hInstance, (void *)this);
+
+        SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
 
         ShowWindow(m_window, SW_SHOW);
         UpdateWindow(m_window);
@@ -504,8 +525,8 @@ using namespace Windows::Web::UI::Interop;
 
 class webview : public browser_window {
 public:
-    webview(webview_external_invoke_cb_t invoke_cb, bool debug, void* window)
-        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), window)
+    webview(webview_external_invoke_cb_t invoke_cb, int width, int height, bool resizable, bool debug)
+        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), width, height, resizable)
         , invoke_cb(invoke_cb)
     {
         init_apartment(winrt::apartment_type::single_threaded);
@@ -579,9 +600,9 @@ private:
 
 } // namespace webview
 
-WEBVIEW_API webview_t webview_create(webview_external_invoke_cb_t invoke_cb, int debug, void* wnd)
+WEBVIEW_API webview_t webview_create(webview_external_invoke_cb_t invoke_cb, int width, int height, int resizable, int debug)
 {
-    return new webview::webview(invoke_cb, debug, wnd);
+    return new webview::webview(invoke_cb, width, height, resizable, debug);
 }
 
 WEBVIEW_API void webview_destroy(webview_t w)
