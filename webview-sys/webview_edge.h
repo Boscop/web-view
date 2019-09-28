@@ -378,7 +378,7 @@ inline std::string json_parse(std::string s, std::string key, int index)
 LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 class browser_window {
 public:
-    browser_window(msg_cb_t cb, int width, int height, bool resizable)
+    browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable)
         : m_cb(cb)
     {
         HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -412,7 +412,7 @@ public:
         rect.bottom = rect.bottom - rect.top + top;
         rect.top = top;
 
-        m_window = CreateWindowEx(0, "webview", "title", style, rect.left, rect.top,
+        m_window = CreateWindowEx(0, "webview", title, style, rect.left, rect.top,
                      rect.right - rect.left, rect.bottom - rect.top,
                      HWND_DESKTOP, NULL, hInstance, (void *)this);
 
@@ -525,8 +525,8 @@ using namespace Windows::Web::UI::Interop;
 
 class webview : public browser_window {
 public:
-    webview(webview_external_invoke_cb_t invoke_cb, int width, int height, bool resizable, bool debug)
-        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), width, height, resizable)
+    webview(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, bool resizable, bool debug)
+        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), title, width, height, resizable)
         , invoke_cb(invoke_cb)
     {
         init_apartment(winrt::apartment_type::single_threaded);
@@ -600,9 +600,9 @@ private:
 
 } // namespace webview
 
-WEBVIEW_API webview_t webview_create(webview_external_invoke_cb_t invoke_cb, int width, int height, int resizable, int debug)
+WEBVIEW_API webview_t webview_create(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, int resizable, int debug)
 {
-    return new webview::webview(invoke_cb, width, height, resizable, debug);
+    return new webview::webview(invoke_cb, title, width, height, resizable, debug);
 }
 
 WEBVIEW_API void webview_destroy(webview_t w)
