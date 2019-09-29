@@ -248,7 +248,7 @@ where
 struct UserData<'a, T> {
     inner: T,
     live: Arc<RwLock<()>>,
-    invoke_handler: Box<FnMut(&mut WebView<T>, &str) -> WVResult + 'a>,
+    invoke_handler: Box<dyn FnMut(&mut WebView<T>, &str) -> WVResult + 'a>,
     result: WVResult,
 }
 

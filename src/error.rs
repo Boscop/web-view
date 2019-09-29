@@ -25,7 +25,7 @@ pub enum Error {
     /// WebView was dropped.
     Dispatch,
     /// An user-specified error occurred. For use inside invoke and dispatch closures.
-    Custom(Box<CustomError>),
+    Custom(Box<dyn CustomError>),
 }
 
 impl Error {
