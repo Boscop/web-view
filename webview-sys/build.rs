@@ -6,7 +6,7 @@ use std::env;
 fn main() {
     let mut build = cc::Build::new();
 
-    if cfg!(feature = "edge") {
+    if target.contains("windows") && cfg!(feature = "edge") {
         build
             .include("webview_edge.h")
             .file("webview_edge.cc")
