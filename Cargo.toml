@@ -16,8 +16,6 @@ webview-sys = { path = "webview-sys", version = "0.1.4" }
 boxfnonce = "0.1"
 
 [features]
-default = ["V1_30"]
-V1_30 = []
 edge = ["webview-sys/edge"]
 
 [dev-dependencies]

@@ -36,14 +36,6 @@ impl Error {
 }
 
 impl error::Error for Error {
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            Error::NulByte(cause) => Some(cause),
-            _ => None,
-        }
-    }
-
-    #[cfg(feature = "V1_30")]
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match self {
             Error::NulByte(ref cause) => Some(cause),
