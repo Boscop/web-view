@@ -40,7 +40,14 @@ $ cargo run --example elm-counter
 ```
 
 ## actix
+
 Uses [rust-embed](https://github.com/pyros2097/rust-embed) and [actix-web](https://github.com/actix/actix-web) to embed files directly in binary and serve them to web-view.
+
+Unfortunately if you run this with the EdgeHTML backend (`edge` feature) it won't work by default due to webview sandbox restrictions.
+
+In order for this to run on EdgeHTML, you need to run `CheckNetIsolation.exe LoopbackExempt -a -n="Microsoft.Win32WebViewHost_cw5n1h2txyewy"` from your administrator command prompt only once and everything works.
+
+You can make this step for example as a part of your apps installer.
 
 ---
 
