@@ -593,7 +593,9 @@ public:
         , invoke_cb(invoke_cb)
     {
         init_apartment(winrt::apartment_type::single_threaded);
-        m_process = WebViewControlProcess();
+        WebViewControlProcessOptions options;
+        options.PrivateNetworkClientServerCapability(WebViewControlProcessCapabilityState::Enabled);
+        m_process = WebViewControlProcess(options);
         auto op = m_process.CreateWebViewControlAsync(
             reinterpret_cast<int64_t>(m_window), Rect());
         if (op.Status() != AsyncStatus::Completed) {
