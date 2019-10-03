@@ -1,4 +1,4 @@
-#include "webview_new.h"
+#include "webview.h"
 
 #include <JavaScriptCore/JavaScript.h>
 #include <gtk/gtk.h>
