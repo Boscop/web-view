@@ -16,7 +16,7 @@ fn main() {
     } else {
         build
             .include("webview_new.h")
-            .file("webview_mshtml.c")
+            .file("webview_gtk.c")
             .flag_if_supported("-std=c11")
             .flag_if_supported("-w");
     }

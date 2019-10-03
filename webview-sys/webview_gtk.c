@@ -15,6 +15,43 @@ struct webview_priv {
   int should_exit;
 };
 
+struct webview {
+  const char *url;
+  const char *title;
+  int width;
+  int height;
+  int resizable;
+  int debug;
+  webview_external_invoke_cb_t external_invoke_cb;
+  struct webview_priv priv;
+  void *userdata;
+};
+
+WEBVIEW_API void wrapper_webview_free(struct webview* w) {
+	free(w);
+}
+
+WEBVIEW_API void* wrapper_webview_get_userdata(struct webview* w) {
+	return w->userdata;
+}
+
+WEBVIEW_API struct webview* wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+	struct webview* w = (struct webview*)calloc(1, sizeof(*w));
+	w->width = width;
+	w->height = height;
+	w->title = title;
+	w->url = url;
+	w->resizable = resizable;
+	w->debug = debug;
+	w->external_invoke_cb = external_invoke_cb;
+	w->userdata = userdata;
+	if (webview_init(w) != 0) {
+		wrapper_webview_free(w);
+		return NULL;
+	}
+	return w;
+}
+
 static void external_message_received_cb(WebKitUserContentManager *m,
                                          WebKitJavascriptResult *r,
                                          gpointer arg) {

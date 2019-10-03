@@ -19,6 +19,12 @@ struct webview;
 typedef void (*webview_external_invoke_cb_t)(struct webview *w, const char *arg);
 typedef void (*webview_dispatch_fn)(struct webview *w, void *arg);
 
+enum webview_dialog_type {
+  WEBVIEW_DIALOG_TYPE_OPEN = 0,
+  WEBVIEW_DIALOG_TYPE_SAVE = 1,
+  WEBVIEW_DIALOG_TYPE_ALERT = 2
+};
+
 WEBVIEW_API int webview(const char *title, const char *url, int width,
                         int height, int resizable);
 
@@ -44,12 +50,6 @@ WEBVIEW_API void webview_print_log(const char *s);
 WEBVIEW_API void* wrapper_webview_get_userdata(struct webview* w);
 WEBVIEW_API struct webview* wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata);
 WEBVIEW_API void wrapper_webview_free(struct webview* w);
-
-enum webview_dialog_type {
-  WEBVIEW_DIALOG_TYPE_OPEN = 0,
-  WEBVIEW_DIALOG_TYPE_SAVE = 1,
-  WEBVIEW_DIALOG_TYPE_ALERT = 2
-};
 
 #define WEBVIEW_DIALOG_FLAG_FILE (0 << 0)
 #define WEBVIEW_DIALOG_FLAG_DIRECTORY (1 << 0)
