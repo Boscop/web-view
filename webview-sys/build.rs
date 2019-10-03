@@ -15,8 +15,8 @@ fn main() {
             .flag_if_supported("/std:c++17");
     } else {
         build
-            .include("webview.h")
-            .file("webview.c")
+            .include("webview_new.h")
+            .file("webview_mshtml.c")
             .flag_if_supported("-std=c11")
             .flag_if_supported("-w");
     }
@@ -29,7 +29,6 @@ fn main() {
 
     if target.contains("windows") {
         if !cfg!(feature = "edge") {
-            build.define("WEBVIEW_WINAPI", None);
             for &lib in &["ole32", "comctl32", "oleaut32", "uuid", "gdi32"] {
                 println!("cargo:rustc-link-lib={}", lib);
             }
