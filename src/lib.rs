@@ -287,7 +287,7 @@ impl<'a, T> WebView<'a, T> {
         let user_data_ptr = Box::into_raw(user_data);
 
         unsafe {
-            let inner = wrapper_webview_new(
+            let inner = webview_new(
                 title.as_ptr(),
                 url.as_ptr(),
                 width,
@@ -326,7 +326,7 @@ impl<'a, T> WebView<'a, T> {
     }
 
     fn user_data_wrapper_ptr(&self) -> *mut UserData<'a, T> {
-        unsafe { wrapper_webview_get_userdata(self.inner) as _ }
+        unsafe { webview_get_user_data(self.inner) as _ }
     }
 
     fn user_data_wrapper(&self) -> &UserData<'a, T> {
@@ -460,7 +460,7 @@ impl<'a, T> WebView<'a, T> {
 
         let user_data_ptr = self.user_data_wrapper_ptr();
         webview_exit(self.inner);
-        wrapper_webview_free(self.inner);
+        webview_free(self.inner);
         let user_data = *Box::from_raw(user_data_ptr);
         user_data.inner
     }

@@ -24,16 +24,16 @@ struct cocoa_webview {
   void *userdata;
 };
 
-WEBVIEW_API void wrapper_webview_free(webview_t w) {
+WEBVIEW_API void webview_free(webview_t w) {
 	free(w);
 }
 
-WEBVIEW_API void* wrapper_webview_get_userdata(webview_t w) {
+WEBVIEW_API void* webview_get_user_data(webview_t w) {
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
 	return wv->userdata;
 }
 
-WEBVIEW_API webview_t wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
 	struct cocoa_webview* wv = (struct cocoa_webview*)calloc(1, sizeof(*wv));
 	wv->width = width;
 	wv->height = height;
@@ -44,7 +44,7 @@ WEBVIEW_API webview_t wrapper_webview_new(const char* title, const char* url, in
 	wv->external_invoke_cb = external_invoke_cb;
 	wv->userdata = userdata;
 	if (webview_init(wv) != 0) {
-		wrapper_webview_free(wv);
+		webview_free(wv);
 		return NULL;
 	}
 	return wv;

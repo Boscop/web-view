@@ -848,12 +848,12 @@ WEBVIEW_API void webview_print_log(const char *s)
     // TODO
 }
 
-WEBVIEW_API void* wrapper_webview_get_userdata(webview_t w)
+WEBVIEW_API void* webview_get_user_data(webview_t w)
 {
     return static_cast<webview::webview*>(w)->get_user_data();
 }
 
-WEBVIEW_API webview_t wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
+WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
 {
     auto w = new webview::webview(external_invoke_cb, title, width, height, resizable, debug);
     w->set_user_data(userdata);
@@ -861,7 +861,7 @@ WEBVIEW_API webview_t wrapper_webview_new(const char* title, const char* url, in
 	return w;
 }
 
-WEBVIEW_API void wrapper_webview_free(webview_t w)
+WEBVIEW_API void webview_free(webview_t w)
 {
     delete static_cast<webview::webview*>(w);
 }
