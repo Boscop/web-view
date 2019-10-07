@@ -565,78 +565,6 @@ static inline char *webview_from_utf16(WCHAR *ws) {
   return s;
 }
 
-webview_t webview_create(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, int resizable, int debug)
-{
-    return new webview::webview(invoke_cb, title, width, height, resizable, debug);
-}
-
-void webview_destroy(webview_t w)
-{
-    delete static_cast<webview::webview*>(w);
-}
-
-void webview_run(webview_t w) { static_cast<webview::webview*>(w)->run(); }
-
-void webview_terminate(webview_t w)
-{
-    static_cast<webview::webview*>(w)->terminate();
-}
-
-void webview_dispatch(
-    webview_t w, void (*fn)(webview_t w, void* arg), void* arg)
-{
-    static_cast<webview::webview*>(w)->dispatch([=]() { fn(w, arg); });
-}
-
-void* webview_get_window(webview_t w)
-{
-    return static_cast<webview::webview*>(w)->window();
-}
-
-void webview_set_title(webview_t w, const char* title)
-{
-    static_cast<webview::webview*>(w)->set_title(title);
-}
-
-void webview_navigate(webview_t w, const char* url)
-{
-    static_cast<webview::webview*>(w)->navigate(url);
-}
-
-void webview_init(webview_t w, const char* js)
-{
-    static_cast<webview::webview*>(w)->init(js);
-}
-
-int webview_eval(webview_t w, const char* js)
-{
-    static_cast<webview::webview*>(w)->eval(js);
-    return 0;
-}
-
-int webview_loop(webview_t w, int blocking) {
-	return static_cast<webview::webview*>(w)->loop(blocking);
-}
-
-void* webview_get_userdata(webview_t w) {
-    return static_cast<webview::webview*>(w)->get_user_data();
-}
-
-void webview_set_userdata(webview_t w, void* user_data)
-{
-    static_cast<webview::webview*>(w)->set_user_data(user_data);
-}
-
-void webview_set_fullscreen(webview_t w, int fullscreen)
-{
-    static_cast<webview::webview*>(w)->set_fullscreen(fullscreen);
-}
-
-void webview_set_color(webview_t w, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-{
-    static_cast<webview::webview*>(w)->set_color(r, g, b, a);
-}
-
 static int webview_js_encode(const char *s, char *esc, size_t n) {
   int r = 1; /* At least one byte for trailing zero */
   for (; *s; s++) {
@@ -656,22 +584,6 @@ static int webview_js_encode(const char *s, char *esc, size_t n) {
       r += 4;
     }
   }
-  return r;
-}
-
-int webview_inject_css(webview_t w, const char *css) {
-  int n = webview_js_encode(css, NULL, 0);
-  char *esc = (char *)calloc(1, sizeof(CSS_INJECT_FUNCTION) + n + 4);
-  if (esc == NULL) {
-    return -1;
-  }
-  char *js = (char *)calloc(1, n);
-  webview_js_encode(css, js, n);
-  snprintf(esc, sizeof(CSS_INJECT_FUNCTION) + n + 4, "%s(\"%s\")",
-           CSS_INJECT_FUNCTION, js);
-  int r = webview_eval(w, esc);
-  free(js);
-  free(esc);
   return r;
 }
 
@@ -769,7 +681,58 @@ DEFINE_GUID(IID_IFileSaveDialog, 0x84bccd23, 0x5fde, 0x4cdb, 0xae, 0xa4, 0xaf,
             0x64, 0xb8, 0x3d, 0x78, 0xab);
 #endif
 
-void webview_dialog(webview_t w,
+
+// HERE
+
+WEBVIEW_API void webview_run(webview_t w)
+{
+    static_cast<webview::webview*>(w)->run();
+}
+
+WEBVIEW_API int webview_loop(webview_t w, int blocking)
+{
+    return static_cast<webview::webview*>(w)->loop(blocking);
+}
+
+WEBVIEW_API int webview_eval(webview_t w, const char *js)
+{
+    static_cast<webview::webview*>(w)->eval(js);
+    return 0;
+}
+
+WEBVIEW_API int webview_inject_css(webview_t w, const char *css) {
+  int n = webview_js_encode(css, NULL, 0);
+  char *esc = (char *)calloc(1, sizeof(CSS_INJECT_FUNCTION) + n + 4);
+  if (esc == NULL) {
+    return -1;
+  }
+  char *js = (char *)calloc(1, n);
+  webview_js_encode(css, js, n);
+  snprintf(esc, sizeof(CSS_INJECT_FUNCTION) + n + 4, "%s(\"%s\")",
+           CSS_INJECT_FUNCTION, js);
+  int r = webview_eval(w, esc);
+  free(js);
+  free(esc);
+  return r;
+}
+
+WEBVIEW_API void webview_set_title(webview_t w, const char *title)
+{
+    static_cast<webview::webview*>(w)->set_title(title);
+}
+
+WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen)
+{
+    static_cast<webview::webview*>(w)->set_fullscreen(fullscreen);
+}
+
+WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
+                                   uint8_t b, uint8_t a)
+{
+    static_cast<webview::webview*>(w)->set_color(r, g, b, a);
+}
+
+WEBVIEW_API void webview_dialog(webview_t w,
                     enum webview_dialog_type dlgtype, int flags,
                     const char *title, const char *arg,
                     char *result, size_t resultsz) {
@@ -859,21 +822,51 @@ void webview_dialog(webview_t w,
   }
 }
 
-void wrapper_webview_free(webview_t w) {
-	webview_destroy(w);
+WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
+                                  void *arg)
+{
+    static_cast<webview::webview*>(w)->dispatch([=]() { fn(w, arg); });
 }
 
-webview_t wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
-	webview_t w = webview_create(external_invoke_cb, title, width, height, resizable, debug);
-	webview_set_userdata(w, userdata);
-	webview_navigate(w, url);
+WEBVIEW_API void webview_terminate(webview_t w)
+{
+    static_cast<webview::webview*>(w)->terminate();
+}
+
+WEBVIEW_API void webview_exit(webview_t w)
+{
+    webview_terminate(w);
+}
+
+WEBVIEW_API void webview_debug(const char *format, ...)
+{
+    // TODO
+}
+
+WEBVIEW_API void webview_print_log(const char *s)
+{
+    // TODO
+}
+
+WEBVIEW_API void* wrapper_webview_get_userdata(webview_t w)
+{
+    return static_cast<webview::webview*>(w)->get_user_data();
+}
+
+WEBVIEW_API webview_t wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
+{
+    auto w = new webview::webview(external_invoke_cb, title, width, height, resizable, debug);
+    w->set_user_data(userdata);
+    w->navigate(url);
 	return w;
 }
 
-void* wrapper_webview_get_userdata(webview_t w) {
-	return webview_get_userdata(w);
+WEBVIEW_API void wrapper_webview_free(webview_t w)
+{
+    delete static_cast<webview::webview*>(w);
 }
 
-void webview_exit(webview_t w) {
-	webview_terminate(w);
+WEBVIEW_API void webview_destroy(webview_t w)
+{
+    delete static_cast<webview::webview*>(w);
 }
