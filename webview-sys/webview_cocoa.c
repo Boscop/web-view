@@ -12,7 +12,7 @@ struct webview_priv {
   int should_exit;
 };
 
-struct webview {
+struct cocoa_webview {
   const char *url;
   const char *title;
   int width;
@@ -24,29 +24,30 @@ struct webview {
   void *userdata;
 };
 
-WEBVIEW_API void wrapper_webview_free(struct webview* w) {
+WEBVIEW_API void wrapper_webview_free(webview_t w) {
 	free(w);
 }
 
-WEBVIEW_API void* wrapper_webview_get_userdata(struct webview* w) {
-	return w->userdata;
+WEBVIEW_API void* wrapper_webview_get_userdata(webview_t w) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
+	return wv->userdata;
 }
 
-WEBVIEW_API struct webview* wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
-	struct webview* w = (struct webview*)calloc(1, sizeof(*w));
-	w->width = width;
-	w->height = height;
-	w->title = title;
-	w->url = url;
-	w->resizable = resizable;
-	w->debug = debug;
-	w->external_invoke_cb = external_invoke_cb;
-	w->userdata = userdata;
-	if (webview_init(w) != 0) {
-		wrapper_webview_free(w);
+WEBVIEW_API webview_t wrapper_webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+	struct cocoa_webview* wv = (struct cocoa_webview*)calloc(1, sizeof(*wv));
+	wv->width = width;
+	wv->height = height;
+	wv->title = title;
+	wv->url = url;
+	wv->resizable = resizable;
+	wv->debug = debug;
+	wv->external_invoke_cb = external_invoke_cb;
+	wv->userdata = userdata;
+	if (webview_init(wv) != 0) {
+		wrapper_webview_free(wv);
 		return NULL;
 	}
-	return w;
+	return wv;
 }
 
 #define NSAlertStyleWarning 0
@@ -87,20 +88,20 @@ static id create_menu_item(id title, const char *action, const char *key) {
 }
 
 static void webview_window_will_close(id self, SEL cmd, id notification) {
-  struct webview *w =
-      (struct webview *)objc_getAssociatedObject(self, "webview");
+  struct cocoa_webview *w =
+      (struct cocoa_webview *)objc_getAssociatedObject(self, "webview");
   webview_terminate(w);
 }
 
 static void webview_external_invoke(id self, SEL cmd, id contentController,
                                     id message) {
-  struct webview *w =
-      (struct webview *)objc_getAssociatedObject(contentController, "webview");
-  if (w == NULL || w->external_invoke_cb == NULL) {
+  struct cocoa_webview *wv =
+      (struct cocoa_webview *)objc_getAssociatedObject(contentController, "webview");
+  if (wv == NULL || wv->external_invoke_cb == NULL) {
     return;
   }
 
-  w->external_invoke_cb(w, (const char *)objc_msgSend(
+  wv->external_invoke_cb(wv, (const char *)objc_msgSend(
                                objc_msgSend(message, sel_registerName("body")),
                                sel_registerName("UTF8String")));
 }
@@ -203,8 +204,9 @@ static void make_nav_policy_decision(id self, SEL cmd, id webView, id response,
   }
 }
 
-WEBVIEW_API int webview_init(struct webview *w) {
-  w->priv.pool = objc_msgSend((id)objc_getClass("NSAutoreleasePool"),
+WEBVIEW_API int webview_init(webview_t w) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
+  wv->priv.pool = objc_msgSend((id)objc_getClass("NSAutoreleasePool"),
                               sel_registerName("new"));
   objc_msgSend((id)objc_getClass("NSApplication"),
                sel_registerName("sharedApplication"));
@@ -253,7 +255,7 @@ WEBVIEW_API int webview_init(struct webview *w) {
   id wkPref = objc_msgSend((id)__WKPreferences, sel_registerName("new"));
   objc_msgSend(wkPref, sel_registerName("setValue:forKey:"),
                objc_msgSend((id)objc_getClass("NSNumber"),
-                            sel_registerName("numberWithBool:"), !!w->debug),
+                            sel_registerName("numberWithBool:"), !!wv->debug),
                objc_msgSend((id)objc_getClass("NSString"),
                             sel_registerName("stringWithUTF8String:"),
                             "developerExtrasEnabled"));
@@ -303,35 +305,35 @@ WEBVIEW_API int webview_init(struct webview *w) {
                       (IMP)webview_window_will_close, "v@:@");
   objc_registerClassPair(__NSWindowDelegate);
 
-  w->priv.windowDelegate =
+  wv->priv.windowDelegate =
       objc_msgSend((id)__NSWindowDelegate, sel_registerName("new"));
 
-  objc_setAssociatedObject(w->priv.windowDelegate, "webview", (id)(w),
+  objc_setAssociatedObject(wv->priv.windowDelegate, "webview", (id)(w),
                            OBJC_ASSOCIATION_ASSIGN);
 
   id nsTitle =
       objc_msgSend((id)objc_getClass("NSString"),
-                   sel_registerName("stringWithUTF8String:"), w->title);
+                   sel_registerName("stringWithUTF8String:"), wv->title);
 
-  CGRect r = CGRectMake(0, 0, w->width, w->height);
+  CGRect r = CGRectMake(0, 0, wv->width, wv->height);
 
   unsigned int style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                        NSWindowStyleMaskMiniaturizable;
-  if (w->resizable) {
+  if (wv->resizable) {
     style = style | NSWindowStyleMaskResizable;
   }
 
-  w->priv.window =
+  wv->priv.window =
       objc_msgSend((id)objc_getClass("NSWindow"), sel_registerName("alloc"));
-  objc_msgSend(w->priv.window,
+  objc_msgSend(wv->priv.window,
                sel_registerName("initWithContentRect:styleMask:backing:defer:"),
                r, style, NSBackingStoreBuffered, 0);
 
-  objc_msgSend(w->priv.window, sel_registerName("autorelease"));
-  objc_msgSend(w->priv.window, sel_registerName("setTitle:"), nsTitle);
-  objc_msgSend(w->priv.window, sel_registerName("setDelegate:"),
-               w->priv.windowDelegate);
-  objc_msgSend(w->priv.window, sel_registerName("center"));
+  objc_msgSend(wv->priv.window, sel_registerName("autorelease"));
+  objc_msgSend(wv->priv.window, sel_registerName("setTitle:"), nsTitle);
+  objc_msgSend(wv->priv.window, sel_registerName("setDelegate:"),
+               wv->priv.windowDelegate);
+  objc_msgSend(wv->priv.window, sel_registerName("center"));
 
   Class __WKUIDelegate =
       objc_allocateClassPair(objc_getClass("NSObject"), "__WKUIDelegate", 0);
@@ -364,27 +366,27 @@ WEBVIEW_API int webview_init(struct webview *w) {
   objc_registerClassPair(__WKNavigationDelegate);
   id navDel = objc_msgSend((id)__WKNavigationDelegate, sel_registerName("new"));
 
-  w->priv.webview =
+  wv->priv.webview =
       objc_msgSend((id)objc_getClass("WKWebView"), sel_registerName("alloc"));
-  objc_msgSend(w->priv.webview,
+  objc_msgSend(wv->priv.webview,
                sel_registerName("initWithFrame:configuration:"), r, config);
-  objc_msgSend(w->priv.webview, sel_registerName("setUIDelegate:"), uiDel);
-  objc_msgSend(w->priv.webview, sel_registerName("setNavigationDelegate:"),
+  objc_msgSend(wv->priv.webview, sel_registerName("setUIDelegate:"), uiDel);
+  objc_msgSend(wv->priv.webview, sel_registerName("setNavigationDelegate:"),
                navDel);
 
   id nsURL = objc_msgSend((id)objc_getClass("NSURL"),
                           sel_registerName("URLWithString:"),
-                          get_nsstring(webview_check_url(w->url)));
+                          get_nsstring(webview_check_url(wv->url)));
 
-  objc_msgSend(w->priv.webview, sel_registerName("loadRequest:"),
+  objc_msgSend(wv->priv.webview, sel_registerName("loadRequest:"),
                objc_msgSend((id)objc_getClass("NSURLRequest"),
                             sel_registerName("requestWithURL:"), nsURL));
-  objc_msgSend(w->priv.webview, sel_registerName("setAutoresizesSubviews:"), 1);
-  objc_msgSend(w->priv.webview, sel_registerName("setAutoresizingMask:"),
+  objc_msgSend(wv->priv.webview, sel_registerName("setAutoresizesSubviews:"), 1);
+  objc_msgSend(wv->priv.webview, sel_registerName("setAutoresizingMask:"),
                (NSViewWidthSizable | NSViewHeightSizable));
-  objc_msgSend(objc_msgSend(w->priv.window, sel_registerName("contentView")),
-               sel_registerName("addSubview:"), w->priv.webview);
-  objc_msgSend(w->priv.window, sel_registerName("orderFrontRegardless"));
+  objc_msgSend(objc_msgSend(wv->priv.window, sel_registerName("contentView")),
+               sel_registerName("addSubview:"), wv->priv.webview);
+  objc_msgSend(wv->priv.window, sel_registerName("orderFrontRegardless"));
 
   objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
                             sel_registerName("sharedApplication")),
@@ -451,11 +453,12 @@ WEBVIEW_API int webview_init(struct webview *w) {
                             sel_registerName("sharedApplication")),
                sel_registerName("setMainMenu:"), menubar);
 
-  w->priv.should_exit = 0;
+  wv->priv.should_exit = 0;
   return 0;
 }
 
-WEBVIEW_API int webview_loop(struct webview *w, int blocking) {
+WEBVIEW_API int webview_loop(webview_t w, int blocking) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
   id until = (blocking ? objc_msgSend((id)objc_getClass("NSDate"),
                                       sel_registerName("distantFuture"))
                        : objc_msgSend((id)objc_getClass("NSDate"),
@@ -477,65 +480,69 @@ WEBVIEW_API int webview_loop(struct webview *w, int blocking) {
                  sel_registerName("sendEvent:"), event);
   }
 
-  return w->priv.should_exit;
+  return wv->priv.should_exit;
 }
 
-WEBVIEW_API int webview_eval(struct webview *w, const char *js) {
-  objc_msgSend(w->priv.webview,
+WEBVIEW_API int webview_eval(webview_t w, const char *js) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
+  objc_msgSend(wv->priv.webview,
                sel_registerName("evaluateJavaScript:completionHandler:"),
                get_nsstring(js), NULL);
 
   return 0;
 }
 
-WEBVIEW_API void webview_set_title(struct webview *w, const char *title) {
-  objc_msgSend(w->priv.window, sel_registerName("setTitle:"),
+WEBVIEW_API void webview_set_title(webview_t w, const char *title) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
+  objc_msgSend(wv->priv.window, sel_registerName("setTitle:"),
                get_nsstring(title));
 }
 
-WEBVIEW_API void webview_set_fullscreen(struct webview *w, int fullscreen) {
+WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
   unsigned long windowStyleMask = (unsigned long)objc_msgSend(
-      w->priv.window, sel_registerName("styleMask"));
+      wv->priv.window, sel_registerName("styleMask"));
   int b = (((windowStyleMask & NSWindowStyleMaskFullScreen) ==
             NSWindowStyleMaskFullScreen)
                ? 1
                : 0);
   if (b != fullscreen) {
-    objc_msgSend(w->priv.window, sel_registerName("toggleFullScreen:"), NULL);
+    objc_msgSend(wv->priv.window, sel_registerName("toggleFullScreen:"), NULL);
   }
 }
 
-WEBVIEW_API void webview_set_color(struct webview *w, uint8_t r, uint8_t g,
+WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a) {
-
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
   id color = objc_msgSend((id)objc_getClass("NSColor"),
                           sel_registerName("colorWithRed:green:blue:alpha:"),
                           (float)r / 255.0, (float)g / 255.0, (float)b / 255.0,
                           (float)a / 255.0);
 
-  objc_msgSend(w->priv.window, sel_registerName("setBackgroundColor:"), color);
+  objc_msgSend(wv->priv.window, sel_registerName("setBackgroundColor:"), color);
 
   if (0.5 >= ((r / 255.0 * 299.0) + (g / 255.0 * 587.0) + (b / 255.0 * 114.0)) /
                  1000.0) {
-    objc_msgSend(w->priv.window, sel_registerName("setAppearance:"),
+    objc_msgSend(wv->priv.window, sel_registerName("setAppearance:"),
                  objc_msgSend((id)objc_getClass("NSAppearance"),
                               sel_registerName("appearanceNamed:"),
                               get_nsstring("NSAppearanceNameVibrantDark")));
   } else {
-    objc_msgSend(w->priv.window, sel_registerName("setAppearance:"),
+    objc_msgSend(wv->priv.window, sel_registerName("setAppearance:"),
                  objc_msgSend((id)objc_getClass("NSAppearance"),
                               sel_registerName("appearanceNamed:"),
                               get_nsstring("NSAppearanceNameVibrantLight")));
   }
-  objc_msgSend(w->priv.window, sel_registerName("setOpaque:"), 0);
-  objc_msgSend(w->priv.window,
+  objc_msgSend(wv->priv.window, sel_registerName("setOpaque:"), 0);
+  objc_msgSend(wv->priv.window,
                sel_registerName("setTitlebarAppearsTransparent:"), 1);
 }
 
-WEBVIEW_API void webview_dialog(struct webview *w,
+WEBVIEW_API void webview_dialog(webview_t w,
                                 enum webview_dialog_type dlgtype, int flags,
                                 const char *title, const char *arg,
                                 char *result, size_t resultsz) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
   if (dlgtype == WEBVIEW_DIALOG_TYPE_OPEN ||
       dlgtype == WEBVIEW_DIALOG_TYPE_SAVE) {
     id panel = (id)objc_getClass("NSSavePanel");
@@ -568,7 +575,7 @@ WEBVIEW_API void webview_dialog(struct webview *w,
                  1);
     objc_msgSend(
         panel, sel_registerName("beginSheetModalForWindow:completionHandler:"),
-        w->priv.window, ^(id result) {
+        wv->priv.window, ^(id result) {
           objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
                                     sel_registerName("sharedApplication")),
                        sel_registerName("stopModalWithCode:"), result);
@@ -617,8 +624,9 @@ static void webview_dispatch_cb(void *arg) {
   free(context);
 }
 
-WEBVIEW_API void webview_dispatch(struct webview *w, webview_dispatch_fn fn,
+WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
                                   void *arg) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
   struct webview_dispatch_arg *context = (struct webview_dispatch_arg *)malloc(
       sizeof(struct webview_dispatch_arg));
   context->w = w;
@@ -627,11 +635,13 @@ WEBVIEW_API void webview_dispatch(struct webview *w, webview_dispatch_fn fn,
   dispatch_async_f(dispatch_get_main_queue(), context, webview_dispatch_cb);
 }
 
-WEBVIEW_API void webview_terminate(struct webview *w) {
-  w->priv.should_exit = 1;
+WEBVIEW_API void webview_terminate(webview_t w) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
+  wv->priv.should_exit = 1;
 }
 
-WEBVIEW_API void webview_exit(struct webview *w) {
+WEBVIEW_API void webview_exit(webview_t w) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
   id app = objc_msgSend((id)objc_getClass("NSApplication"),
                         sel_registerName("sharedApplication"));
   objc_msgSend(app, sel_registerName("terminate:"), app);
