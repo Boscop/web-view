@@ -10,8 +10,8 @@ fn main() {
 
     if target.contains("windows") && cfg!(feature = "edge") {
         build
-            .include("webview_edge.h")
-            .file("webview_edge.cc")
+            .include("webview.h")
+            .file("webview_edge.cpp")
             .flag_if_supported("/std:c++17");
     } else {
         build
