@@ -8,17 +8,10 @@ fn main() {
 
     let target = env::var("TARGET").unwrap();
 
-    if target.contains("windows") && cfg!(feature = "edge") {
-        build
-            .include("webview.h")
-            .file("webview_edge.cpp")
-            .flag_if_supported("/std:c++17");
-    } else {
-        build
-            .include("webview.h")
-            .flag_if_supported("-std=c11")
-            .flag_if_supported("-w");
-    }
+    build
+        .include("webview.h")
+        .flag_if_supported("-std=c11")
+        .flag_if_supported("-w");
 
     if env::var("DEBUG").is_err() {
         build.define("NDEBUG", None);
@@ -27,7 +20,11 @@ fn main() {
     }
 
     if target.contains("windows") {
-        if !cfg!(feature = "edge") {
+        if cfg!(feature = "edge") {
+            build
+                .file("webview_edge.cpp")
+                .flag_if_supported("/std:c++17");
+        } else {
             build.file("webview_mshtml.c");
 
             for &lib in &["ole32", "comctl32", "oleaut32", "uuid", "gdi32"] {
