@@ -528,6 +528,11 @@ public:
             L"eval", single_threaded_vector<hstring>({ winrt::to_hstring(js) }));
     }
 
+    void terminate() {
+        browser_window::terminate();
+        m_webview.Close();
+    }
+
     void* window() { return (void*)m_window; }
 
     void* get_user_data() { return this->user_data; }
