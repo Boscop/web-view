@@ -20,6 +20,8 @@ fn main() {
     }
 
     if target.contains("windows") {
+        build.define("UNICODE", None);
+
         if cfg!(feature = "edge") {
             build
                 .file("webview_edge.cpp")

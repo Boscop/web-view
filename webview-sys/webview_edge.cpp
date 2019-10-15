@@ -19,6 +19,16 @@
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "gdi32")
 
+static inline BSTR webview_to_bstr(const char *s) {
+  DWORD size = MultiByteToWideChar(CP_UTF8, 0, s, -1, 0, 0);
+  BSTR bs = SysAllocStringLen(0, size);
+  if (bs == NULL) {
+    return NULL;
+  }
+  MultiByteToWideChar(CP_UTF8, 0, s, -1, bs, size);
+  return bs;
+}
+
 namespace webview {
 using dispatch_fn_t = std::function<void()>;
 using msg_cb_t = std::function<void(const char* msg)>;
@@ -305,7 +315,7 @@ public:
         wc.cbSize = sizeof(WNDCLASSEX);
         wc.hInstance = hInstance;
         wc.lpfnWndProc = WebviewWndProc;
-        wc.lpszClassName = "webview";
+        wc.lpszClassName = L"webview";
         RegisterClassEx(&wc);
 
         DWORD style = WS_OVERLAPPEDWINDOW;
@@ -329,9 +339,11 @@ public:
         rect.bottom = rect.bottom - rect.top + top;
         rect.top = top;
 
-        m_window = CreateWindowEx(0, "webview", title, style, rect.left, rect.top,
+        BSTR window_title = webview_to_bstr(title);
+        m_window = CreateWindowEx(0, L"webview", window_title, style, rect.left, rect.top,
                      rect.right - rect.left, rect.bottom - rect.top,
                      HWND_DESKTOP, NULL, hInstance, (void *)this);
+        SysFreeString(window_title);
 
         SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
 
@@ -379,7 +391,12 @@ public:
         PostThreadMessage(m_main_thread, WM_APP, 0, (LPARAM) new dispatch_fn_t(f));
     }
 
-    void set_title(const char* title) { SetWindowText(m_window, title); }
+    void set_title(const char* title)
+    {
+        BSTR window_title = webview_to_bstr(title);
+        SetWindowText(m_window, window_title);
+        SysFreeString(window_title);
+    }
 
     void set_size(int width, int height)
     {
@@ -822,7 +839,11 @@ WEBVIEW_API void webview_dialog(webview_t w,
       type |= MB_ICONERROR;
       break;
     }
-    MessageBox(hwnd, arg, title, type);
+    BSTR box_title = webview_to_bstr(title);
+    BSTR box_text = webview_to_bstr(arg);
+    MessageBox(hwnd, box_text, box_title, type);
+    SysFreeString(box_title);
+    SysFreeString(box_text);
 #endif
   }
 }
