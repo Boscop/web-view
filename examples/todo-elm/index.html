@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <title>Elm - Todo</title>
+  <script type="text/javascript" src="elm.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<!--
+  This index.html is here only for debugging purposes,
+  it is not used in todo-elm Rust example.
+
+  This is the same backend as it is in todo-elm.rs but implemented
+  in JavaScript, you can open this in your browser directly and
+  it should work without Rust.
+-->
+
+<body>
+  <div id="elm">
+  </div>
+  <script type="text/javascript">
+    var tasks = [];
+    var app = Elm.Main.init({ node: document.getElementById("elm") });
+    app.ports.toRust.subscribe(function (data) {
+      console.debug(data);
+      switch (data.cmd) {
+        case "Init":
+          tasks = [{ name: "Create elm example", done: true }];
+          break;
+        case "Log":
+          console.log(data.text);
+          break;
+        case "AddTask":
+          tasks.push({ name: data.name, done: false });
+          break;
+        case "MarkTask":
+          // we use filter instead of find for compatibility with IE11
+          var task = tasks.filter(function (_, index) { return index == data.index })[0];
+          if (task) {
+            task.done = data.done;
+          }
+          break;
+        case "ClearDoneTasks":
+          tasks = tasks.filter(function (value) { return !value.done; });
+          break;
+      }
+
+      if (data.cmd != "Log") {
+        app.ports.fromRust.send(tasks);
+      }
+    })
+  </script>
+</body>
+
+</html>

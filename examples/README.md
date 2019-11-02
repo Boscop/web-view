@@ -49,6 +49,22 @@ In order for this to run on EdgeHTML, you need to run `CheckNetIsolation.exe Loo
 
 You can make this step for example as a part of your apps installer.
 
+## todo-elm
+
+(This assumes you're using Elm 0.19.0).  
+This example is functionally equivalent to `todo` and `todo-purescript` examples, but implemented in Elm.  
+It showcases how to communicate from Elm to Rust and back through Elm's ports.  
+You can run this example as is with `cargo run --example todo-elm`.  
+
+If you want to edit the example's sources, you will first need to install Elm as described [here](https://guide.elm-lang.org/install/elm.html).  
+Then run:  
+```
+elm make --optimize --output=elm.js src/Main.elm
+cargo run --example todo-elm
+```
+The `--output=elm.js` parameter is very important, otherwise `elm make` would output `index.html`.
+We include `elm.js` and js glue code (for Elm's ports) in `todo-elm.rs`, so we cannot use `index.html`.
+
 ---
 
 Note: For some reason (at least on Windows), if I try to `cargo run` the examples directly, they don't show the window, but it works with `cargo build --example <name> && target\debug\examples\<name>`
