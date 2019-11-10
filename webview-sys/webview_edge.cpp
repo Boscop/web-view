@@ -15,9 +15,10 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Web.UI.Interop.h>
 
-#pragma comment(lib, "windowsapp")
+#pragma comment(lib, "windowsapp.lib")
 #pragma comment(lib, "user32.lib")
-#pragma comment(lib, "gdi32")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "ole32.lib")
 
 static inline BSTR webview_to_bstr(const char *s) {
   DWORD size = MultiByteToWideChar(CP_UTF8, 0, s, -1, 0, 0);

@@ -70,9 +70,12 @@ WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width,
 	return wv;
 }
 
-#pragma comment(lib, "user32.lib")
 #pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "oleaut32.lib")
+#pragma comment(lib, "uuid.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "user32.lib")
 
 #define WM_WEBVIEW_DISPATCH (WM_APP + 1)
 

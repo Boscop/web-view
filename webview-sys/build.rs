@@ -26,10 +26,14 @@ fn main() {
             build
                 .file("webview_edge.cpp")
                 .flag_if_supported("/std:c++17");
+
+            for &lib in &["windowsapp", "user32", "gdi32", "ole32"] {
+                println!("cargo:rustc-link-lib={}", lib);
+            }
         } else {
             build.file("webview_mshtml.c");
 
-            for &lib in &["ole32", "comctl32", "oleaut32", "uuid", "gdi32"] {
+            for &lib in &["ole32", "comctl32", "oleaut32", "uuid", "gdi32", "user32"] {
                 println!("cargo:rustc-link-lib={}", lib);
             }
         }
