@@ -49,6 +49,10 @@ In order for this to run on EdgeHTML, you need to run `CheckNetIsolation.exe Loo
 
 You can make this step for example as a part of your apps installer.
 
+## todo-yew
+
+Based of the code of the actix example (see above) this bundles/serves the yew [todo example](https://github.com/yewstack/yew/tree/master/examples/todomvc) app. That makes it the most `rust`y example of them all and still only has a ~4mb binary size (90% of which is actix actually).
+
 ## todo-elm
 
 (This assumes you're using Elm 0.19.0).  
