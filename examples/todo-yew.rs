@@ -15,7 +15,7 @@ use std::{borrow::Cow, thread, sync::mpsc};
 use web_view::*;
 
 #[derive(RustEmbed)]
-#[folder = "examples/todo-yew"]
+#[folder = "examples/todo-yew/static"]
 struct Asset;
 
 fn assets(req: HttpRequest) -> HttpResponse {
@@ -75,9 +75,9 @@ fn main() {
     // and point it to a port that was bound
     // to actix web server
     web_view::builder()
-        .title("Actix webview example")
+        .title("todomvc example")
         .content(Content::Url(format!("http://127.0.0.1:{}", port)))
-        .size(400, 400)
+        .size(600, 500)
         .resizable(true)
         .debug(true)
         .user_data(())
