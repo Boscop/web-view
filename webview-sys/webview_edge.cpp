@@ -20,6 +20,7 @@
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "ole32.lib")
 
+// Free result with SysFreeString.
 static inline BSTR webview_to_bstr(const char *s) {
   DWORD size = MultiByteToWideChar(CP_UTF8, 0, s, -1, 0, 0);
   BSTR bs = SysAllocStringLen(0, size);
@@ -34,28 +35,31 @@ namespace webview {
 using dispatch_fn_t = std::function<void()>;
 using msg_cb_t = std::function<void(const char* msg)>;
 
-inline std::string url_decode(std::string s)
+inline std::string url_decode(const char *s)
 {
     std::string decoded;
-    for (unsigned int i = 0; i < s.length(); i++) {
+    size_t length = strlen(s);
+    for (unsigned int i = 0; i < length; i++) {
         if (s[i] == '%') {
             int n;
-            sscanf(s.substr(i + 1, 2).c_str(), "%x", &n);
-            decoded = decoded + static_cast<char>(n);
+            sscanf(s + i + 1, "%2x", &n);
+            decoded.push_back(static_cast<char>(n));
             i = i + 2;
         } else if (s[i] == '+') {
-            decoded = decoded + ' ';
+            decoded.push_back(' ');
         } else {
-            decoded = decoded + s[i];
+            decoded.push_back(s[i]);
         }
     }
     return decoded;
 }
 
-inline std::string html_from_uri(std::string s)
+inline std::string html_from_uri(const char *s)
 {
-    if (s.substr(0, 15) == "data:text/html,") {
-        return url_decode(s.substr(15));
+    const char *const prefix = "data:text/html,";
+    const size_t prefix_length = strlen(prefix);
+    if (!strncmp(s, prefix, prefix_length)) {
+      return url_decode(s + prefix_length);
     }
     return "";
 }
@@ -296,7 +300,12 @@ public:
             m_webview.Navigate(uri);
         }
     }
-    void init(const char* js) { init_js = init_js + "(function(){" + js + "})();"; }
+    void init(const char* js)
+    {
+      init_js.append("(function(){")
+             .append(js)
+             .append("})();");
+    }
     void eval(const char* js)
     {
         m_webview.InvokeScriptAsync(
@@ -330,11 +339,12 @@ private:
     std::string init_js = "";
 
     void* user_data = nullptr;
-    webview_external_invoke_cb_t invoke_cb;
+    webview_external_invoke_cb_t invoke_cb = nullptr;
 };
 
 } // namespace webview
 
+// Free result with GlobalFree.
 static inline char *webview_from_utf16(WCHAR *ws) {
   int n = WideCharToMultiByte(CP_UTF8, 0, ws, -1, NULL, 0, NULL, NULL);
   char *s = (char *)GlobalAlloc(GMEM_FIXED, n);
