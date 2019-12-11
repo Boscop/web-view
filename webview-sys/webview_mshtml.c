@@ -196,6 +196,7 @@ JS_Invoke(IDispatch FAR *This, DISPID dispIdMember, REFIID riid, LCID lcid,
           wv->external_invoke_cb(wv, s);
         }
       } else {
+        GlobalFree(s);
         return S_FALSE;
       }
       GlobalFree(s);
