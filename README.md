@@ -12,11 +12,13 @@
 - [Contribution opportunities](#contribution-opportunities)
 - [Ideas for apps](#ideas-for-apps)
 - [Showcase](#showcase)
- 
-This library provides a Rust binding to the original implementation of [webview](https://github.com/zserge/webview), a tiny cross-platform library to render web-based GUIs as desktop applications.
- 
+
 > **Important:** requires Rust 1.30 stable or newer.
- 
+
+This library provides a Rust binding to the original implementation of [webview](https://github.com/zserge/webview), a tiny cross-platform library to render web-based GUIs as desktop applications.
+
+<p align="center"><img alt="screenshot" src="https://i.imgur.com/Z3c2zwD.png"></p>
+
 Two-way binding between your Rust and JavaScript code is made simple via the `external` JS object and `webview.eval` Rust function. We have full [working examples](https://github.com/Boscop/web-view/tree/master/examples), but the core is as follows:
  
 ```rust
@@ -143,9 +145,7 @@ Assuming you get a successful build all you have to do now is run it with: `carg
 
 <p align="center"><img alt="screenshot" src="https://i.imgur.com/vQrS2p2.png"></p>
 
-For more usage info please check out the [examples](https://github.com/Boscop/web-view/tree/master/examples) and the [original README](https://github.com/zserge/webview/blob/master/README.md). For instance, the PureScript todo app will show how to render the following: 
-
-<p align="center"><img alt="screenshot" src="https://i.imgur.com/Z3c2zwD.png"></p>
+For more usage info please check out the [examples](https://github.com/Boscop/web-view/tree/master/examples) and the [original README](https://github.com/zserge/webview/blob/master/README.md).
 
 ## Known Issues and Limitations
  
