@@ -423,12 +423,17 @@ impl<'a, T> WebView<'a, T> {
                     let closure_result = &mut self.user_data_wrapper_mut().result;
                     match closure_result {
                         Ok(_) => Some(Ok(())),
+                        Err(Error::QueueClose) => None,
                         e => Some(mem::replace(e, Ok(()))),
                     }
                 }
                 _ => None,
             }
         }
+    }
+
+    pub fn queue_close(&mut self) -> WVResult<T> {
+        Err(Error::QueueClose)
     }
 
     /// Runs the event loop to completion and returns the user data.
