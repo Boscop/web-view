@@ -8,6 +8,9 @@
 #[macro_use]
 extern crate bitflags;
 
+#[cfg(target_os = "windows")]
+mod mshtml;
+
 use std::os::raw::*;
 
 pub enum CWebView {} // opaque type, only used in ffi pointers

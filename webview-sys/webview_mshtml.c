@@ -790,33 +790,7 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-#define WEBVIEW_KEY_FEATURE_BROWSER_EMULATION                                  \
-  L"Software\\Microsoft\\Internet "                                            \
-   "Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION"
-
-static int webview_fix_ie_compat_mode() {
-  HKEY hKey;
-  DWORD ie_version = 11000;
-  WCHAR appname[MAX_PATH + 1];
-  WCHAR *p;
-  if (GetModuleFileNameW(NULL, appname, MAX_PATH + 1) == 0) {
-    return -1;
-  }
-  for (p = &appname[wcslen(appname) - 1]; p != appname && *p != L'\\'; p--) {
-  }
-  p++;
-  if (RegCreateKeyW(HKEY_CURRENT_USER, WEBVIEW_KEY_FEATURE_BROWSER_EMULATION,
-                    &hKey) != ERROR_SUCCESS) {
-    return -1;
-  }
-  if (RegSetValueExW(hKey, p, 0, REG_DWORD, (BYTE *)&ie_version,
-                     sizeof(ie_version)) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
-    return -1;
-  }
-  RegCloseKey(hKey);
-  return 0;
-}
+extern int webview_fix_ie_compat_mode();
 
 int webview_init(struct mshtml_webview *wv, const char *title) {
   WNDCLASSEX wc;
