@@ -27,8 +27,6 @@ struct mshtml_webview {
   void *userdata;
 };
 
-int webview_init(struct mshtml_webview *wv, const char *title);
-
 WEBVIEW_API void webview_free(webview_t w) {
 	free(w);
 }
@@ -46,22 +44,6 @@ static inline BSTR webview_to_bstr(const char *s) {
   }
   MultiByteToWideChar(CP_UTF8, 0, s, -1, bs, size);
   return bs;
-}
-
-WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
-	struct mshtml_webview* wv = (struct mshtml_webview*)calloc(1, sizeof(*wv));
-	wv->width = width;
-	wv->height = height;
-	wv->url = url;
-	wv->resizable = resizable;
-	wv->debug = debug;
-	wv->external_invoke_cb = external_invoke_cb;
-	wv->userdata = userdata;
-	if (webview_init(wv, title) != 0) {
-		webview_free(wv);
-		return NULL;
-	}
-	return wv;
 }
 
 #pragma comment(lib, "ole32.lib")
@@ -682,7 +664,7 @@ error:
 }
 
 #define WEBVIEW_DATA_URL_PREFIX "data:text/html,"
-static int DisplayHTMLPage(struct mshtml_webview *wv) {
+int DisplayHTMLPage(struct mshtml_webview *wv) {
   IWebBrowser2 *webBrowser2;
   VARIANT myURL;
   LPDISPATCH lpDispatch;
@@ -756,7 +738,7 @@ static int DisplayHTMLPage(struct mshtml_webview *wv) {
   return (-5);
 }
 
-static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
+LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
                                 LPARAM lParam) {
   struct mshtml_webview *wv = (struct mshtml_webview *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
   switch (uMsg) {
@@ -788,80 +770,6 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
   }
   }
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-extern int webview_fix_ie_compat_mode();
-
-int webview_init(struct mshtml_webview *wv, const char *title) {
-  WNDCLASSEX wc;
-  HINSTANCE hInstance;
-  DWORD style;
-  RECT clientRect;
-  RECT rect;
-  HRESULT oleInitCode;
-
-  if (webview_fix_ie_compat_mode() < 0) {
-    return -1;
-  }
-
-  hInstance = GetModuleHandle(NULL);
-  if (hInstance == NULL) {
-    return -1;
-  }
-
-  oleInitCode = OleInitialize(NULL);
-  if (oleInitCode != S_OK && oleInitCode != S_FALSE) {
-    return -1;
-  }
-  ZeroMemory(&wc, sizeof(WNDCLASSEX));
-  wc.cbSize = sizeof(WNDCLASSEX);
-  wc.hInstance = hInstance;
-  wc.lpfnWndProc = wndproc;
-  wc.lpszClassName = classname;
-  RegisterClassEx(&wc);
-
-  style = WS_OVERLAPPEDWINDOW;
-  if (!wv->resizable) {
-    style = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU;
-  }
-
-  rect.left = 0;
-  rect.top = 0;
-  rect.right = wv->width;
-  rect.bottom = wv->height;
-  AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, 0);
-
-  GetClientRect(GetDesktopWindow(), &clientRect);
-  int left = (clientRect.right / 2) - ((rect.right - rect.left) / 2);
-  int top = (clientRect.bottom / 2) - ((rect.bottom - rect.top) / 2);
-  rect.right = rect.right - rect.left + left;
-  rect.left = left;
-  rect.bottom = rect.bottom - rect.top + top;
-  rect.top = top;
-
-  BSTR bstr_title = webview_to_bstr(title);
-  wv->hwnd =
-      CreateWindowEx(0, classname, bstr_title, style, rect.left, rect.top,
-                     rect.right - rect.left, rect.bottom - rect.top,
-                     HWND_DESKTOP, NULL, hInstance, (void *)wv);
-  if (wv->hwnd == 0) {
-    SysFreeString(bstr_title);
-    OleUninitialize();
-    return -1;
-  }
-
-  SetWindowLongPtr(wv->hwnd, GWLP_USERDATA, (LONG_PTR)wv);
-
-  DisplayHTMLPage(wv);
-
-  SetWindowText(wv->hwnd, bstr_title);
-  ShowWindow(wv->hwnd, SW_SHOWDEFAULT);
-  UpdateWindow(wv->hwnd);
-  SetFocus(wv->hwnd);
-
-  SysFreeString(bstr_title);
-
-  return 0;
 }
 
 WEBVIEW_API int webview_loop(webview_t w, int blocking) {

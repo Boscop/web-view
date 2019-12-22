@@ -22,7 +22,7 @@ edge = []
 bitflags = "1"
 
 [target.'cfg(windows)'.dependencies]
-winapi = "0.3"
+winapi = { version = "0.3", features = ["windef", "minwindef", "winuser", "ole2", "libloaderapi", "errhandlingapi", "ntdef", "basetsd"] }
 libc = "0.2"
 com = "0.1"
 winreg = "0.6"

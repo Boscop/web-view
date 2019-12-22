@@ -3,3 +3,4 @@ target/
 Cargo.lock
 TODO.md
 .idea
+.vscode/
