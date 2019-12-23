@@ -27,7 +27,7 @@ fn main() -> WVResult {
                         .warning("Warning", "You didn't choose a file."),
                 }?,
                 "exit" => {
-                    webview.terminate();
+                    webview.exit();
                 }
                 _ => unimplemented!(),
             };
