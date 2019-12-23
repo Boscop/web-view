@@ -884,13 +884,6 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
   PostMessageW(wv->hwnd, WM_WEBVIEW_DISPATCH, (WPARAM)fn, (LPARAM)arg);
 }
 
-WEBVIEW_API void webview_set_title(webview_t w, const char *title) {
-  struct mshtml_webview* wv = (struct mshtml_webview*)w;
-  BSTR bstr_title = webview_to_bstr(title);
-  SetWindowText(wv->hwnd, bstr_title);
-  SysFreeString(bstr_title);
-}
-
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
   struct mshtml_webview* wv = (struct mshtml_webview*)w;
   if (wv->is_fullscreen == !!fullscreen) {

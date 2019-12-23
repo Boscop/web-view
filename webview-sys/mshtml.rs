@@ -238,3 +238,13 @@ extern "C" fn webview_set_color(webview: *mut WebView, r: u8, g: u8, b: u8, a: u
         winuser::SetClassLongPtrW((*webview).hwnd, winuser::GCLP_HBRBACKGROUND, std::mem::transmute(brush));
     }
 }
+
+#[no_mangle]
+extern "C" fn webview_set_title(webview: *mut WebView, title: *const c_char) {
+    unsafe {
+        let c_title = CStr::from_ptr(title);
+        let title = c_title.to_string_lossy();
+        let title = to_wstring(&title);
+        winuser::SetWindowTextW((*webview).hwnd, title.as_ptr());
+    }
+}
