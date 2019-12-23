@@ -165,15 +165,6 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
   return ((struct gtk_webview*)w)->should_exit;
 }
 
-WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
-  struct gtk_webview *wv = (struct webview *)w;
-  if (fullscreen) {
-    gtk_window_fullscreen(GTK_WINDOW(wv->window));
-  } else {
-    gtk_window_unfullscreen(GTK_WINDOW(wv->window));
-  }
-}
-
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a) {
   struct gtk_webview *wv = (struct webview *)w;

@@ -36,3 +36,14 @@ extern "C" fn webview_set_title(webview: *mut WebView, title: *const c_char) {
         gtk_window_set_title(mem::transmute((*webview).window), title);
     }
 }
+
+#[no_mangle]
+extern "C" fn webview_set_fullscreen(webview: *mut WebView, fullscreen: c_int) {
+    unsafe {
+        if fullscreen > 0 {
+            gtk_window_fullscreen(mem::transmute((*webview).window));
+        } else {
+            gtk_window_unfullscreen(mem::transmute((*webview).window));
+        }
+    }
+}
