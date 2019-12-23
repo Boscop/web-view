@@ -32,24 +32,7 @@ WEBVIEW_API void* webview_get_user_data(webview_t w) {
 	return wv->userdata;
 }
 
-WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
-	struct gtk_webview* w = (struct gtk_webview*)calloc(1, sizeof(*w));
-	w->width = width;
-	w->height = height;
-	w->title = title;
-	w->url = url;
-	w->resizable = resizable;
-	w->debug = debug;
-	w->external_invoke_cb = external_invoke_cb;
-	w->userdata = userdata;
-	if (webview_init(w) != 0) {
-		webview_free(w);
-		return NULL;
-	}
-	return w;
-}
-
-static void external_message_received_cb(WebKitUserContentManager *m,
+void external_message_received_cb(WebKitUserContentManager *m,
                                          WebKitJavascriptResult *r,
                                          gpointer arg) {
   (void)m;
@@ -68,7 +51,7 @@ static void external_message_received_cb(WebKitUserContentManager *m,
   g_free(s);
 }
 
-static void webview_load_changed_cb(WebKitWebView *webview,
+void webview_load_changed_cb(WebKitWebView *webview,
                                     WebKitLoadEvent event, gpointer arg) {
   (void)webview;
   struct gtk_webview *w = (struct gtk_webview *)arg;
@@ -77,88 +60,11 @@ static void webview_load_changed_cb(WebKitWebView *webview,
   }
 }
 
-static void webview_destroy_cb(GtkWidget *widget, gpointer arg) {
+void webview_destroy_cb(GtkWidget *widget, gpointer arg) {
   (void)widget;
   webview_terminate((webview_t)arg);
 }
 
-static gboolean webview_context_menu_cb(WebKitWebView *webview,
-                                        GtkWidget *default_menu,
-                                        WebKitHitTestResult *hit_test_result,
-                                        gboolean triggered_with_keyboard,
-                                        gpointer userdata) {
-  (void)webview;
-  (void)default_menu;
-  (void)hit_test_result;
-  (void)triggered_with_keyboard;
-  (void)userdata;
-  return TRUE;
-}
-
-int webview_init(struct gtk_webview *w) {
-  if (gtk_init_check(0, NULL) == FALSE) {
-    return -1;
-  }
-
-  w->ready = 0;
-  w->should_exit = 0;
-  w->queue = g_async_queue_new();
-  w->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_title(GTK_WINDOW(w->window), w->title);
-
-  if (w->resizable) {
-    gtk_window_set_default_size(GTK_WINDOW(w->window), w->width,
-                                w->height);
-  } else {
-    gtk_widget_set_size_request(w->window, w->width, w->height);
-  }
-  gtk_window_set_resizable(GTK_WINDOW(w->window), !!w->resizable);
-  gtk_window_set_position(GTK_WINDOW(w->window), GTK_WIN_POS_CENTER);
-
-  w->scroller = gtk_scrolled_window_new(NULL, NULL);
-  gtk_container_add(GTK_CONTAINER(w->window), w->scroller);
-
-  WebKitUserContentManager *m = webkit_user_content_manager_new();
-  webkit_user_content_manager_register_script_message_handler(m, "external");
-  g_signal_connect(m, "script-message-received::external",
-                   G_CALLBACK(external_message_received_cb), w);
-
-  w->webview = webkit_web_view_new_with_user_content_manager(m);
-  webkit_web_view_load_uri(WEBKIT_WEB_VIEW(w->webview),
-                           webview_check_url(w->url));
-  g_signal_connect(G_OBJECT(w->webview), "load-changed",
-                   G_CALLBACK(webview_load_changed_cb), w);
-  gtk_container_add(GTK_CONTAINER(w->scroller), w->webview);
-
-  WebKitSettings *settings =
-      webkit_web_view_get_settings(WEBKIT_WEB_VIEW(w->webview));
-
-  // Enable webgl and canvas features.
-  webkit_settings_set_enable_webgl(settings, true);
-  webkit_settings_set_enable_accelerated_2d_canvas(settings, true);
-
-  if (w->debug) {
-    WebKitSettings *settings =
-        webkit_web_view_get_settings(WEBKIT_WEB_VIEW(w->webview));
-    webkit_settings_set_enable_write_console_messages_to_stdout(settings, true);
-    webkit_settings_set_enable_developer_extras(settings, true);
-  } else {
-    g_signal_connect(G_OBJECT(w->webview), "context-menu",
-                     G_CALLBACK(webview_context_menu_cb), w);
-  }
-
-  gtk_widget_show_all(w->window);
-
-  webkit_web_view_run_javascript(
-      WEBKIT_WEB_VIEW(w->webview),
-      "window.external={invoke:function(x){"
-      "window.webkit.messageHandlers.external.postMessage(x);}}",
-      NULL, NULL, NULL);
-
-  g_signal_connect(G_OBJECT(w->window), "destroy",
-                   G_CALLBACK(webview_destroy_cb), w);
-  return 0;
-}
 
 WEBVIEW_API int webview_loop(webview_t w, int blocking) {
   gtk_main_iteration_do(blocking);

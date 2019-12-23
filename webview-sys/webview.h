@@ -119,7 +119,7 @@ WEBVIEW_API int webview_inject_css(webview_t w, const char *css) {
   return r;
 }
 
-static inline const char *webview_check_url(const char *url) {
+const char *webview_check_url(const char *url) {
   if (url == NULL || strlen(url) == 0) {
     return DEFAULT_URL;
   }
