@@ -932,13 +932,6 @@ WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
   }
 }
 
-WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
-                                   uint8_t b, uint8_t a) {
-  struct mshtml_webview* wv = (struct mshtml_webview*)w;
-  HBRUSH brush = CreateSolidBrush(RGB(r, g, b));
-  SetClassLongPtr(wv->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)brush);
-}
-
 /* These are missing parts from MinGW */
 #ifndef __IFileDialog_INTERFACE_DEFINED__
 #define __IFileDialog_INTERFACE_DEFINED__

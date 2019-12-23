@@ -7,7 +7,7 @@ use std::ffi::{CStr, OsStr};
 use std::os::windows::ffi::OsStrExt;
 use std::ptr;
 use winapi::shared::{basetsd, minwindef, ntdef, windef, winerror};
-use winapi::um::{errhandlingapi, libloaderapi, ole2, winuser};
+use winapi::um::{errhandlingapi, libloaderapi, ole2, winuser, wingdi};
 use winreg::{enums, RegKey};
 
 type ExternalInvokeCallback = extern "C" fn(webview: *mut WebView, arg: *const c_char);
@@ -229,4 +229,12 @@ fn to_wstring(s: &str) -> Vec<u16> {
         .chain(Some(0).into_iter())
         .collect();
     v
+}
+
+#[no_mangle]
+extern "C" fn webview_set_color(webview: *mut WebView, r: u8, g: u8, b: u8, a: u8) {
+    unsafe {
+        let brush = wingdi::CreateSolidBrush(wingdi::RGB(r, g, b));
+        winuser::SetClassLongPtrW((*webview).hwnd, winuser::GCLP_HBRBACKGROUND, std::mem::transmute(brush));
+    }
 }
