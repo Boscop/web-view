@@ -4,7 +4,7 @@ use web_view::*;
 
 fn main() {
     web_view::builder()
-        .title("Change title with input")
+        .title("Fullscreen example")
         .content(Content::Html(HTML))
         .size(800, 100)
         .resizable(true)
