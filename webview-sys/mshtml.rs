@@ -7,7 +7,7 @@ use std::ffi::{CStr, OsStr};
 use std::os::windows::ffi::OsStrExt;
 use std::ptr;
 use winapi::shared::{basetsd, minwindef, ntdef, windef, winerror};
-use winapi::um::{errhandlingapi, libloaderapi, ole2, winuser, wingdi};
+use winapi::um::{errhandlingapi, libloaderapi, ole2, wingdi, winuser};
 use winreg::{enums, RegKey};
 
 type ExternalInvokeCallback = extern "C" fn(webview: *mut WebView, arg: *const c_char);
@@ -47,8 +47,8 @@ struct WebView {
     hwnd: windef::HWND,
     browser: *mut *mut c_void, // TODO: this needs to be IOleObject
     is_fullscreen: minwindef::BOOL,
-    saved_style: minwindef::DWORD,
-    saved_ex_style: minwindef::DWORD,
+    saved_style: ntdef::LONG,
+    saved_ex_style: ntdef::LONG,
     saved_rect: windef::RECT,
     userdata: *mut c_void,
 }
@@ -235,7 +235,11 @@ fn to_wstring(s: &str) -> Vec<u16> {
 extern "C" fn webview_set_color(webview: *mut WebView, r: u8, g: u8, b: u8, a: u8) {
     unsafe {
         let brush = wingdi::CreateSolidBrush(wingdi::RGB(r, g, b));
-        winuser::SetClassLongPtrW((*webview).hwnd, winuser::GCLP_HBRBACKGROUND, std::mem::transmute(brush));
+        winuser::SetClassLongPtrW(
+            (*webview).hwnd,
+            winuser::GCLP_HBRBACKGROUND,
+            std::mem::transmute(brush),
+        );
     }
 }
 
@@ -246,5 +250,68 @@ extern "C" fn webview_set_title(webview: *mut WebView, title: *const c_char) {
         let title = c_title.to_string_lossy();
         let title = to_wstring(&title);
         winuser::SetWindowTextW((*webview).hwnd, title.as_ptr());
+    }
+}
+
+#[no_mangle]
+extern "C" fn webview_set_fullscreen(webview: *mut WebView, fullscreen: c_int) {
+    unsafe {
+        let mut webview = webview.as_mut().unwrap();
+
+        if webview.is_fullscreen == 0 {
+            webview.saved_style = winuser::GetWindowLongW(webview.hwnd, winuser::GWL_STYLE);
+            webview.saved_ex_style = winuser::GetWindowLongW(webview.hwnd, winuser::GWL_EXSTYLE);
+            winuser::GetWindowRect(webview.hwnd, &mut webview.saved_rect as *mut _);
+        }
+
+        webview.is_fullscreen = fullscreen;
+        if fullscreen > 0 {
+            let mut monitor_info: winuser::MONITORINFO = Default::default();
+            monitor_info.cbSize = std::mem::size_of::<winuser::MONITORINFO>() as minwindef::DWORD;
+
+            winuser::SetWindowLongW(
+                webview.hwnd,
+                winuser::GWL_STYLE,
+                webview.saved_style & !(winuser::WS_CAPTION | winuser::WS_THICKFRAME) as i32,
+            );
+
+            winuser::SetWindowLongW(
+                webview.hwnd,
+                winuser::GWL_EXSTYLE,
+                webview.saved_ex_style
+                    & !(winuser::WS_EX_DLGMODALFRAME
+                        | winuser::WS_EX_WINDOWEDGE
+                        | winuser::WS_EX_CLIENTEDGE
+                        | winuser::WS_EX_STATICEDGE) as i32,
+            );
+
+            let monitor = winuser::MonitorFromWindow(webview.hwnd, winuser::MONITOR_DEFAULTTONEAREST);
+            winuser::GetMonitorInfoW(monitor, &mut monitor_info as *mut _);
+
+            let monitor_rect = monitor_info.rcMonitor;
+
+            winuser::SetWindowPos(
+                webview.hwnd,
+                ptr::null_mut(),
+                monitor_rect.left,
+                monitor_rect.top,
+                monitor_rect.right - monitor_rect.left,
+                monitor_rect.bottom - monitor_rect.top,
+                winuser::SWP_NOZORDER | winuser::SWP_NOACTIVATE | winuser::SWP_FRAMECHANGED,
+            );
+        } else {
+            winuser::SetWindowLongW(webview.hwnd, winuser::GWL_STYLE, webview.saved_style);
+            winuser::SetWindowLongW(webview.hwnd, winuser::GWL_EXSTYLE, webview.saved_ex_style);
+            let rect = &webview.saved_rect;
+            winuser::SetWindowPos(
+                webview.hwnd,
+                ptr::null_mut(),
+                rect.left,
+                rect.top,
+                rect.right - rect.left,
+                rect.bottom - rect.top,
+                winuser::SWP_NOZORDER | winuser::SWP_NOACTIVATE | winuser::SWP_FRAMECHANGED,
+            );
+        }
     }
 }

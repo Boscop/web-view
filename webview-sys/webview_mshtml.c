@@ -884,47 +884,6 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
   PostMessageW(wv->hwnd, WM_WEBVIEW_DISPATCH, (WPARAM)fn, (LPARAM)arg);
 }
 
-WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
-  struct mshtml_webview* wv = (struct mshtml_webview*)w;
-  if (wv->is_fullscreen == !!fullscreen) {
-    return;
-  }
-  if (wv->is_fullscreen == 0) {
-    wv->saved_style = GetWindowLong(wv->hwnd, GWL_STYLE);
-    wv->saved_ex_style = GetWindowLong(wv->hwnd, GWL_EXSTYLE);
-    GetWindowRect(wv->hwnd, &wv->saved_rect);
-  }
-  wv->is_fullscreen = !!fullscreen;
-  if (fullscreen) {
-    MONITORINFO monitor_info;
-    SetWindowLong(wv->hwnd, GWL_STYLE,
-                  wv->saved_style & ~(WS_CAPTION | WS_THICKFRAME));
-    SetWindowLong(wv->hwnd, GWL_EXSTYLE,
-                  wv->saved_ex_style &
-                      ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE |
-                        WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
-    monitor_info.cbSize = sizeof(monitor_info);
-    GetMonitorInfo(MonitorFromWindow(wv->hwnd, MONITOR_DEFAULTTONEAREST),
-                   &monitor_info);
-    RECT r;
-    r.left = monitor_info.rcMonitor.left;
-    r.top = monitor_info.rcMonitor.top;
-    r.right = monitor_info.rcMonitor.right;
-    r.bottom = monitor_info.rcMonitor.bottom;
-    SetWindowPos(wv->hwnd, NULL, r.left, r.top, r.right - r.left,
-                 r.bottom - r.top,
-                 SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-  } else {
-    SetWindowLong(wv->hwnd, GWL_STYLE, wv->saved_style);
-    SetWindowLong(wv->hwnd, GWL_EXSTYLE, wv->saved_ex_style);
-    SetWindowPos(wv->hwnd, NULL, wv->saved_rect.left,
-                 wv->saved_rect.top,
-                 wv->saved_rect.right - wv->saved_rect.left,
-                 wv->saved_rect.bottom - wv->saved_rect.top,
-                 SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-  }
-}
-
 /* These are missing parts from MinGW */
 #ifndef __IFileDialog_INTERFACE_DEFINED__
 #define __IFileDialog_INTERFACE_DEFINED__
