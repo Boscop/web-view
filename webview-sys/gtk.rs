@@ -5,6 +5,7 @@
 use glib_sys::*;
 use gobject_sys::g_signal_connect_data;
 use gtk_sys::*;
+use javascriptcore_sys::{JSValueToStringCopy, JSStringGetMaximumUTF8CStringSize, JSStringGetUTF8CString, JSStringRelease};
 use libc::{c_char, c_int, c_void};
 use std::ffi::CStr;
 use std::mem;
@@ -177,12 +178,6 @@ extern "C" fn webview_new(
 }
 
 extern "C" {
-    fn external_message_received_cb(
-        m: *mut WebKitUserContentManager,
-        r: *mut WebKitJavascriptResult,
-        arg: gpointer,
-    );
-
     fn webview_check_url(url: *const c_char) -> *const c_char;
 
     fn webview_load_changed_cb(webview: *mut WebKitWebView, event: WebKitLoadEvent, arg: gpointer);
@@ -198,4 +193,22 @@ extern "C" fn webview_context_menu_cb(
     userdata: gboolean,
 ) -> gboolean {
     GTRUE
+}
+
+extern "C" fn external_message_received_cb(
+    m: *mut WebKitUserContentManager,
+    r: *mut WebKitJavascriptResult,
+    arg: gpointer,
+) {
+    unsafe {
+        let webview: *mut WebView = mem::transmute(arg);
+        let context = webkit_javascript_result_get_global_context(r);
+        let value = webkit_javascript_result_get_value(r);
+        let js = JSValueToStringCopy(context, value, ptr::null_mut());
+        let n = JSStringGetMaximumUTF8CStringSize(js);
+        let mut s = Vec::new();
+        s.reserve(n);
+        JSStringGetUTF8CString(js, s.as_mut_ptr(), n);
+        ((*webview).external_invoke_cb)(webview, s.as_ptr());
+    }
 }

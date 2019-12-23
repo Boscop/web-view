@@ -32,25 +32,6 @@ WEBVIEW_API void* webview_get_user_data(webview_t w) {
 	return wv->userdata;
 }
 
-void external_message_received_cb(WebKitUserContentManager *m,
-                                         WebKitJavascriptResult *r,
-                                         gpointer arg) {
-  (void)m;
-  struct gtk_webview *w = (struct gtk_webview *)arg;
-  if (w->external_invoke_cb == NULL) {
-    return;
-  }
-  JSGlobalContextRef context = webkit_javascript_result_get_global_context(r);
-  JSValueRef value = webkit_javascript_result_get_value(r);
-  JSStringRef js = JSValueToStringCopy(context, value, NULL);
-  size_t n = JSStringGetMaximumUTF8CStringSize(js);
-  char *s = g_new(char, n);
-  JSStringGetUTF8CString(js, s, n);
-  w->external_invoke_cb(w, s);
-  JSStringRelease(js);
-  g_free(s);
-}
-
 void webview_load_changed_cb(WebKitWebView *webview,
                                     WebKitLoadEvent event, gpointer arg) {
   (void)webview;
