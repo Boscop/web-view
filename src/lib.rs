@@ -348,7 +348,12 @@ impl<'a, T> WebView<'a, T> {
         &mut self.user_data_wrapper_mut().inner
     }
 
-    /// Forces the `WebView` instance to end, without dropping.
+    #[deprecated(note = "Please use exit instead")]
+    pub fn terminate(&mut self) {
+        self.exit();
+    }
+
+    /// Gracefully exits the webview
     pub fn exit(&mut self) {
         unsafe { webview_exit(self.inner) }
     }
