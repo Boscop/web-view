@@ -165,11 +165,6 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
   return ((struct gtk_webview*)w)->should_exit;
 }
 
-WEBVIEW_API void webview_set_title(webview_t w, const char *title) {
-  struct gtk_webview *wv = (struct webview *)w;
-  gtk_window_set_title(GTK_WINDOW(wv->window), title);
-}
-
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
   struct gtk_webview *wv = (struct webview *)w;
   if (fullscreen) {
