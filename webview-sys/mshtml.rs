@@ -6,7 +6,7 @@ use libc::{c_char, c_int, c_void};
 use std::ffi::{CStr, OsStr};
 use std::os::windows::ffi::OsStrExt;
 use std::ptr;
-use winapi::shared::{basetsd, minwindef, ntdef, windef};
+use winapi::shared::{basetsd, minwindef, ntdef, windef, winerror};
 use winapi::um::{errhandlingapi, libloaderapi, ole2, winuser};
 use winreg::{enums, RegKey};
 
@@ -103,7 +103,11 @@ extern "C" fn webview_new(
     }
 
     unsafe {
-        ole2::OleInitialize(ptr::null_mut());
+        let result = ole2::OleInitialize(ptr::null_mut());
+
+        if result != winerror::S_OK && result != winerror::S_FALSE {
+            return ptr::null_mut();
+        }
 
         let class_name = to_wstring("webview");
         let h_instance = libloaderapi::GetModuleHandleA(ptr::null());
