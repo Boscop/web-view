@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            #counter-message.preload {
+                display: none;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 id="counter-message" class="preload"></h1>
+        <script>
+            function init() {
+                let h1 = document.getElementById('counter-message');
+                h1.classList.remove('preload');
+                setCurrentCount(0);
+                setTimeout(tick, 500, 0);
+            }
+            function tick() {
+                window.external.invoke('update');
+                setTimeout(tick, 1000);
+            }
+
+            function setCurrentCount(count) {
+                if (count > 10) {
+                    return window.external.invoke('exit');
+                }
+                let h1 = document.getElementById('counter-message');
+                let rem = 11 - count;
+                let suffix = rem < 2 ? ' second' : ' seconds';
+                h1.innerText = 'Exiting in ' + (11 - count) + suffix;
+                document.body.appendChild(h1);
+            }
+
+            (function() {
+                window.external.invoke('init');
+            })();
+        </script>
+    </body>
+</html>

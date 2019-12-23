@@ -37,7 +37,6 @@ extern {
 	pub fn webview_free(this: *mut CWebView);
 	pub fn webview_new(title: *const c_char, url: *const c_char, width: c_int, height: c_int, resizable: c_int, debug: c_int, external_invoke_cb: Option<ErasedExternalInvokeFn>, userdata: *mut c_void) -> *mut CWebView;
 	pub fn webview_loop(this: *mut CWebView, blocking: c_int) -> c_int;
-	pub fn webview_terminate(this: *mut CWebView);
 	pub fn webview_exit(this: *mut CWebView);
 	pub fn webview_get_user_data(this: *mut CWebView) -> *mut c_void;
 	pub fn webview_dispatch(this: *mut CWebView, f: Option<ErasedDispatchFn>, arg: *mut c_void);

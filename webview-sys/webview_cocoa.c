@@ -88,9 +88,9 @@ static id create_menu_item(id title, const char *action, const char *key) {
 }
 
 static void webview_window_will_close(id self, SEL cmd, id notification) {
-  struct cocoa_webview *w =
+  struct cocoa_webview* wv =
       (struct cocoa_webview *)objc_getAssociatedObject(self, "webview");
-  webview_terminate(w);
+  wv->priv.should_exit = 1;
 }
 
 static void webview_external_invoke(id self, SEL cmd, id contentController,
@@ -633,11 +633,6 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
   context->arg = arg;
   context->fn = fn;
   dispatch_async_f(dispatch_get_main_queue(), context, webview_dispatch_cb);
-}
-
-WEBVIEW_API void webview_terminate(webview_t w) {
-  struct cocoa_webview* wv = (struct cocoa_webview*)w;
-  wv->priv.should_exit = 1;
 }
 
 WEBVIEW_API void webview_exit(webview_t w) {
