@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <style>
             #counter-message.preload {
                 display: none;
+            }
+            #counter-message {
+                display: block;
             }
         </style>
     </head>
@@ -11,11 +15,12 @@
         <h1 id="counter-message" class="preload"></h1>
         <script>
             function init() {
-                let h1 = document.getElementById('counter-message');
-                h1.classList.remove('preload');
+                var h1 = document.getElementById('counter-message');
+                h1.setAttribute('class', '');
                 setCurrentCount(0);
-                setTimeout(tick, 500, 0);
+                setTimeout(tick, 500);
             }
+
             function tick() {
                 window.external.invoke('update');
                 setTimeout(tick, 1000);
@@ -25,16 +30,13 @@
                 if (count > 10) {
                     return window.external.invoke('exit');
                 }
-                let h1 = document.getElementById('counter-message');
-                let rem = 11 - count;
-                let suffix = rem < 2 ? ' second' : ' seconds';
+                var h1 = document.getElementById('counter-message');
+                var rem = 11 - count;
+                var suffix = rem < 2 ? ' second' : ' seconds';
                 h1.innerText = 'Exiting in ' + (11 - count) + suffix;
                 document.body.appendChild(h1);
             }
-
-            (function() {
-                window.external.invoke('init');
-            })();
+            external.invoke('init');
         </script>
     </body>
 </html>
