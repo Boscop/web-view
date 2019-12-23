@@ -830,6 +830,7 @@ int webview_init(struct mshtml_webview *wv) {
   DWORD style;
   RECT clientRect;
   RECT rect;
+  HRESULT oleInitCode;
 
   if (webview_fix_ie_compat_mode() < 0) {
     return -1;
@@ -839,7 +840,9 @@ int webview_init(struct mshtml_webview *wv) {
   if (hInstance == NULL) {
     return -1;
   }
-  if (OleInitialize(NULL) != S_OK) {
+	
+  oleInitCode = OleInitialize(NULL);
+  if (oleInitCode != S_OK && oleInitCode != S_FALSE) {
     return -1;
   }
   ZeroMemory(&wc, sizeof(WNDCLASSEX));
