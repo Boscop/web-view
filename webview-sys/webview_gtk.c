@@ -83,7 +83,7 @@ static void webview_load_changed_cb(WebKitWebView *webview,
 
 static void webview_destroy_cb(GtkWidget *widget, gpointer arg) {
   (void)widget;
-  webview_terminate((webview_t)arg);
+  webview_exit((webview_t)arg);
 }
 
 static gboolean webview_context_menu_cb(WebKitWebView *webview,
