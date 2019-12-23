@@ -64,6 +64,25 @@ impl<'a: 'b, 'b, T: 'a> DialogBuilder<'a, 'b, T> {
         })
     }
 
+    /// Opens a new save file dialog and returns the chosen file path.
+    pub fn save_file(&mut self) -> WVResult<Option<PathBuf>> {
+        // TODO implement filters for save file dialog
+
+        self.dialog(
+            String::from(""),
+            String::from(""),
+            DialogType::Save,
+            DialogFlags::FILE,
+        )
+        .map(|path| {
+            if path.is_empty() {
+                None
+            } else {
+                Some(PathBuf::from(path))
+            }
+        })
+    }
+
     /// Opens a new choose directory dialog as returns the chosen directory path.
     pub fn choose_directory<S, P>(
         &mut self,
