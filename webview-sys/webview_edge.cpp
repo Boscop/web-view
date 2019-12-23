@@ -242,7 +242,8 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         DestroyWindow(hwnd);
         break;
     case WM_DESTROY:
-        w->terminate();
+        DestroyWindow(w->m_window);
+        PostQuitMessage(0);
         break;
     default:
         return DefWindowProc(hwnd, msg, wp, lp);
@@ -591,7 +592,9 @@ WEBVIEW_API void webview_terminate(webview_t w)
 
 WEBVIEW_API void webview_exit(webview_t w)
 {
-    webview_terminate(w);
+    webview::webview* wv = static_cast<webview::webview*>(w);
+    DestroyWindow(wv->m_window);
+    OleUninitialize();
 }
 
 WEBVIEW_API void webview_debug(const char *format, ...)
