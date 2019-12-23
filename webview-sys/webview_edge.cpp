@@ -594,7 +594,6 @@ WEBVIEW_API void webview_exit(webview_t w)
 {
     webview::webview* wv = static_cast<webview::webview*>(w);
     DestroyWindow(wv->m_window);
-    OleUninitialize();
 }
 
 WEBVIEW_API void webview_debug(const char *format, ...)
