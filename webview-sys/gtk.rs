@@ -3,8 +3,9 @@
 #![allow(unused_variables)]
 
 use gdk_sys::GdkRGBA;
+use gio_sys::GAsyncResult;
 use glib_sys::*;
-use gobject_sys::g_signal_connect_data;
+use gobject_sys::{g_signal_connect_data, GObject};
 use gtk_sys::*;
 use javascriptcore_sys::{
     JSStringGetMaximumUTF8CStringSize, JSStringGetUTF8CString, JSStringRelease, JSValueToStringCopy,
@@ -183,8 +184,6 @@ extern "C" fn webview_new(
 extern "C" {
     fn webview_check_url(url: *const c_char) -> *const c_char;
 
-    fn webview_load_changed_cb(webview: *mut WebKitWebView, event: WebKitLoadEvent, arg: gpointer);
-
     fn webview_destroy_cb(widget: *mut GtkWidget, arg: gpointer);
 }
 
@@ -246,5 +245,54 @@ extern "C" fn webview_set_color(webview: *mut WebView, r: u8, g: u8, b: u8, a: u
     };
     unsafe {
         webkit_web_view_set_background_color(mem::transmute((*webview).webview), &color);
+    }
+}
+
+extern "C" fn webview_load_changed_cb(
+    webview: *mut WebKitWebView,
+    event: WebKitLoadEvent,
+    arg: gpointer,
+) {
+    unsafe {
+        let w: *mut WebView = mem::transmute(arg);
+        if event == WEBKIT_LOAD_FINISHED {
+            (*w).ready = 1;
+        }
+    }
+}
+
+extern "C" fn webview_eval_finished(
+    object: *mut GObject,
+    result: *mut GAsyncResult,
+    userdata: gpointer,
+) {
+    unsafe {
+        let webview: *mut WebView = mem::transmute(userdata);
+        (*webview).js_busy = 0;
+    }
+}
+
+#[no_mangle]
+extern "C" fn webview_eval(webview: *mut WebView, js: *const c_char) -> c_int {
+    unsafe {
+        while (*webview).ready == 0 {
+            g_main_context_iteration(ptr::null_mut(), GTRUE);
+        }
+
+        (*webview).js_busy = 1;
+
+        webkit_web_view_run_javascript(
+            mem::transmute((*webview).webview),
+            js,
+            ptr::null_mut(),
+            Some(webview_eval_finished),
+            mem::transmute(webview),
+        );
+
+        while (*webview).js_busy == 1 {
+            g_main_context_iteration(ptr::null_mut(), GTRUE);
+        }
+
+        0
     }
 }

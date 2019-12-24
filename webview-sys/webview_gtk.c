@@ -23,15 +23,6 @@ struct gtk_webview {
   void *userdata;
 };
 
-void webview_load_changed_cb(WebKitWebView *webview,
-                                    WebKitLoadEvent event, gpointer arg) {
-  (void)webview;
-  struct gtk_webview *w = (struct gtk_webview *)arg;
-  if (event == WEBKIT_LOAD_FINISHED) {
-    w->ready = 1;
-  }
-}
-
 void webview_destroy_cb(GtkWidget *widget, gpointer arg) {
   (void)widget;
   webview_terminate((webview_t)arg);
@@ -90,28 +81,6 @@ WEBVIEW_API void webview_dialog(webview_t w,
     gtk_dialog_run(GTK_DIALOG(dlg));
     gtk_widget_destroy(dlg);
   }
-}
-
-static void webview_eval_finished(GObject *object, GAsyncResult *result,
-                                  gpointer userdata) {
-  (void)object;
-  (void)result;
-  struct gtk_webview *w = (struct gtk_webview *)userdata;
-  w->js_busy = 0;
-}
-
-WEBVIEW_API int webview_eval(webview_t w, const char *js) {
-  struct gtk_webview *wv = (struct webview *)w;
-  while (wv->ready == 0) {
-    g_main_context_iteration(NULL, TRUE);
-  }
-  wv->js_busy = 1;
-  webkit_web_view_run_javascript(WEBKIT_WEB_VIEW(wv->webview), js, NULL,
-                                 webview_eval_finished, w);
-  while (wv->js_busy) {
-    g_main_context_iteration(NULL, TRUE);
-  }
-  return 0;
 }
 
 static gboolean webview_dispatch_wrapper(gpointer userdata) {
