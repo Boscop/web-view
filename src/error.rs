@@ -24,8 +24,6 @@ pub enum Error {
     /// Failure to dispatch a closure to a WebView instance via a handle, likely because the
     /// WebView was dropped.
     Dispatch,
-    /// Not an error, but a graceful shutdown message from the user
-    QueueClose,
     /// An user-specified error occurred. For use inside invoke and dispatch closures.
     Custom(Box<dyn CustomError>),
 }
@@ -60,7 +58,6 @@ impl Display for Error {
                 f,
                 "Closure could not be dispatched. WebView was likely dropped."
             ),
-            Error::QueueClose => write!(f, "request to close window"),
             Error::Custom(e) => write!(f, "Error: {}", e),
         }
     }
