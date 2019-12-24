@@ -241,7 +241,7 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         DestroyWindow(hwnd);
         break;
     case WM_DESTROY:
-        w->quit();
+        w->exit();
         break;
     default:
         return DefWindowProc(hwnd, msg, wp, lp);
