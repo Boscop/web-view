@@ -1,4 +1,3 @@
-#![windows_subsystem = "windows"]
 
 extern crate web_view;
 
@@ -15,6 +14,7 @@ fn main() {
         .invoke_handler(invoke_handler)
         .run()
         .unwrap();
+        println!("res: {:?}", res)
 }
 
 fn invoke_handler(wv: &mut WebView<usize>, arg: &str) -> WVResult {
