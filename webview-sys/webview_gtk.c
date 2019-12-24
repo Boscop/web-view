@@ -23,15 +23,6 @@ struct gtk_webview {
   void *userdata;
 };
 
-WEBVIEW_API void webview_free(webview_t w) {
-	free(w);
-}
-
-WEBVIEW_API void* webview_get_user_data(webview_t w) {
-  struct gtk_webview *wv = (struct webview *)w;
-	return wv->userdata;
-}
-
 void webview_load_changed_cb(WebKitWebView *webview,
                                     WebKitLoadEvent event, gpointer arg) {
   (void)webview;
@@ -44,20 +35,6 @@ void webview_load_changed_cb(WebKitWebView *webview,
 void webview_destroy_cb(GtkWidget *widget, gpointer arg) {
   (void)widget;
   webview_terminate((webview_t)arg);
-}
-
-
-WEBVIEW_API int webview_loop(webview_t w, int blocking) {
-  gtk_main_iteration_do(blocking);
-  return ((struct gtk_webview*)w)->should_exit;
-}
-
-WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
-                                   uint8_t b, uint8_t a) {
-  struct gtk_webview *wv = (struct webview *)w;
-  GdkRGBA color = {r / 255.0, g / 255.0, b / 255.0, a / 255.0};
-  webkit_web_view_set_background_color(WEBKIT_WEB_VIEW(wv->webview),
-                                       &color);
 }
 
 WEBVIEW_API void webview_dialog(webview_t w,

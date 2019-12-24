@@ -2,11 +2,14 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
+use gdk_sys::GdkRGBA;
 use glib_sys::*;
 use gobject_sys::g_signal_connect_data;
 use gtk_sys::*;
-use javascriptcore_sys::{JSValueToStringCopy, JSStringGetMaximumUTF8CStringSize, JSStringGetUTF8CString, JSStringRelease};
-use libc::{c_char, c_int, c_void};
+use javascriptcore_sys::{
+    JSStringGetMaximumUTF8CStringSize, JSStringGetUTF8CString, JSStringRelease, JSValueToStringCopy,
+};
+use libc::{c_char, c_double, c_int, c_void};
 use std::ffi::CStr;
 use std::mem;
 use std::ptr;
@@ -210,5 +213,38 @@ extern "C" fn external_message_received_cb(
         s.reserve(n);
         JSStringGetUTF8CString(js, s.as_mut_ptr(), n);
         ((*webview).external_invoke_cb)(webview, s.as_ptr());
+    }
+}
+
+#[no_mangle]
+extern "C" fn webview_get_user_data(webview: *mut WebView) -> *mut c_void {
+    unsafe { (*webview).userdata }
+}
+
+#[no_mangle]
+extern "C" fn webview_free(webview: *mut WebView) {
+    unsafe {
+        let _ = Box::from_raw(webview);
+    }
+}
+
+#[no_mangle]
+extern "C" fn webview_loop(webview: *mut WebView, blocking: c_int) -> c_int {
+    unsafe {
+        gtk_main_iteration_do(blocking);
+        (*webview).should_exit
+    }
+}
+
+#[no_mangle]
+extern "C" fn webview_set_color(webview: *mut WebView, r: u8, g: u8, b: u8, a: u8) {
+    let color = GdkRGBA {
+        red: r as c_double / 255.0,
+        green: g as c_double / 255.0,
+        blue: b as c_double / 255.0,
+        alpha: a as c_double / 255.0,
+    };
+    unsafe {
+        webkit_web_view_set_background_color(mem::transmute((*webview).webview), &color);
     }
 }

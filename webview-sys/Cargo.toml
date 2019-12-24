@@ -25,6 +25,7 @@ gtk-sys = "0.9"
 glib-sys = "0.9"
 gobject-sys = "0.9"
 webkit2gtk-sys = { version = "0.10", features = ["v2_8"] }
+gdk-sys = "0.9"
 libc = "0.2"
 
 [build-dependencies]
