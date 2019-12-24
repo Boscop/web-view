@@ -2,6 +2,7 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
+use bitflags::bitflags;
 use gdk_sys::{gdk_threads_add_idle, GdkRGBA};
 use gio_sys::GAsyncResult;
 use glib_sys::*;
@@ -339,5 +340,109 @@ extern "C" fn webview_dispatch(webview: *mut WebView, func: DispatchFn, arg: *mu
         }
 
         g_async_queue_unlock(queue);
+    }
+}
+
+#[repr(C)]
+pub enum DialogType {
+    Open = 0,
+    Save = 1,
+    Alert = 2,
+}
+
+bitflags! {
+    #[repr(C)]
+    pub struct DialogFlags: u32 {
+        const FILE      = 0b0000;
+        const DIRECTORY = 0b0001;
+        const INFO      = 0b0010;
+        const WARNING   = 0b0100;
+        const ERROR     = 0b0110;
+    }
+}
+
+#[no_mangle]
+extern "C" fn webview_dialog(
+    webview: *mut WebView,
+    dialog_type: DialogType,
+    flags: DialogFlags,
+    title: *const c_char,
+    arg: *const c_char,
+    result: *mut c_char,
+    resultsz: usize,
+) {
+    unsafe {
+        match dialog_type {
+            DialogType::Open | DialogType::Save => {
+                let (action, button_text) = match dialog_type {
+                    DialogType::Open => {
+                        if flags == DialogFlags::DIRECTORY {
+                            (
+                                GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
+                                CStr::from_bytes_with_nul_unchecked(b"_Open\0"),
+                            )
+                        } else {
+                            (
+                                GTK_FILE_CHOOSER_ACTION_OPEN,
+                                CStr::from_bytes_with_nul_unchecked(b"_Open\0"),
+                            )
+                        }
+                    }
+                    DialogType::Save => (
+                        GTK_FILE_CHOOSER_ACTION_SAVE,
+                        CStr::from_bytes_with_nul_unchecked(b"_Save\0"),
+                    ),
+                    _ => unreachable!(),
+                };
+
+                let dialog = gtk_file_chooser_dialog_new(
+                    title,
+                    mem::transmute((*webview).window),
+                    action,
+                    CStr::from_bytes_with_nul_unchecked(b"_Cancel\0").as_ptr(),
+                    GTK_RESPONSE_CANCEL,
+                    button_text.as_ptr(),
+                    GTK_RESPONSE_ACCEPT,
+                    ptr::null_mut::<c_void>(),
+                );
+
+                gtk_file_chooser_set_local_only(mem::transmute(dialog), GFALSE);
+                gtk_file_chooser_set_select_multiple(mem::transmute(dialog), GFALSE);
+                gtk_file_chooser_set_show_hidden(mem::transmute(dialog), GTRUE);
+                gtk_file_chooser_set_do_overwrite_confirmation(mem::transmute(dialog), GTRUE);
+                gtk_file_chooser_set_create_folders(mem::transmute(dialog), GTRUE);
+                let response = gtk_dialog_run(mem::transmute(dialog));
+                if response == GTK_RESPONSE_ACCEPT {
+                    let filename = gtk_file_chooser_get_filename(mem::transmute(dialog));
+                    g_strlcpy(result, filename, resultsz);
+                    g_free(mem::transmute(filename));
+                }
+                gtk_widget_destroy(dialog);
+            }
+            DialogType::Alert => {
+                let message_type = match flags {
+                    DialogFlags::INFO => GTK_MESSAGE_INFO,
+                    DialogFlags::WARNING => GTK_MESSAGE_WARNING,
+                    DialogFlags::ERROR => GTK_MESSAGE_ERROR,
+                    _ => GTK_MESSAGE_OTHER,
+                };
+                let dialog = gtk_message_dialog_new(
+                    mem::transmute((*webview).window),
+                    GTK_DIALOG_MODAL,
+                    message_type,
+                    GTK_BUTTONS_OK,
+                    CStr::from_bytes_with_nul_unchecked(b"%s\0").as_ptr(),
+                    title,
+                );
+                gtk_message_dialog_format_secondary_text(
+                    mem::transmute(dialog),
+                    CStr::from_bytes_with_nul_unchecked(b"%s\0").as_ptr(),
+                    arg,
+                );
+
+                gtk_dialog_run(mem::transmute(dialog));
+                gtk_widget_destroy(dialog);
+            }
+        }
     }
 }
