@@ -14,26 +14,28 @@
     <body>
         <h1 id="counter-message" class="preload"></h1>
         <script>
+            var t;
             function init() {
                 var h1 = document.getElementById('counter-message');
                 h1.setAttribute('class', '');
                 setCurrentCount(0);
-                setTimeout(tick, 500);
+                t = setTimeout(tick, 500);
             }
 
             function tick() {
                 window.external.invoke('update');
-                setTimeout(tick, 1000);
+                t = setTimeout(tick, 300);
             }
 
             function setCurrentCount(count) {
                 if (count > 10) {
+                    clearTimeout(t);
                     return window.external.invoke('exit');
                 }
                 var h1 = document.getElementById('counter-message');
                 var rem = 11 - count;
                 var suffix = rem < 2 ? ' second' : ' seconds';
-                h1.innerText = 'Exiting in ' + (11 - count) + suffix;
+                h1.innerText = 'Exiting in ' + rem + suffix;
                 document.body.appendChild(h1);
             }
             external.invoke('init');
