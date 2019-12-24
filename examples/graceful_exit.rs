@@ -4,7 +4,7 @@ extern crate web_view;
 use web_view::*;
 
 fn main() {
-    web_view::builder()
+    let res = web_view::builder()
         .title("Minimal webview example")
         .content(Content::Html(include_str!("graceful_exit/index.html")))
         .size(800, 600)
