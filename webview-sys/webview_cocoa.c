@@ -637,9 +637,8 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
 
 WEBVIEW_API void webview_exit(webview_t w) {
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
-  id app = objc_msgSend((id)objc_getClass("NSApplication"),
-                        sel_registerName("sharedApplication"));
-  objc_msgSend(app, sel_registerName("terminate:"), app);
+  objc_msgSend(wv->priv.window,
+                        sel_registerName("performClose:"), wv->priv.window);
 }
 
 WEBVIEW_API void webview_print_log(const char *s) { printf("%s\n", s); }
