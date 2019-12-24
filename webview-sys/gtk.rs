@@ -2,7 +2,7 @@
 #![allow(unused_imports)]
 #![allow(unused_variables)]
 
-use gdk_sys::GdkRGBA;
+use gdk_sys::{gdk_threads_add_idle, GdkRGBA};
 use gio_sys::GAsyncResult;
 use glib_sys::*;
 use gobject_sys::{g_signal_connect_data, GObject};
@@ -294,5 +294,50 @@ extern "C" fn webview_eval(webview: *mut WebView, js: *const c_char) -> c_int {
         }
 
         0
+    }
+}
+
+type DispatchFn = extern "C" fn(webview: *mut WebView, arg: *mut c_void);
+
+#[repr(C)]
+struct DispatchArg {
+    func: DispatchFn,
+    webview: *mut WebView,
+    arg: *mut c_void,
+}
+
+extern "C" fn webview_dispatch_wrapper(userdata: gpointer) -> gboolean {
+    unsafe {
+        let webview: *mut WebView = mem::transmute(userdata);
+
+        loop {
+            let arg: *mut DispatchArg = mem::transmute(g_async_queue_try_pop((*webview).queue));
+            if arg.is_null() {
+                break;
+            }
+
+            ((*arg).func)(webview, (*arg).arg);
+            let _ = Box::from_raw(arg);
+        }
+
+        GFALSE
+    }
+}
+
+#[no_mangle]
+extern "C" fn webview_dispatch(webview: *mut WebView, func: DispatchFn, arg: *mut c_void) {
+    let arg = Box::new(DispatchArg { func, webview, arg });
+
+    unsafe {
+        let queue = (*webview).queue;
+
+        g_async_queue_lock(queue);
+        g_async_queue_push_unlocked(queue, mem::transmute(Box::into_raw(arg)));
+
+        if g_async_queue_length_unlocked(queue) == 1 {
+            gdk_threads_add_idle(Some(webview_dispatch_wrapper), mem::transmute(webview));
+        }
+
+        g_async_queue_unlock(queue);
     }
 }

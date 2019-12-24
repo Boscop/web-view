@@ -83,36 +83,6 @@ WEBVIEW_API void webview_dialog(webview_t w,
   }
 }
 
-static gboolean webview_dispatch_wrapper(gpointer userdata) {
-  struct gtk_webview *w = (struct gtk_webview *)userdata;
-  for (;;) {
-    struct webview_dispatch_arg *arg =
-        (struct webview_dispatch_arg *)g_async_queue_try_pop(w->queue);
-    if (arg == NULL) {
-      break;
-    }
-    (arg->fn)(w, arg->arg);
-    g_free(arg);
-  }
-  return FALSE;
-}
-
-WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
-                                  void *arg) {
-  struct gtk_webview *wv = (struct webview *)w;
-  struct webview_dispatch_arg *context =
-      (struct webview_dispatch_arg *)g_new(struct webview_dispatch_arg, 1);
-  context->w = w;
-  context->arg = arg;
-  context->fn = fn;
-  g_async_queue_lock(wv->queue);
-  g_async_queue_push_unlocked(wv->queue, context);
-  if (g_async_queue_length_unlocked(wv->queue) == 1) {
-    gdk_threads_add_idle(webview_dispatch_wrapper, w);
-  }
-  g_async_queue_unlock(wv->queue);
-}
-
 WEBVIEW_API void webview_terminate(webview_t w) {
   struct gtk_webview *wv = (struct webview *)w;
   wv->should_exit = 1;
