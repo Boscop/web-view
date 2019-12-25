@@ -149,7 +149,7 @@ For more usage info please check out the [examples](https://github.com/Boscop/we
 
 ## Known Issues and Limitations
  
-* `Edge` feature switch not working on Windows 10. As of version `0.5.4` the Edge feature switch seems to have regressed and will not render content reliably. Trying to run the application with `cargo run` will always display an empty window before faulting, but if you run the binary created during the build process directly it will work as expected. For more information [see issue #96](https://github.com/Boscop/web-view/issues/96).
+* `Edge` feature switch not working on Windows 10 if run as `Administrator`. This was the root cause of the issue raised in [#96](https://github.com/Boscop/web-view/issues/96) and is the result of a bug in `Microsoft.Toolkit.Win32` which is [tracked here](https://github.com/windows-toolkit/Microsoft.Toolkit.Win32/issues/50).
 * `Edge` sandbox restrictions. If you decide to make use of an embedded Web Server to return your content you will need to run the following command to bypass the restriction that prevents communication with `localhost`:
  
     ``` powershell
