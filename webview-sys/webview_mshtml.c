@@ -797,26 +797,26 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
 }
 
 #define WEBVIEW_KEY_FEATURE_BROWSER_EMULATION                                  \
-  "Software\\Microsoft\\Internet "                                             \
-  "Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION"
+  L"Software\\Microsoft\\Internet "                                            \
+   "Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION"
 
 static int webview_fix_ie_compat_mode() {
   HKEY hKey;
   DWORD ie_version = 11000;
-  TCHAR appname[MAX_PATH + 1];
-  TCHAR *p;
-  if (GetModuleFileName(NULL, appname, MAX_PATH + 1) == 0) {
+  WCHAR appname[MAX_PATH + 1];
+  WCHAR *p;
+  if (GetModuleFileNameW(NULL, appname, MAX_PATH + 1) == 0) {
     return -1;
   }
-  for (p = &appname[strlen(appname) - 1]; p != appname && *p != '\\'; p--) {
+  for (p = &appname[wcslen(appname) - 1]; p != appname && *p != L'\\'; p--) {
   }
   p++;
-  if (RegCreateKey(HKEY_CURRENT_USER, WEBVIEW_KEY_FEATURE_BROWSER_EMULATION,
-                   &hKey) != ERROR_SUCCESS) {
+  if (RegCreateKeyW(HKEY_CURRENT_USER, WEBVIEW_KEY_FEATURE_BROWSER_EMULATION,
+                    &hKey) != ERROR_SUCCESS) {
     return -1;
   }
-  if (RegSetValueEx(hKey, p, 0, REG_DWORD, (BYTE *)&ie_version,
-                    sizeof(ie_version)) != ERROR_SUCCESS) {
+  if (RegSetValueExW(hKey, p, 0, REG_DWORD, (BYTE *)&ie_version,
+                     sizeof(ie_version)) != ERROR_SUCCESS) {
     RegCloseKey(hKey);
     return -1;
   }
@@ -840,7 +840,7 @@ int webview_init(struct mshtml_webview *wv) {
   if (hInstance == NULL) {
     return -1;
   }
-	
+
   oleInitCode = OleInitialize(NULL);
   if (oleInitCode != S_OK && oleInitCode != S_FALSE) {
     return -1;
