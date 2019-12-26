@@ -146,7 +146,7 @@ public:
 
         return 0;
     }
-
+    void exit() { PostQuitMessage(0); }
     void dispatch(dispatch_fn_t f)
     {
         PostThreadMessage(m_main_thread, WM_APP, 0, (LPARAM) new dispatch_fn_t(f));
