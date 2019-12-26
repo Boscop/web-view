@@ -4,6 +4,78 @@
 #include <CoreGraphics/CoreGraphics.h>
 #include <limits.h>
 
+static char * debug_event_string(uint event_type) {
+  switch (event_type) {
+    case 1: 
+      return "NSEventTypeLeftMouseDown";
+    case 2: 
+      return "NSEventTypeLeftMouseUp";
+    case 3: 
+      return "NSEventTypeRightMouseDown";
+    case 4: 
+      return "NSEventTypeRightMouseUp";
+    case 5: 
+      return "NSEventTypeMouseMoved";
+    case 6: 
+      return "NSEventTypeLeftMouseDragged";
+    case 7: 
+      return "NSEventTypeRightMouseDragged";
+    case 8: 
+      return "NSEventTypeMouseEntered";
+    case 9: 
+      return "NSEventTypeMouseExited";
+    case 10: 
+      return "NSEventTypeKeyDown";
+    case 11: 
+      return "NSEventTypeKeyUp";
+    case 12: 
+      return "NSEventTypeFlagsChanged";
+    case 13: 
+      return "NSEventTypeAppKitDefined";
+    case 14: 
+      return "NSEventTypeSystemDefined";
+    case 15: 
+      return "NSEventTypeApplicationDefined";
+    case 16: 
+      return "NSEventTypePeriodic";
+    case 17: 
+      return "NSEventTypeCursorUpdate";
+    case 18: 
+      return "NSEventTypeScrollWheel";
+    case 19: 
+      return "NSEventTypeTabletPoint";
+    case 20: 
+      return "NSEventTypeTabletProximity";
+    case 21: 
+      return "NSEventTypeOtherMouseDown";
+    case 22: 
+      return "NSEventTypeOtherMouseUp";
+    case 23: 
+      return "NSEventTypeOtherMouseDragged";
+    case 24: 
+      return "NSEventTypeGesture";
+    case 25: 
+      return "NSEventTypeMagnify";
+    case 26: 
+      return "NSEventTypeSwipe";
+    case 27: 
+      return "NSEventTypeRotate";
+    case 28: 
+      return "NSEventTypeBeginGesture";
+    case 29: 
+      return "NSEventTypeEndGesture";
+    case 30: 
+      return "NSEventTypeSmartMagnify";
+    case 31: 
+      return "NSEventTypePressure";
+    case 32: 
+      return "NSEventTypeDirectTouch";
+    case 33: 
+      return "NSEventTypeQuickLook";
+    default:
+      return "Unknown";
+  }
+}
 struct webview_priv {
   id pool;
   id window;
@@ -512,15 +584,16 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
                    sel_registerName("stringWithUTF8String:"),
                    "kCFRunLoopDefaultMode"),
       true);
-  printf("%u received event %u\n", loopcount, objc_msgSend(event, sel_registerName("type")));
+  char *event_str = debug_event_string(objc_msgSend(event, sel_registerName("type")));
+  printf("%u received event %s\n", loopcount, event_str);
   printf("subtype %u\n", objc_msgSend(event, sel_registerName("subtype")));
   
   if (event) {
-    printf("%d sending event %u\n", loopcount, objc_msgSend(event, sel_registerName("type")));
+    printf("%d sending event %s\n", loopcount,  event_str);
     objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
                               sel_registerName("sharedApplication")),
                  sel_registerName("sendEvent:"), event);
-    printf("%d sent event %u\n", loopcount, objc_msgSend(event, sel_registerName("type")));
+    printf("%d sent event %s\n", loopcount, event_str);
   }
   printf("exiting again %u\n", wv->priv.should_exit);
   return wv->priv.should_exit;
