@@ -24,12 +24,11 @@
 
             function tick() {
                 window.external.invoke('update');
-                t = setTimeout(tick, 300);
+                t = setTimeout(tick, 30);
             }
 
             function setCurrentCount(count) {
                 if (count > 10) {
-                    clearTimeout(t);
                     return window.external.invoke('exit');
                 }
                 var h1 = document.getElementById('counter-message');

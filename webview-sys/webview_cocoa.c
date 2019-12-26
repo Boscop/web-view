@@ -25,6 +25,7 @@ struct cocoa_webview {
 };
 
 WEBVIEW_API void webview_free(webview_t w) {
+  printf("webview_free\n");
 	free(w);
 }
 
@@ -71,6 +72,7 @@ WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width,
 #define WKNavigationResponsePolicyAllow 1
 #define WKUserScriptInjectionTimeAtDocumentStart 0
 #define NSApplicationActivationPolicyRegular 0
+#define NSApplicationDefinedEvent 15
 
 static id get_nsstring(const char *c_str) {
   return objc_msgSend((id)objc_getClass("NSString"),
@@ -88,9 +90,31 @@ static id create_menu_item(id title, const char *action, const char *key) {
 }
 
 static void webview_window_will_close(id self, SEL cmd, id notification) {
+  printf("webview_window_will_close\n");
   struct cocoa_webview* wv =
       (struct cocoa_webview *)objc_getAssociatedObject(self, "webview");
   wv->priv.should_exit = 1;
+  id event = objc_msgSend((id)objc_getClass("NSEvent"),
+                  sel_registerName("otherEventWithType:location:modifierFlags:timestamp:windowNumber:context:subtype:data1:data2:"),
+                  NSApplicationDefinedEvent,
+                  (id)objc_getClass("NSZeroPoint"),
+                  0,
+                  0.0,
+                  0,
+                  NULL,
+                  0,
+                  0,
+                  0);
+  id app = objc_msgSend((id)objc_getClass("NSApplication"),
+                        sel_registerName("sharedApplication"));
+  objc_msgSend(app, sel_registerName("sendEvent:"), event);
+}
+
+static BOOL webview_window_should_close(id self, SEL cmd, id notification) {
+  printf("shouldClose\n");
+  struct cocoa_webview* wv =
+      (struct cocoa_webview *)objc_getAssociatedObject(self, "webview");
+  return (BOOL)wv->priv.should_exit;
 }
 
 static void webview_external_invoke(id self, SEL cmd, id contentController,
@@ -303,6 +327,8 @@ WEBVIEW_API int webview_init(webview_t w) {
   class_addProtocol(__NSWindowDelegate, objc_getProtocol("NSWindowDelegate"));
   class_replaceMethod(__NSWindowDelegate, sel_registerName("windowWillClose:"),
                       (IMP)webview_window_will_close, "v@:@");
+  class_replaceMethod(__NSWindowDelegate, sel_registerName("windowshouldClose:"),
+                      (IMP)webview_window_should_close, "v@:@");
   objc_registerClassPair(__NSWindowDelegate);
 
   wv->priv.windowDelegate =
@@ -310,6 +336,7 @@ WEBVIEW_API int webview_init(webview_t w) {
 
   objc_setAssociatedObject(wv->priv.windowDelegate, "webview", (id)(w),
                            OBJC_ASSOCIATION_ASSIGN);
+  objc_msgSend(wv->priv.windowDelegate, sel_registerName("autorelease"));
 
   id nsTitle =
       objc_msgSend((id)objc_getClass("NSString"),
@@ -334,6 +361,7 @@ WEBVIEW_API int webview_init(webview_t w) {
   objc_msgSend(wv->priv.window, sel_registerName("setDelegate:"),
                wv->priv.windowDelegate);
   objc_msgSend(wv->priv.window, sel_registerName("center"));
+  objc_msgSend(wv->priv.window, sel_registerName("setReleasedWhenClosed:"), YES);
 
   Class __WKUIDelegate =
       objc_allocateClassPair(objc_getClass("NSObject"), "__WKUIDelegate", 0);
@@ -373,7 +401,10 @@ WEBVIEW_API int webview_init(webview_t w) {
   objc_msgSend(wv->priv.webview, sel_registerName("setUIDelegate:"), uiDel);
   objc_msgSend(wv->priv.webview, sel_registerName("setNavigationDelegate:"),
                navDel);
-
+  objc_msgSend(wv->priv.webview, sel_registerName("autorelease"));
+  objc_msgSend(uiDel, sel_registerName("autorelease"));
+  objc_msgSend(navDel, sel_registerName("autorelease"));
+  
   id nsURL = objc_msgSend((id)objc_getClass("NSURL"),
                           sel_registerName("URLWithString:"),
                           get_nsstring(webview_check_url(wv->url)));
@@ -456,30 +487,42 @@ WEBVIEW_API int webview_init(webview_t w) {
   wv->priv.should_exit = 0;
   return 0;
 }
-
+int loopcount = 0;
 WEBVIEW_API int webview_loop(webview_t w, int blocking) {
+  printf("webview_loop\n");
+  loopcount++;
+  printf("%u blocking %u\n", loopcount, blocking);
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
+  printf("%u should_exit %u\n", loopcount, wv->priv.should_exit);
   id until = (blocking ? objc_msgSend((id)objc_getClass("NSDate"),
                                       sel_registerName("distantFuture"))
                        : objc_msgSend((id)objc_getClass("NSDate"),
                                       sel_registerName("distantPast")));
-
+  printf("%u getting event\n", loopcount);
+  id app = objc_msgSend((id)objc_getClass("NSApplication"),
+                   sel_registerName("sharedApplication"));
+  id wins = objc_msgSend(app, sel_registerName("windows"));
+  uint win_ct = objc_msgSend(wins, sel_registerName("containsObject:"), wv->priv.window);
+  printf("%u app windows %u\n", win_ct);
   id event = objc_msgSend(
-      objc_msgSend((id)objc_getClass("NSApplication"),
-                   sel_registerName("sharedApplication")),
+      app,
       sel_registerName("nextEventMatchingMask:untilDate:inMode:dequeue:"),
       ULONG_MAX, until,
       objc_msgSend((id)objc_getClass("NSString"),
                    sel_registerName("stringWithUTF8String:"),
                    "kCFRunLoopDefaultMode"),
       true);
-
+  printf("%u received event %u\n", loopcount, objc_msgSend(event, sel_registerName("type")));
+  printf("subtype %u\n", objc_msgSend(event, sel_registerName("subtype")));
+  
   if (event) {
+    printf("%d sending event %u\n", loopcount, objc_msgSend(event, sel_registerName("type")));
     objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
                               sel_registerName("sharedApplication")),
                  sel_registerName("sendEvent:"), event);
+    printf("%d sent event %u\n", loopcount, objc_msgSend(event, sel_registerName("type")));
   }
-
+  printf("exiting again %u\n", wv->priv.should_exit);
   return wv->priv.should_exit;
 }
 
@@ -636,9 +679,16 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
 }
 
 WEBVIEW_API void webview_exit(webview_t w) {
+  printf("webview_exit\n");
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
-  objc_msgSend(wv->priv.window,
-                        sel_registerName("performClose:"), wv->priv.window);
+  wv->external_invoke_cb = NULL;
+  id app = objc_msgSend((id)objc_getClass("NSApplication"),
+                        sel_registerName("sharedApplication"));
+  objc_msgSend(app, sel_registerName("sendAction:to:from:"), 
+                        sel_registerName("close"), wv->priv.window, wv->priv.windowDelegate);
+  // objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
+  //                       sel_registerName("sharedApplication")),
+  //                       sel_registerName("setWindowsNeedUpdate"), YES);
 }
 
 WEBVIEW_API void webview_print_log(const char *s) { printf("%s\n", s); }
