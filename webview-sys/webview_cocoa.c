@@ -498,12 +498,12 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
                                       sel_registerName("distantFuture"))
                        : objc_msgSend((id)objc_getClass("NSDate"),
                                       sel_registerName("distantPast")));
-  printf("%u getting event\n", loopcount);
   id app = objc_msgSend((id)objc_getClass("NSApplication"),
                    sel_registerName("sharedApplication"));
   id wins = objc_msgSend(app, sel_registerName("windows"));
-  uint win_ct = objc_msgSend(wins, sel_registerName("containsObject:"), wv->priv.window);
-  printf("%u app windows %u\n", win_ct);
+  uint win_ct = objc_msgSend(wins, sel_registerName("count"));
+  printf("%u app windows %u\n", loopcount, win_ct);
+  printf("%u getting event\n", loopcount);
   id event = objc_msgSend(
       app,
       sel_registerName("nextEventMatchingMask:untilDate:inMode:dequeue:"),
