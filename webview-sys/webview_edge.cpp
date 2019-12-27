@@ -41,9 +41,7 @@ inline std::string url_decode(const char *s)
     size_t length = strlen(s);
     for (unsigned int i = 0; i < length; i++) {
         if (s[i] == '%') {
-            int n;
-            sscanf(s + i + 1, "%2x", &n);
-            decoded.push_back(static_cast<char>(n));
+            decoded.push_back(hex2char(s + i + 1));
             i = i + 2;
         } else if (s[i] == '+') {
             decoded.push_back(' ');

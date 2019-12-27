@@ -729,7 +729,7 @@ static int DisplayHTMLPage(struct mshtml_webview *wv) {
     for (const char *p = webview_url + strlen(WEBVIEW_DATA_URL_PREFIX); *q = *p;
          p++, q++) {
       if (*q == '%' && *(p + 1) && *(p + 2)) {
-        sscanf(p + 1, "%02x", q);
+        *q = hex2char(p + 1);
         p = p + 2;
       }
     }
