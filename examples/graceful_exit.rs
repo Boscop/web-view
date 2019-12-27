@@ -5,7 +5,7 @@ use web_view::*;
 
 fn main() {
     let res = web_view::builder()
-        .title("Minimal webview example")
+        .title("Graceful Exit Example")
         .content(Content::Html(include_str!("graceful_exit/index.html")))
         .size(800, 600)
         .resizable(true)
