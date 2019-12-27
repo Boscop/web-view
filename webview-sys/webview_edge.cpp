@@ -64,6 +64,36 @@ inline std::string html_from_uri(const char *s)
 
 LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 class browser_window {
+private:
+    bool EnableDpiAwareness() {
+        auto lib_user32 = GetModuleHandleW(L"user32.dll");
+        if(lib_user32) {
+            auto fn_set_thread_dpi_awareness_context =
+                reinterpret_cast<decltype(&SetThreadDpiAwarenessContext)>(
+                GetProcAddress(lib_user32, "SetThreadDpiAwarenessContext")
+            );
+            if (
+                fnSetThreadDpiAwarenessContext
+                && fn_set_thread_dpi_awareness_context(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
+            ) {
+                return true;
+            }
+        }
+        auto lib_shcore = LoadLibraryW(L"shcore.dll");
+        if (!lib_shcore) {
+            return false;
+        }
+        auto fn_set_process_dpi_awareness =
+            reinterpret_cast<HRESULT (WINAPI *)(int)>(
+            GetProcAddress(lib_shcore, "SetProcessDpiAwareness")
+            );
+        if (!fn_set_process_dpi_awareness || !fn_set_process_dpi_awareness(2)) {
+            FreeLibrary(lib_shcore);
+            return false;
+        }
+        FreeLibrary(lib_shcore);
+        return true;
+    }
 public:
     browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable, bool frameless)
         : m_cb(cb)
@@ -77,6 +107,8 @@ public:
         wc.lpfnWndProc = WebviewWndProc;
         wc.lpszClassName = L"webview";
         RegisterClassEx(&wc);
+
+        EnableDpiAwareness();
 
         DWORD style = WS_OVERLAPPEDWINDOW;
         if (!resizable) {
@@ -244,6 +276,21 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     switch (msg) {
     case WM_SIZE:
         w->resize();
+        break;
+    case WM_DPICHANGED:
+        auto rect = reinterpret_cast<LPRECT>(lp);
+        auto x = rect->left;
+        auto y = rect->top;
+        auto w = rect->right - x;
+        auto h = rect->bottom - y;
+        SetWindowPos(hwnd, nullptr, x, y, w, h, SWP_NOZORDER);
+        auto monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+        MONITORINFOEXW mi{};
+        mi.cbSize = sizeof(MONITORINFOEXW);
+        GetMonitorInfoW(monitor, &mi);
+        auto scale = LOWORD(wp) / (float)USER_DEFAULT_SCREEN_DPI;
+        auto xres = mi.rcMonitor.right - mi.rcMonitor.left;
+        auto yres = mi.rcMonitor.bottom - mi.rcMonitor.top;
         break;
     case WM_CLOSE:
         DestroyWindow(hwnd);
