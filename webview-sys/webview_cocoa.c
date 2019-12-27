@@ -4,78 +4,6 @@
 #include <CoreGraphics/CoreGraphics.h>
 #include <limits.h>
 
-static char * debug_event_string(uint event_type) {
-  switch (event_type) {
-    case 1: 
-      return "NSEventTypeLeftMouseDown";
-    case 2: 
-      return "NSEventTypeLeftMouseUp";
-    case 3: 
-      return "NSEventTypeRightMouseDown";
-    case 4: 
-      return "NSEventTypeRightMouseUp";
-    case 5: 
-      return "NSEventTypeMouseMoved";
-    case 6: 
-      return "NSEventTypeLeftMouseDragged";
-    case 7: 
-      return "NSEventTypeRightMouseDragged";
-    case 8: 
-      return "NSEventTypeMouseEntered";
-    case 9: 
-      return "NSEventTypeMouseExited";
-    case 10: 
-      return "NSEventTypeKeyDown";
-    case 11: 
-      return "NSEventTypeKeyUp";
-    case 12: 
-      return "NSEventTypeFlagsChanged";
-    case 13: 
-      return "NSEventTypeAppKitDefined";
-    case 14: 
-      return "NSEventTypeSystemDefined";
-    case 15: 
-      return "NSEventTypeApplicationDefined";
-    case 16: 
-      return "NSEventTypePeriodic";
-    case 17: 
-      return "NSEventTypeCursorUpdate";
-    case 18: 
-      return "NSEventTypeScrollWheel";
-    case 19: 
-      return "NSEventTypeTabletPoint";
-    case 20: 
-      return "NSEventTypeTabletProximity";
-    case 21: 
-      return "NSEventTypeOtherMouseDown";
-    case 22: 
-      return "NSEventTypeOtherMouseUp";
-    case 23: 
-      return "NSEventTypeOtherMouseDragged";
-    case 24: 
-      return "NSEventTypeGesture";
-    case 25: 
-      return "NSEventTypeMagnify";
-    case 26: 
-      return "NSEventTypeSwipe";
-    case 27: 
-      return "NSEventTypeRotate";
-    case 28: 
-      return "NSEventTypeBeginGesture";
-    case 29: 
-      return "NSEventTypeEndGesture";
-    case 30: 
-      return "NSEventTypeSmartMagnify";
-    case 31: 
-      return "NSEventTypePressure";
-    case 32: 
-      return "NSEventTypeDirectTouch";
-    case 33: 
-      return "NSEventTypeQuickLook";
-    default:
-      return "Unknown";
-  }
-}
 struct webview_priv {
   id pool;
   id window;
@@ -97,7 +25,6 @@ struct cocoa_webview {
 };
 
 WEBVIEW_API void webview_free(webview_t w) {
-  printf("webview_free\n");
 	free(w);
 }
 
@@ -162,28 +89,24 @@ static id create_menu_item(id title, const char *action, const char *key) {
 }
 
 static void webview_window_will_close(id self, SEL cmd, id notification) {
-  printf("webview_window_will_close\n");
   struct cocoa_webview* wv =
       (struct cocoa_webview *)objc_getAssociatedObject(self, "webview");
   wv->priv.should_exit = 1;
+  // To trigger the event loop to move forward one step
+  // we need to send an event to the application's 
+  // event loop.
   id event = objc_msgSend((id)objc_getClass("NSEvent"),
                   sel_registerName("otherEventWithType:location:modifierFlags:timestamp:windowNumber:context:subtype:data1:data2:"),
                   NSApplicationDefinedEvent,
                   (id)objc_getClass("NSZeroPoint"),
-                  0,
-                  0.0,
-                  0,
-                  NULL,
-                  0,
-                  0,
-                  0);
+                  0, 0.0, 0, NULL, 0, 0, 0);
   id app = objc_msgSend((id)objc_getClass("NSApplication"),
                         sel_registerName("sharedApplication"));
-  objc_msgSend(app, sel_registerName("sendEvent:"), event);
+  objc_msgSend(app, sel_registerName("postEvent:atStart:"), event, objc_msgSend((id)objc_getClass("NSDate"),
+                                      sel_registerName("distantPast")));
 }
 
 static BOOL webview_window_should_close(id self, SEL cmd, id notification) {
-  printf("shouldClose\n");
   struct cocoa_webview* wv =
       (struct cocoa_webview *)objc_getAssociatedObject(self, "webview");
   return (BOOL)wv->priv.should_exit;
@@ -559,13 +482,9 @@ WEBVIEW_API int webview_init(webview_t w) {
   wv->priv.should_exit = 0;
   return 0;
 }
-int loopcount = 0;
+
 WEBVIEW_API int webview_loop(webview_t w, int blocking) {
-  printf("webview_loop\n");
-  loopcount++;
-  printf("%u blocking %u\n", loopcount, blocking);
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
-  printf("%u should_exit %u\n", loopcount, wv->priv.should_exit);
   id until = (blocking ? objc_msgSend((id)objc_getClass("NSDate"),
                                       sel_registerName("distantFuture"))
                        : objc_msgSend((id)objc_getClass("NSDate"),
@@ -574,8 +493,6 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
                    sel_registerName("sharedApplication"));
   id wins = objc_msgSend(app, sel_registerName("windows"));
   uint win_ct = objc_msgSend(wins, sel_registerName("count"));
-  printf("%u app windows %u\n", loopcount, win_ct);
-  printf("%u getting event\n", loopcount);
   id event = objc_msgSend(
       app,
       sel_registerName("nextEventMatchingMask:untilDate:inMode:dequeue:"),
@@ -584,18 +501,12 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
                    sel_registerName("stringWithUTF8String:"),
                    "kCFRunLoopDefaultMode"),
       true);
-  char *event_str = debug_event_string(objc_msgSend(event, sel_registerName("type")));
-  printf("%u received event %s\n", loopcount, event_str);
-  printf("subtype %u\n", objc_msgSend(event, sel_registerName("subtype")));
-  
+
   if (event) {
-    printf("%d sending event %s\n", loopcount,  event_str);
     objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
                               sel_registerName("sharedApplication")),
                  sel_registerName("sendEvent:"), event);
-    printf("%d sent event %s\n", loopcount, event_str);
   }
-  printf("exiting again %u\n", wv->priv.should_exit);
   return wv->priv.should_exit;
 }
 
@@ -752,16 +663,9 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
 }
 
 WEBVIEW_API void webview_exit(webview_t w) {
-  printf("webview_exit\n");
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
   wv->external_invoke_cb = NULL;
-  id app = objc_msgSend((id)objc_getClass("NSApplication"),
-                        sel_registerName("sharedApplication"));
-  objc_msgSend(app, sel_registerName("sendAction:to:from:"), 
-                        sel_registerName("close"), wv->priv.window, wv->priv.windowDelegate);
-  // objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
-  //                       sel_registerName("sharedApplication")),
-  //                       sel_registerName("setWindowsNeedUpdate"), YES);
+  objc_msgSend(wv->priv.window, sel_registerName("close"));
 }
 
 WEBVIEW_API void webview_print_log(const char *s) { printf("%s\n", s); }
