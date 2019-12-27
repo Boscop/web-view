@@ -125,6 +125,27 @@ static inline const char *webview_check_url(const char *url) {
   return url;
 }
 
+// Convert ASCII hex digit to a nibble (four bits, 0 - 15).
+//
+// Use unsigned to avoid signed overflow UB.
+static inline unsigned char hex2nibble(unsigned char c) {
+  if (c >= '0' && c <= '9') {
+    return c - '0';
+  } else if (c >= 'a' && c <= 'f') {
+    return 10 + (c - 'a');
+  } else if (c >= 'A' && c <= 'F') {
+    return 10 + (c - 'A');
+  }
+  return 0;
+}
+
+// Convert ASCII hex string (two characters) to byte.
+//
+// E.g., "0B" => 0x0B, "af" => 0xAF.
+static inline char hex2char(const char* p) {
+  return hex2nibble(p[0]) * 16 + hex2nibble(p[1]);
+}
+
 #ifdef __cplusplus
 }
 #endif
