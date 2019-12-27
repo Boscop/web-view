@@ -110,6 +110,9 @@ typedef struct {
   _IServiceProviderEx provider;
 } _IOleClientSiteEx;
 
+typedef BOOL (*SetThreadDpiAwareness)(int);
+typedef BOOL (*SetProcessDpiAwareness)(int);
+
 #ifdef __cplusplus
 #define iid_ref(x) &(x)
 #define iid_unref(x) *(x)
@@ -209,6 +212,39 @@ static IDispatchVtbl ExternalDispatchTable = {
     JS_QueryInterface, JS_AddRef,        JS_Release, JS_GetTypeInfoCount,
     JS_GetTypeInfo,    JS_GetIDsOfNames, JS_Invoke};
 
+
+static HRESULT EnableDpiAwareness() {
+    auto libUser32 = GetModuleHandleW(L"user32.dll");
+    if (libUser32) {
+        SetThreadDpiAwareness set_thread_dpi_awareness =
+            (SetThreadDpiAwareness) GetProcAddress(libUser32, "SetThreadDpiAwarenessContext");
+        if(set_thread_dpi_awareness == NULL) {
+            return E_NOINTERFACE;
+        } else {
+            BOOL thread_awareness_retval = set_thread_dpi_awareness(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+            if(!thread_awareness_retval) {
+                return E_NOINTERFACE;
+            }
+        }
+    }
+    auto lib_shcore = LoadLibraryW(L"shcore.dll");
+    if (!lib_shcore) {
+        return E_NOINTERFACE;
+    }
+    SetProcessDpiAwareness set_process_dpi_awareness =
+        (SetProcessDpiAwareness) GetProcAddress(lib_shcore, "SetProcessDpiAwareness");
+    if(set_process_dpi_awareness == NULL) {
+        return E_NOINTERFACE;
+    } else {
+        BOOL process_awareness_retval = set_process_dpi_awareness(2);
+        if(!process_awareness_retval) {
+            FreeLibrary(lib_shcore);
+            return E_NOINTERFACE;
+        }
+    }
+    FreeLibrary(lib_shcore);
+    return S_OK;
+}
 static ULONG STDMETHODCALLTYPE Site_AddRef(IOleClientSite FAR *This) {
   return 1;
 }
@@ -420,7 +456,7 @@ static HRESULT STDMETHODCALLTYPE UI_ShowContextMenu(
 static HRESULT STDMETHODCALLTYPE
 UI_GetHostInfo(IDocHostUIHandler FAR *This, DOCHOSTUIINFO __RPC_FAR *pInfo) {
   pInfo->cbSize = sizeof(DOCHOSTUIINFO);
-  pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER;
+  pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_DPI_AWARE;
   pInfo->dwDoubleClick = DOCHOSTUIDBLCLK_DEFAULT;
   return S_OK;
 }
@@ -608,6 +644,7 @@ static void UnEmbedBrowserObject(webview_t w) {
   }
 }
 
+
 static int EmbedBrowserObject(webview_t w) {
   struct mshtml_webview* wv = (struct mshtml_webview*)w;
   RECT rect;
@@ -786,6 +823,23 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
     }
     return TRUE;
   }
+  case WM_DPICHANGED: {
+    RECT rect;
+    GetClientRect(hwnd, &rect);
+    auto x = rect.left;
+    auto y = rect.top;
+    auto w = rect.right - x;
+    auto h = rect.bottom - y;
+    SetWindowPos(hwnd, NULL, x, y, w, h, SWP_NOZORDER);
+    auto monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    MONITORINFOEXW mi;
+    mi.cbSize = sizeof(MONITORINFOEXW);
+    GetMonitorInfoW(monitor, &mi);
+    auto scale = LOWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
+    auto xres = mi.rcMonitor.right - mi.rcMonitor.left;
+    auto yres = mi.rcMonitor.bottom - mi.rcMonitor.top;
+    return TRUE;
+  }
   case WM_WEBVIEW_DISPATCH: {
     webview_dispatch_fn f = (webview_dispatch_fn)wParam;
     void *arg = (void *)lParam;
@@ -883,6 +937,7 @@ int webview_init(struct mshtml_webview *wv) {
   SetWindowLongPtr(wv->priv.hwnd, GWLP_USERDATA, (LONG_PTR)wv);
 
   DisplayHTMLPage(wv);
+  EnableDpiAwareness();
 
   SetWindowText(wv->priv.hwnd, wv->title);
   ShowWindow(wv->priv.hwnd, SW_SHOWDEFAULT);
