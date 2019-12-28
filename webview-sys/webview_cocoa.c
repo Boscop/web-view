@@ -92,9 +92,18 @@ static void webview_window_will_close(id self, SEL cmd, id notification) {
   struct cocoa_webview *wv =
       (struct cocoa_webview *)objc_getAssociatedObject(self, "webview");
   wv->priv.should_exit = 1;
-  // To trigger the event loop to move forward one step
-  // we need to send an event to the application's 
-  // event loop.
+  /***
+  Since by default for `webview_loop` is set to be blocking
+  we need to somehow signal the application that our
+  state has changed. The activity in the `invoke_handler` does
+  not interact with the `webview_loop` at all. This means that
+  the `exit` wouldn't be recognized by the application until
+  another event occurs like mouse movement or a key press.
+  To enable the invoke_handler to notify the application
+  correctly we need to send a custom event to the application.
+  We are going to first create an event with the type
+  NSApplicationDefined, and zero for all the other properties.
+  ***/
   id event = objc_msgSend((id)objc_getClass("NSEvent"),
                   sel_registerName("otherEventWithType:location:modifierFlags:timestamp:windowNumber:context:subtype:data1:data2:"),
                   NSApplicationDefinedEvent,
@@ -102,8 +111,17 @@ static void webview_window_will_close(id self, SEL cmd, id notification) {
                   0, 0.0, 0, NULL, 0, 0, 0);
   id app = objc_msgSend((id)objc_getClass("NSApplication"),
                         sel_registerName("sharedApplication"));
-  objc_msgSend(app, sel_registerName("postEvent:atStart:"), event, objc_msgSend((id)objc_getClass("NSDate"),
-                                      sel_registerName("distantPast")));
+  /***
+  With a custom event crated and a pointer to the sharedApplication
+  we can now send the event. We need to make sure it get's queued as
+  early as possible, so we will set the argument atStart to
+  the NSDate distantPast constructor. This will trigger a noop
+  event on the application allowing the `webview_loop` to continue
+  its current iteration.
+  ***/
+  objc_msgSend(app, sel_registerName("postEvent:atStart:"), event, 
+                    objc_msgSend((id)objc_getClass("NSDate"),
+                      sel_registerName("distantPast")));
 }
 
 static void webview_external_invoke(id self, SEL cmd, id contentController,
