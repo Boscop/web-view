@@ -1245,8 +1245,6 @@ WEBVIEW_API void webview_dialog(webview_t w,
   }
 }
 
-WEBVIEW_API void webview_terminate(webview_t w) { (void)w; PostQuitMessage(0); }
-
 WEBVIEW_API void webview_exit(webview_t w) {
   struct mshtml_webview* wv = (struct mshtml_webview*)w;
   if (wv->title != NULL)
