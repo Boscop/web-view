@@ -83,7 +83,7 @@ static void webview_load_changed_cb(WebKitWebView *webview,
 
 static void webview_destroy_cb(GtkWidget *widget, gpointer arg) {
   (void)widget;
-  webview_terminate((webview_t)arg);
+  webview_exit((webview_t)arg);
 }
 
 static gboolean webview_context_menu_cb(WebKitWebView *webview,
@@ -298,12 +298,10 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
   g_async_queue_unlock(wv->priv.queue);
 }
 
-WEBVIEW_API void webview_terminate(webview_t w) {
+WEBVIEW_API void webview_exit(webview_t w) { 
   struct gtk_webview *wv = (struct webview *)w;
   wv->priv.should_exit = 1;
 }
-
-WEBVIEW_API void webview_exit(webview_t w) { (void)w; }
 WEBVIEW_API void webview_print_log(const char *s) {
   fprintf(stderr, "%s\n", s);
 }

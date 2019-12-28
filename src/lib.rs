@@ -29,6 +29,7 @@ mod color;
 mod dialog;
 mod error;
 mod escape;
+
 pub use color::Color;
 pub use dialog::DialogBuilder;
 pub use error::{CustomError, Error, WVResult};
@@ -347,9 +348,14 @@ impl<'a, T> WebView<'a, T> {
         &mut self.user_data_wrapper_mut().inner
     }
 
-    /// Forces the `WebView` instance to end, without dropping.
+    #[deprecated(note = "Please use exit instead")]
     pub fn terminate(&mut self) {
-        unsafe { webview_terminate(self.inner) }
+        self.exit();
+    }
+
+    /// Gracefully exits the webview
+    pub fn exit(&mut self) {
+        unsafe { webview_exit(self.inner) }
     }
 
     /// Executes the provided string as JavaScript code within the `WebView` instance.

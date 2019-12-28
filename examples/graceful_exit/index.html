@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <style>
+            #counter-message.preload {
+                display: none;
+            }
+            #counter-message {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 id="counter-message" class="preload"></h1>
+        <script>
+            var t;
+            function init() {
+                var h1 = document.getElementById('counter-message');
+                h1.setAttribute('class', '');
+                setCurrentCount(0);
+                t = setTimeout(tick, 500);
+            }
+
+            function tick() {
+                window.external.invoke('update');
+                t = setTimeout(tick, 500);
+            }
+
+            function setCurrentCount(count) {
+                if (count > 10) {
+                    return window.external.invoke('exit');
+                }
+                var h1 = document.getElementById('counter-message');
+                var rem = 11 - count;
+                var suffix = rem < 2 ? ' second' : ' seconds';
+                h1.innerText = 'Exiting in ' + rem + suffix;
+                document.body.appendChild(h1);
+            }
+            external.invoke('init');
+        </script>
+    </body>
+</html>

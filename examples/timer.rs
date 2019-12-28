@@ -29,7 +29,7 @@ fn main() {
                     render(webview, *counter)?;
                 }
                 "exit" => {
-                    webview.terminate();
+                    webview.exit();
                 }
                 _ => unimplemented!(),
             };

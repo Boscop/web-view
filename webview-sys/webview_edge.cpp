@@ -146,8 +146,7 @@ public:
 
         return 0;
     }
-
-    void terminate() { PostQuitMessage(0); }
+    void exit() { PostQuitMessage(0); }
     void dispatch(dispatch_fn_t f)
     {
         PostThreadMessage(m_main_thread, WM_APP, 0, (LPARAM) new dispatch_fn_t(f));
@@ -242,7 +241,7 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         DestroyWindow(hwnd);
         break;
     case WM_DESTROY:
-        w->terminate();
+        w->exit();
         break;
     default:
         return DefWindowProc(hwnd, msg, wp, lp);
@@ -312,8 +311,7 @@ public:
             L"eval", single_threaded_vector<hstring>({ winrt::to_hstring(js) }));
     }
 
-    void terminate() {
-        browser_window::terminate();
+    void exit() {
         m_webview.Close();
     }
 
@@ -584,14 +582,10 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
     static_cast<webview::webview*>(w)->dispatch([=]() { fn(w, arg); });
 }
 
-WEBVIEW_API void webview_terminate(webview_t w)
-{
-    static_cast<webview::webview*>(w)->terminate();
-}
-
 WEBVIEW_API void webview_exit(webview_t w)
 {
-    webview_terminate(w);
+    webview::webview* wv = static_cast<webview::webview*>(w);
+    DestroyWindow(wv->m_window);
 }
 
 WEBVIEW_API void webview_debug(const char *format, ...)

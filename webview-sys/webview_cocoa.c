@@ -71,6 +71,7 @@ WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width,
 #define WKNavigationResponsePolicyAllow 1
 #define WKUserScriptInjectionTimeAtDocumentStart 0
 #define NSApplicationActivationPolicyRegular 0
+#define NSApplicationDefinedEvent 15
 
 static id get_nsstring(const char *c_str) {
   return objc_msgSend((id)objc_getClass("NSString"),
@@ -88,9 +89,39 @@ static id create_menu_item(id title, const char *action, const char *key) {
 }
 
 static void webview_window_will_close(id self, SEL cmd, id notification) {
-  struct cocoa_webview *w =
+  struct cocoa_webview *wv =
       (struct cocoa_webview *)objc_getAssociatedObject(self, "webview");
-  webview_terminate(w);
+  wv->priv.should_exit = 1;
+  /***
+  Since by default for `webview_loop` is set to be blocking
+  we need to somehow signal the application that our
+  state has changed. The activity in the `invoke_handler` does
+  not interact with the `webview_loop` at all. This means that
+  the `exit` wouldn't be recognized by the application until
+  another event occurs like mouse movement or a key press.
+  To enable the invoke_handler to notify the application
+  correctly we need to send a custom event to the application.
+  We are going to first create an event with the type
+  NSApplicationDefined, and zero for all the other properties.
+  ***/
+  id event = objc_msgSend((id)objc_getClass("NSEvent"),
+                  sel_registerName("otherEventWithType:location:modifierFlags:timestamp:windowNumber:context:subtype:data1:data2:"),
+                  NSApplicationDefinedEvent,
+                  (id)objc_getClass("NSZeroPoint"),
+                  0, 0.0, 0, NULL, 0, 0, 0);
+  id app = objc_msgSend((id)objc_getClass("NSApplication"),
+                        sel_registerName("sharedApplication"));
+  /***
+  With a custom event crated and a pointer to the sharedApplication
+  we can now send the event. We need to make sure it get's queued as
+  early as possible, so we will set the argument atStart to
+  the NSDate distantPast constructor. This will trigger a noop
+  event on the application allowing the `webview_loop` to continue
+  its current iteration.
+  ***/
+  objc_msgSend(app, sel_registerName("postEvent:atStart:"), event, 
+                    objc_msgSend((id)objc_getClass("NSDate"),
+                      sel_registerName("distantPast")));
 }
 
 static void webview_external_invoke(id self, SEL cmd, id contentController,
@@ -373,7 +404,7 @@ WEBVIEW_API int webview_init(webview_t w) {
   objc_msgSend(wv->priv.webview, sel_registerName("setUIDelegate:"), uiDel);
   objc_msgSend(wv->priv.webview, sel_registerName("setNavigationDelegate:"),
                navDel);
-
+  
   id nsURL = objc_msgSend((id)objc_getClass("NSURL"),
                           sel_registerName("URLWithString:"),
                           get_nsstring(webview_check_url(wv->url)));
@@ -463,10 +494,10 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
                                       sel_registerName("distantFuture"))
                        : objc_msgSend((id)objc_getClass("NSDate"),
                                       sel_registerName("distantPast")));
-
+  id app = objc_msgSend((id)objc_getClass("NSApplication"),
+                   sel_registerName("sharedApplication"));
   id event = objc_msgSend(
-      objc_msgSend((id)objc_getClass("NSApplication"),
-                   sel_registerName("sharedApplication")),
+      app,
       sel_registerName("nextEventMatchingMask:untilDate:inMode:dequeue:"),
       ULONG_MAX, until,
       objc_msgSend((id)objc_getClass("NSString"),
@@ -479,7 +510,6 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
                               sel_registerName("sharedApplication")),
                  sel_registerName("sendEvent:"), event);
   }
-
   return wv->priv.should_exit;
 }
 
@@ -635,16 +665,10 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
   dispatch_async_f(dispatch_get_main_queue(), context, webview_dispatch_cb);
 }
 
-WEBVIEW_API void webview_terminate(webview_t w) {
-  struct cocoa_webview* wv = (struct cocoa_webview*)w;
-  wv->priv.should_exit = 1;
-}
-
 WEBVIEW_API void webview_exit(webview_t w) {
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
-  id app = objc_msgSend((id)objc_getClass("NSApplication"),
-                        sel_registerName("sharedApplication"));
-  objc_msgSend(app, sel_registerName("terminate:"), app);
+  wv->external_invoke_cb = NULL;
+  objc_msgSend(wv->priv.window, sel_registerName("close"));
 }
 
 WEBVIEW_API void webview_print_log(const char *s) { printf("%s\n", s); }
