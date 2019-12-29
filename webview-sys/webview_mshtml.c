@@ -218,7 +218,7 @@ static IDispatchVtbl ExternalDispatchTable = {
 
 
 static HRESULT EnableDpiAwareness() {
-    auto libUser32 = GetModuleHandleW(L"user32.dll");
+    HMODULE libUser32 = GetModuleHandleW(L"user32.dll");
     if (libUser32) {
         SetThreadDpiAwareness set_thread_dpi_awareness =
             (SetThreadDpiAwareness) GetProcAddress(libUser32, "SetThreadDpiAwarenessContext");
@@ -231,7 +231,7 @@ static HRESULT EnableDpiAwareness() {
             }
         }
     }
-    auto lib_shcore = LoadLibraryW(L"shcore.dll");
+    HMODULE lib_shcore = LoadLibraryW(L"shcore.dll");
     if (!lib_shcore) {
         return E_NOINTERFACE;
     }
