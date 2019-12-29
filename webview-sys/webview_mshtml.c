@@ -110,7 +110,7 @@ typedef struct {
   _IServiceProviderEx provider;
 } _IOleClientSiteEx;
 
-typedef BOOL (*SetThreadDpiAwareness)(int);
+typedef BOOL (*SetThreadDpiAwareness)(DPI_AWARENESS_CONTEXT);
 typedef BOOL (*SetProcessDpiAwareness)(int);
 
 #ifdef __cplusplus
