@@ -899,6 +899,7 @@ int webview_init(struct mshtml_webview *wv) {
   if (oleInitCode != S_OK && oleInitCode != S_FALSE) {
     return -1;
   }
+  EnableDpiAwareness();
   ZeroMemory(&wc, sizeof(WNDCLASSEX));
   wc.cbSize = sizeof(WNDCLASSEX);
   wc.hInstance = hInstance;
@@ -937,7 +938,6 @@ int webview_init(struct mshtml_webview *wv) {
   SetWindowLongPtr(wv->priv.hwnd, GWLP_USERDATA, (LONG_PTR)wv);
 
   DisplayHTMLPage(wv);
-  EnableDpiAwareness();
 
   SetWindowText(wv->priv.hwnd, wv->title);
   ShowWindow(wv->priv.hwnd, SW_SHOWDEFAULT);
