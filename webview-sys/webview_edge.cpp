@@ -73,7 +73,7 @@ private:
                 GetProcAddress(lib_user32, "SetThreadDpiAwarenessContext")
             );
             if (
-                fnSetThreadDpiAwarenessContext
+                fn_set_thread_dpi_awareness_context
                 && fn_set_thread_dpi_awareness_context(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2)
             ) {
                 return true;
