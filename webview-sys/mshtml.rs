@@ -4,11 +4,15 @@
 use com::{com_interface, interfaces::iunknown::IUnknown};
 use libc::{c_char, c_int, c_void};
 use std::ffi::{CStr, OsStr};
-use std::os::windows::ffi::OsStrExt;
+use std::os::windows::ffi::{OsStrExt, OsStringExt};
+use std::ffi::{OsString, CString};
 use std::ptr;
-use winapi::shared::{basetsd, minwindef, ntdef, windef, winerror};
-use winapi::um::{errhandlingapi, libloaderapi, ole2, wingdi, winuser};
+use winapi::shared::{basetsd, minwindef, ntdef, windef, winerror, wtypesbase};
+use winapi::um::{errhandlingapi, libloaderapi, ole2, wingdi, winuser, combaseapi, shobjidl_core, shobjidl};
+use winapi::Interface;
 use winreg::{enums, RegKey};
+use bitflags::bitflags;
+use std::mem;
 
 type ExternalInvokeCallback = extern "C" fn(webview: *mut WebView, arg: *const c_char);
 
@@ -231,6 +235,16 @@ fn to_wstring(s: &str) -> Vec<u16> {
     v
 }
 
+unsafe fn from_wstring(wide: *const u16) -> OsString {
+    assert!(!wide.is_null());
+    for i in 0.. {
+        if *wide.offset(i) == 0 {
+            return OsStringExt::from_wide(std::slice::from_raw_parts(wide, i as usize));
+        }
+    }
+    unreachable!()
+}
+
 #[no_mangle]
 extern "C" fn webview_set_color(webview: *mut WebView, r: u8, g: u8, b: u8, a: u8) {
     unsafe {
@@ -312,6 +326,161 @@ extern "C" fn webview_set_fullscreen(webview: *mut WebView, fullscreen: c_int) {
                 rect.bottom - rect.top,
                 winuser::SWP_NOZORDER | winuser::SWP_NOACTIVATE | winuser::SWP_FRAMECHANGED,
             );
+        }
+    }
+}
+
+#[repr(C)]
+pub enum DialogType {
+    Open = 0,
+    Save = 1,
+    Alert = 2,
+}
+
+bitflags! {
+    #[repr(C)]
+    pub struct DialogFlags: u32 {
+        const FILE      = 0b0000;
+        const DIRECTORY = 0b0001;
+        const INFO      = 0b0010;
+        const WARNING   = 0b0100;
+        const ERROR     = 0b0110;
+    }
+}
+
+#[no_mangle]
+extern "C" fn webview_dialog(
+    webview: *mut WebView,
+    dialog_type: DialogType,
+    flags: DialogFlags,
+    title: *const c_char,
+    arg: *const c_char,
+    result: *mut c_char,
+    resultsz: usize,
+) {
+    use shobjidl::*;
+
+    unsafe {
+        match dialog_type {
+            DialogType::Open | DialogType::Save => {
+                let mut dialog = ptr::null_mut::<shobjidl::IFileDialog>();
+                let (dresult, options) = match dialog_type {
+                    DialogType::Open => {
+                        let dresult = combaseapi::CoCreateInstance(
+                            &shobjidl_core::CLSID_FileOpenDialog,
+                            ptr::null_mut(),
+                            wtypesbase::CLSCTX_INPROC_SERVER,
+                            &shobjidl::IFileOpenDialog::uuidof(),
+                            mem::transmute(&mut dialog),
+                        );
+
+                        let mut options = FOS_NOCHANGEDIR | FOS_ALLNONSTORAGEITEMS | FOS_NOVALIDATE |
+                            FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST | FOS_SHAREAWARE |
+                            FOS_NOTESTFILECREATE | FOS_NODEREFERENCELINKS |
+                            FOS_FORCESHOWHIDDEN | FOS_DEFAULTNOMINIMODE;
+
+                        if flags == DialogFlags::DIRECTORY {
+                            options |= FOS_PICKFOLDERS;
+                        }
+
+                        (dresult, options)
+                    },
+                    DialogType::Save => (
+                        combaseapi::CoCreateInstance(
+                            &shobjidl_core::CLSID_FileSaveDialog,
+                            ptr::null_mut(),
+                            wtypesbase::CLSCTX_INPROC_SERVER,
+                            &shobjidl::IFileSaveDialog::uuidof(),
+                            mem::transmute(&mut dialog),
+                        ),
+                        FOS_OVERWRITEPROMPT | FOS_NOCHANGEDIR |
+                        FOS_ALLNONSTORAGEITEMS | FOS_NOVALIDATE | FOS_SHAREAWARE |
+                        FOS_NOTESTFILECREATE | FOS_NODEREFERENCELINKS |
+                        FOS_FORCESHOWHIDDEN | FOS_DEFAULTNOMINIMODE
+                    ),
+                    DialogType::Alert => unreachable!(),
+                };
+
+                if dresult != winerror::S_OK {
+                    eprintln!("could not create dialog");
+                    (*dialog).Release();
+                    return;
+                }
+
+                let mut base_options = 0;
+                let dresult = (*dialog).GetOptions(&mut base_options);
+                if dresult != winerror::S_OK {
+                    eprintln!("could not get dialog options");
+                    (*dialog).Release();
+                    return;
+                }
+
+                base_options &= !FOS_NOREADONLYRETURN;
+                base_options |= options;
+
+                let dresult = (*dialog).SetOptions(base_options);
+                if dresult != winerror::S_OK {
+                    eprintln!("could not set dialog options");
+                    (*dialog).Release();
+                    return;
+                }
+
+                let dresult = (*dialog).Show((*webview).hwnd);
+                if dresult != winerror::S_OK {
+                    eprintln!("could not show dialog");
+                    (*dialog).Release();
+                    return;
+                }
+
+                let mut res = ptr::null_mut::<shobjidl_core::IShellItem>();
+                let dresult = (*dialog).GetResult(&mut res);
+                if dresult != winerror::S_OK {
+                    eprintln!("could not get dialog result");
+                    (*dialog).Release();
+                    return;
+                }
+
+                let mut res_path = ptr::null_mut::<u16>();
+                let dresult = (*res).GetDisplayName(shobjidl_core::SIGDN_FILESYSPATH, &mut res_path);
+                if dresult != winerror::S_OK {
+                    eprintln!("could not get dialog result display name");
+                    (*res).Release();
+                    (*dialog).Release();
+                    return;
+                }
+
+                if res_path.is_null() {
+                    eprintln!("result display name is null");
+                    (*res).Release();
+                    (*dialog).Release();
+                    return;
+                }
+
+                let path = from_wstring(res_path);
+                combaseapi::CoTaskMemFree(mem::transmute(res_path));
+                (*res).Release();
+                (*dialog).Release();
+
+                let path = path
+                    .into_string()
+                    .expect("could not convert string to utf8");
+
+                let path = CString::new(path)
+                    .expect("could not convert string to cstring");
+
+                let bytes = path.as_bytes_with_nul();
+                ptr::copy(bytes.as_ptr(), mem::transmute(result), bytes.len());
+                eprintln!("result {:?}", path);
+            },
+            DialogType::Alert => {
+                //to_wstring()
+                match flags {
+                    DialogFlags::INFO => winuser::MessageBoxW((*webview).hwnd, ptr::null_mut(), ptr::null_mut(), winuser::MB_ICONINFORMATION),
+                    DialogFlags::WARNING => winuser::MessageBoxW((*webview).hwnd, ptr::null_mut(), ptr::null_mut(), winuser::MB_ICONWARNING),
+                    DialogFlags::ERROR => winuser::MessageBoxW((*webview).hwnd, ptr::null_mut(), ptr::null_mut(), winuser::MB_ICONERROR),
+                    _ => winuser::MessageBoxW((*webview).hwnd, ptr::null_mut(), ptr::null_mut(), winuser::MB_ICONERROR),
+                };
+            },
         }
     }
 }
