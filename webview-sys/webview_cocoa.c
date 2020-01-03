@@ -242,13 +242,17 @@ WEBVIEW_API int webview_init(webview_t w) {
   objc_msgSend((id)objc_getClass("NSApplication"),
                sel_registerName("sharedApplication"));
 
-  Class __WKScriptMessageHandler = objc_allocateClassPair(
+  static Class __WKScriptMessageHandler;
+  if(__WKScriptMessageHandler == NULL) {
+    __WKScriptMessageHandler = objc_allocateClassPair(
       objc_getClass("NSObject"), "__WKScriptMessageHandler", 0);
-  class_addMethod(
-      __WKScriptMessageHandler,
-      sel_registerName("userContentController:didReceiveScriptMessage:"),
-      (IMP)webview_external_invoke, "v@:@@");
-  objc_registerClassPair(__WKScriptMessageHandler);
+    class_addProtocol(__WKScriptMessageHandler, objc_getProtocol("WKScriptMessageHandler"));
+    class_addMethod(
+        __WKScriptMessageHandler,
+        sel_registerName("userContentController:didReceiveScriptMessage:"),
+        (IMP)webview_external_invoke, "v@:@@");
+    objc_registerClassPair(__WKScriptMessageHandler);
+  }
 
   id scriptMessageHandler =
       objc_msgSend((id)__WKScriptMessageHandler, sel_registerName("new"));
@@ -262,27 +266,36 @@ WEBVIEW_API int webview_init(webview_t w) {
    https://github.com/WebKit/webkit/blob/master/Tools/TestWebKitAPI/Tests/WebKitCocoa/Download.mm
    ***/
 
-  Class __WKDownloadDelegate = objc_allocateClassPair(
+  static Class __WKDownloadDelegate;
+  if(__WKDownloadDelegate == NULL) {
+    __WKDownloadDelegate = objc_allocateClassPair(
       objc_getClass("NSObject"), "__WKDownloadDelegate", 0);
-  class_addMethod(
-      __WKDownloadDelegate,
-      sel_registerName("_download:decideDestinationWithSuggestedFilename:"
-                       "completionHandler:"),
-      (IMP)run_save_panel, "v@:@@?");
-  class_addMethod(__WKDownloadDelegate,
-                  sel_registerName("_download:didFailWithError:"),
-                  (IMP)download_failed, "v@:@@");
-  objc_registerClassPair(__WKDownloadDelegate);
+    class_addProtocol(__WKDownloadDelegate, objc_getProtocol("WKDownloadDelegate"));
+
+    class_addMethod(
+        __WKDownloadDelegate,
+        sel_registerName("_download:decideDestinationWithSuggestedFilename:"
+                        "completionHandler:"),
+        (IMP)run_save_panel, "v@:@@?");
+    class_addMethod(__WKDownloadDelegate,
+                    sel_registerName("_download:didFailWithError:"),
+                    (IMP)download_failed, "v@:@@");
+    objc_registerClassPair(__WKDownloadDelegate);
+  }
+  
   id downloadDelegate =
       objc_msgSend((id)__WKDownloadDelegate, sel_registerName("new"));
 
-  Class __WKPreferences = objc_allocateClassPair(objc_getClass("WKPreferences"),
+  static Class __WKPreferences;
+  if(__WKPreferences == NULL) {
+    __WKPreferences = objc_allocateClassPair(objc_getClass("WKPreferences"),
                                                  "__WKPreferences", 0);
-  objc_property_attribute_t type = {"T", "c"};
-  objc_property_attribute_t ownership = {"N", ""};
-  objc_property_attribute_t attrs[] = {type, ownership};
-  class_replaceProperty(__WKPreferences, "developerExtrasEnabled", attrs, 2);
-  objc_registerClassPair(__WKPreferences);
+    objc_property_attribute_t type = {"T", "c"};
+    objc_property_attribute_t ownership = {"N", ""};
+    objc_property_attribute_t attrs[] = {type, ownership};
+    class_replaceProperty(__WKPreferences, "developerExtrasEnabled", attrs, 2);
+    objc_registerClassPair(__WKPreferences);
+  }
   id wkPref = objc_msgSend((id)__WKPreferences, sel_registerName("new"));
   objc_msgSend(wkPref, sel_registerName("setValue:forKey:"),
                objc_msgSend((id)objc_getClass("NSNumber"),
@@ -329,12 +342,15 @@ WEBVIEW_API int webview_init(webview_t w) {
                userController);
   objc_msgSend(config, sel_registerName("setPreferences:"), wkPref);
 
-  Class __NSWindowDelegate = objc_allocateClassPair(objc_getClass("NSObject"),
+  static Class __NSWindowDelegate;
+  if(__NSWindowDelegate == NULL) {
+    __NSWindowDelegate = objc_allocateClassPair(objc_getClass("NSObject"),
                                                     "__NSWindowDelegate", 0);
-  class_addProtocol(__NSWindowDelegate, objc_getProtocol("NSWindowDelegate"));
-  class_replaceMethod(__NSWindowDelegate, sel_registerName("windowWillClose:"),
-                      (IMP)webview_window_will_close, "v@:@");
-  objc_registerClassPair(__NSWindowDelegate);
+    class_addProtocol(__NSWindowDelegate, objc_getProtocol("NSWindowDelegate"));
+    class_replaceMethod(__NSWindowDelegate, sel_registerName("windowWillClose:"),
+                        (IMP)webview_window_will_close, "v@:@");
+    objc_registerClassPair(__NSWindowDelegate);
+  }
 
   wv->priv.windowDelegate =
       objc_msgSend((id)__NSWindowDelegate, sel_registerName("new"));
@@ -366,35 +382,40 @@ WEBVIEW_API int webview_init(webview_t w) {
                wv->priv.windowDelegate);
   objc_msgSend(wv->priv.window, sel_registerName("center"));
 
-  Class __WKUIDelegate =
-      objc_allocateClassPair(objc_getClass("NSObject"), "__WKUIDelegate", 0);
-  class_addProtocol(__WKUIDelegate, objc_getProtocol("WKUIDelegate"));
-  class_addMethod(__WKUIDelegate,
-                  sel_registerName("webView:runOpenPanelWithParameters:"
-                                   "initiatedByFrame:completionHandler:"),
-                  (IMP)run_open_panel, "v@:@@@?");
-  class_addMethod(__WKUIDelegate,
-                  sel_registerName("webView:runJavaScriptAlertPanelWithMessage:"
-                                   "initiatedByFrame:completionHandler:"),
-                  (IMP)run_alert_panel, "v@:@@@?");
-  class_addMethod(
-      __WKUIDelegate,
-      sel_registerName("webView:runJavaScriptConfirmPanelWithMessage:"
-                       "initiatedByFrame:completionHandler:"),
-      (IMP)run_confirmation_panel, "v@:@@@?");
-  objc_registerClassPair(__WKUIDelegate);
+  static Class __WKUIDelegate;
+  if(__WKUIDelegate == NULL) {
+    __WKUIDelegate = objc_allocateClassPair(objc_getClass("NSObject"), "__WKUIDelegate", 0);
+    class_addProtocol(__WKUIDelegate, objc_getProtocol("WKUIDelegate"));
+    class_addMethod(__WKUIDelegate,
+                    sel_registerName("webView:runOpenPanelWithParameters:"
+                                    "initiatedByFrame:completionHandler:"),
+                    (IMP)run_open_panel, "v@:@@@?");
+    class_addMethod(__WKUIDelegate,
+                    sel_registerName("webView:runJavaScriptAlertPanelWithMessage:"
+                                    "initiatedByFrame:completionHandler:"),
+                    (IMP)run_alert_panel, "v@:@@@?");
+    class_addMethod(
+        __WKUIDelegate,
+        sel_registerName("webView:runJavaScriptConfirmPanelWithMessage:"
+                        "initiatedByFrame:completionHandler:"),
+        (IMP)run_confirmation_panel, "v@:@@@?");
+    objc_registerClassPair(__WKUIDelegate);
+  }
   id uiDel = objc_msgSend((id)__WKUIDelegate, sel_registerName("new"));
 
-  Class __WKNavigationDelegate = objc_allocateClassPair(
+  static Class __WKNavigationDelegate;
+  if(__WKNavigationDelegate == NULL) {
+    __WKNavigationDelegate = objc_allocateClassPair(
       objc_getClass("NSObject"), "__WKNavigationDelegate", 0);
-  class_addProtocol(__WKNavigationDelegate,
-                    objc_getProtocol("WKNavigationDelegate"));
-  class_addMethod(
-      __WKNavigationDelegate,
-      sel_registerName(
-          "webView:decidePolicyForNavigationResponse:decisionHandler:"),
-      (IMP)make_nav_policy_decision, "v@:@@?");
-  objc_registerClassPair(__WKNavigationDelegate);
+    class_addProtocol(__WKNavigationDelegate,
+                      objc_getProtocol("WKNavigationDelegate"));
+    class_addMethod(
+        __WKNavigationDelegate,
+        sel_registerName(
+            "webView:decidePolicyForNavigationResponse:decisionHandler:"),
+        (IMP)make_nav_policy_decision, "v@:@@?");
+    objc_registerClassPair(__WKNavigationDelegate);
+  }
   id navDel = objc_msgSend((id)__WKNavigationDelegate, sel_registerName("new"));
 
   wv->priv.webview =
@@ -404,7 +425,7 @@ WEBVIEW_API int webview_init(webview_t w) {
   objc_msgSend(wv->priv.webview, sel_registerName("setUIDelegate:"), uiDel);
   objc_msgSend(wv->priv.webview, sel_registerName("setNavigationDelegate:"),
                navDel);
-  
+
   id nsURL = objc_msgSend((id)objc_getClass("NSURL"),
                           sel_registerName("URLWithString:"),
                           get_nsstring(webview_check_url(wv->url)));
