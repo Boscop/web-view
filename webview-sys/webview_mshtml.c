@@ -848,7 +848,7 @@ int webview_init(struct mshtml_webview *wv) {
 
   HICON winresIcon = (HICON)LoadImage(
       hInstance, 
-      MAKEINTRESOURCE(1), 
+      (LPWSTR)(1), 
       IMAGE_ICON, 
       0, 
       0,
