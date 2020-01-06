@@ -70,12 +70,22 @@ public:
     {
         HINSTANCE hInstance = GetModuleHandle(nullptr);
 
+        HICON winresIcon = (HICON)LoadImage(
+            hInstance, 
+            MAKEINTRESOURCE(1), 
+            IMAGE_ICON, 
+            0, 
+            0,
+            LR_DEFAULTSIZE
+        );
+
         WNDCLASSEX wc;
         ZeroMemory(&wc, sizeof(WNDCLASSEX));
         wc.cbSize = sizeof(WNDCLASSEX);
         wc.hInstance = hInstance;
         wc.lpfnWndProc = WebviewWndProc;
         wc.lpszClassName = L"webview";
+        wc.hIcon = winresIcon;
         RegisterClassEx(&wc);
 
         DWORD style = WS_OVERLAPPEDWINDOW;

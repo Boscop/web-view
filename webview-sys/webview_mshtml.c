@@ -845,11 +845,22 @@ int webview_init(struct mshtml_webview *wv) {
   if (oleInitCode != S_OK && oleInitCode != S_FALSE) {
     return -1;
   }
+
+  HICON winresIcon = (HICON)LoadImage(
+      hInstance, 
+      MAKEINTRESOURCE(1), 
+      IMAGE_ICON, 
+      0, 
+      0,
+      LR_DEFAULTSIZE
+  );
+
   ZeroMemory(&wc, sizeof(WNDCLASSEX));
   wc.cbSize = sizeof(WNDCLASSEX);
   wc.hInstance = hInstance;
   wc.lpfnWndProc = wndproc;
   wc.lpszClassName = classname;
+  wc.hIcon = winresIcon;
   RegisterClassEx(&wc);
 
   style = WS_OVERLAPPEDWINDOW;
