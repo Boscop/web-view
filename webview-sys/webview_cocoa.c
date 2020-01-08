@@ -432,6 +432,10 @@ WEBVIEW_API int webview_init(webview_t w) {
                             sel_registerName("sharedApplication")),
                sel_registerName("activateIgnoringOtherApps:"), 1);
 
+  /***
+  Create menubar
+  ***/
+
   id menubar =
       objc_msgSend((id)objc_getClass("NSMenu"), sel_registerName("alloc"));
   objc_msgSend(menubar, sel_registerName("initWithTitle:"), get_nsstring(""));
@@ -440,6 +444,10 @@ WEBVIEW_API int webview_init(webview_t w) {
   id appName = objc_msgSend(objc_msgSend((id)objc_getClass("NSProcessInfo"),
                                          sel_registerName("processInfo")),
                             sel_registerName("processName"));
+
+  /***
+  Main application menu
+  ***/
 
   id appMenuItem =
       objc_msgSend((id)objc_getClass("NSMenuItem"), sel_registerName("alloc"));
@@ -479,6 +487,50 @@ WEBVIEW_API int webview_init(webview_t w) {
                        sel_registerName("stringByAppendingString:"), appName);
   item = create_menu_item(title, "terminate:", "q");
   objc_msgSend(appMenu, sel_registerName("addItem:"), item);
+
+  /***
+  Edit menu
+  ***/
+
+  id editMenuItem =
+      objc_msgSend((id)objc_getClass("NSMenuItem"), sel_registerName("alloc"));
+  objc_msgSend(editMenuItem,
+               sel_registerName("initWithTitle:action:keyEquivalent:"),
+               get_nsstring("Edit"), NULL, get_nsstring(""));
+
+  id editMenu =
+      objc_msgSend((id)objc_getClass("NSMenu"), sel_registerName("alloc"));
+  objc_msgSend(editMenu, sel_registerName("initWithTitle:"),
+               get_nsstring("Edit"));
+  objc_msgSend(editMenu, sel_registerName("autorelease"));
+
+  objc_msgSend(editMenuItem, sel_registerName("setSubmenu:"), editMenu);
+  objc_msgSend(menubar, sel_registerName("addItem:"), editMenuItem);
+
+  item = create_menu_item(get_nsstring("Undo"), "undo:", "z");
+  objc_msgSend(editMenu, sel_registerName("addItem:"), item);
+
+  item = create_menu_item(get_nsstring("Redo"), "redo:", "y");
+  objc_msgSend(editMenu, sel_registerName("addItem:"), item);
+
+  item = objc_msgSend((id)objc_getClass("NSMenuItem"), sel_registerName("separatorItem"));
+  objc_msgSend(editMenu, sel_registerName("addItem:"), item);
+
+  item = create_menu_item(get_nsstring("Cut"), "cut:", "x");
+  objc_msgSend(editMenu, sel_registerName("addItem:"), item);
+
+  item = create_menu_item(get_nsstring("Copy"), "copy:", "c");
+  objc_msgSend(editMenu, sel_registerName("addItem:"), item);
+
+  item = create_menu_item(get_nsstring("Paste"), "paste:", "v");
+  objc_msgSend(editMenu, sel_registerName("addItem:"), item);
+
+  item = create_menu_item(get_nsstring("Select All"), "selectAll:", "a");
+  objc_msgSend(editMenu, sel_registerName("addItem:"), item);
+
+  /***
+  Finalize menubar
+  ***/
 
   objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
                             sel_registerName("sharedApplication")),
