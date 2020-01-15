@@ -860,9 +860,6 @@ int webview_init(struct mshtml_webview *wv) {
   if (!wv->resizable) {
     style = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU;
   }
-  if (wv->frameless) {
-    style = WS_POPUP;
-  }
 
   rect.left = 0;
   rect.top = 0;
@@ -888,7 +885,10 @@ int webview_init(struct mshtml_webview *wv) {
   }
 
   SetWindowLongPtr(wv->priv.hwnd, GWLP_USERDATA, (LONG_PTR)wv);
-
+  if (wv->frameless) 
+  {
+    SetWindowLongPtr(wv->priv.hwnd, GWL_STYLE, 0);
+  }
   DisplayHTMLPage(wv);
 
   SetWindowText(wv->priv.hwnd, wv->title);
