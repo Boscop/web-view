@@ -65,7 +65,7 @@ inline std::string html_from_uri(const char *s)
 LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp);
 class browser_window {
 public:
-    browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable)
+    browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable, bool frameless)
         : m_cb(cb)
     {
         HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -81,6 +81,10 @@ public:
         DWORD style = WS_OVERLAPPEDWINDOW;
         if (!resizable) {
             style = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU;
+        }
+
+        if (frameless) {
+            style = WS_POPUP;
         }
 
         RECT clientRect;
@@ -254,8 +258,8 @@ using namespace Windows::Web::UI::Interop;
 
 class webview : public browser_window {
 public:
-    webview(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, bool resizable, bool debug)
-        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), title, width, height, resizable)
+    webview(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, bool resizable, bool debug, bool frameless)
+        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), title, width, height, resizable, frameless)
         , invoke_cb(invoke_cb)
     {
         init_apartment(winrt::apartment_type::single_threaded);
@@ -601,7 +605,9 @@ WEBVIEW_API void* webview_get_user_data(webview_t w)
     return static_cast<webview::webview*>(w)->get_user_data();
 }
 
-WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
+WEBVIEW_API webview_t webview_new(
+    const char* title, const char* url, int width, int height, int resizable, int debug,
+    int frameless, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
 {
     auto w = new webview::webview(external_invoke_cb, title, width, height, resizable, debug);
     w->set_user_data(userdata);

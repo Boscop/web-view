@@ -19,6 +19,7 @@ struct cocoa_webview {
   int height;
   int resizable;
   int debug;
+  int frameless;
   webview_external_invoke_cb_t external_invoke_cb;
   struct webview_priv priv;
   void *userdata;
@@ -33,7 +34,10 @@ WEBVIEW_API void* webview_get_user_data(webview_t w) {
 	return wv->userdata;
 }
 
-WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+WEBVIEW_API webview_t webview_new(
+  const char* title, const char* url, 
+  int width, int height, int resizable, int debug, int frameless,
+  webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
 	struct cocoa_webview* wv = (struct cocoa_webview*)calloc(1, sizeof(*wv));
 	wv->width = width;
 	wv->height = height;
@@ -41,6 +45,7 @@ WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width,
 	wv->url = url;
 	wv->resizable = resizable;
 	wv->debug = debug;
+  wv->frameless = frameless;
 	wv->external_invoke_cb = external_invoke_cb;
 	wv->userdata = userdata;
 	if (webview_init(wv) != 0) {
@@ -72,6 +77,7 @@ WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width,
 #define WKUserScriptInjectionTimeAtDocumentStart 0
 #define NSApplicationActivationPolicyRegular 0
 #define NSApplicationDefinedEvent 15
+#define NSWindowStyleMaskBorderless 0
 
 static id get_nsstring(const char *c_str) {
   return objc_msgSend((id)objc_getClass("NSString"),
@@ -363,9 +369,13 @@ WEBVIEW_API int webview_init(webview_t w) {
                    sel_registerName("stringWithUTF8String:"), wv->title);
 
   CGRect r = CGRectMake(0, 0, wv->width, wv->height);
-
-  unsigned int style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
-                       NSWindowStyleMaskMiniaturizable;
+  unsigned int style;
+  if (wv->frameless) {
+    style = NSWindowStyleMaskBorderless;
+  } else {
+    style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
+                        NSWindowStyleMaskMiniaturizable;
+  }
   if (wv->resizable) {
     style = style | NSWindowStyleMaskResizable;
   }

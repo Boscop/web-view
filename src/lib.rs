@@ -95,6 +95,7 @@ pub struct WebViewBuilder<'a, T: 'a, I, C> {
     pub debug: bool,
     pub invoke_handler: Option<I>,
     pub user_data: Option<T>,
+    pub frameless: bool,
 }
 
 impl<'a, T: 'a, I, C> Default for WebViewBuilder<'a, T, I, C>
@@ -117,6 +118,7 @@ where
             debug,
             invoke_handler: None,
             user_data: None,
+            frameless: false,
         }
     }
 }
@@ -171,6 +173,13 @@ where
         self.debug = debug;
         self
     }
+    /// The window crated will be frameless
+    /// 
+    /// defaults to `false`
+    pub fn frameless(mut self, frameless: bool) -> Self {
+        self.frameless = frameless;
+        self
+    }
 
     /// Sets the invoke handler callback. This will be called when a message is received from
     /// JavaScript.
@@ -219,6 +228,7 @@ where
             self.height,
             self.resizable,
             self.debug,
+            self.frameless,
             user_data,
             invoke_handler,
         )
@@ -273,6 +283,7 @@ impl<'a, T> WebView<'a, T> {
         height: i32,
         resizable: bool,
         debug: bool,
+        frameless: bool,
         user_data: T,
         invoke_handler: I,
     ) -> WVResult<WebView<'a, T>>
@@ -295,6 +306,7 @@ impl<'a, T> WebView<'a, T> {
                 height,
                 resizable as _,
                 debug as _,
+                frameless as _,
                 Some(ffi_invoke_handler::<T>),
                 user_data_ptr as _,
             );
