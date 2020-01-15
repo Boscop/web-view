@@ -887,7 +887,7 @@ int webview_init(struct mshtml_webview *wv) {
   SetWindowLongPtr(wv->priv.hwnd, GWLP_USERDATA, (LONG_PTR)wv);
   if (wv->frameless) 
   {
-    SetWindowLongPtr(wv->priv.hwnd, GWL_STYLE, 0);
+    SetWindowLongPtr(wv->priv.hwnd, GWL_STYLE, WS_POPUP);
   }
   DisplayHTMLPage(wv);
 
