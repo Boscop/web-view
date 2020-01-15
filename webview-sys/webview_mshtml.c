@@ -27,6 +27,7 @@ struct mshtml_webview {
   int height;
   int resizable;
   int debug;
+  int frameless;
   webview_external_invoke_cb_t external_invoke_cb;
   struct webview_priv priv;
   void *userdata;
@@ -53,7 +54,9 @@ static inline BSTR *webview_to_bstr(const char *s) {
   return bs;
 }
 
-WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+WEBVIEW_API webview_t webview_new(
+  const char* title, const char* url, int width, int height, int resizable, int debug, 
+  int frameless, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
 	struct mshtml_webview* wv = (struct mshtml_webview*)calloc(1, sizeof(*wv));
 	wv->width = width;
 	wv->height = height;
@@ -61,6 +64,7 @@ WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width,
 	wv->url = url;
 	wv->resizable = resizable;
 	wv->debug = debug;
+  wv->frameless = frameless;
 	wv->external_invoke_cb = external_invoke_cb;
 	wv->userdata = userdata;
 	if (webview_init(wv) != 0) {
@@ -855,6 +859,9 @@ int webview_init(struct mshtml_webview *wv) {
   style = WS_OVERLAPPEDWINDOW;
   if (!wv->resizable) {
     style = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU;
+  }
+  if (wv->frameless) {
+    style = WS_POPUP;
   }
 
   rect.left = 0;

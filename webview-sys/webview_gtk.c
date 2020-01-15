@@ -22,6 +22,7 @@ struct gtk_webview {
   int height;
   int resizable;
   int debug;
+  int frameless;
   webview_external_invoke_cb_t external_invoke_cb;
   struct webview_priv priv;
   void *userdata;
@@ -36,7 +37,7 @@ WEBVIEW_API void* webview_get_user_data(webview_t w) {
 	return wv->userdata;
 }
 
-WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, int frameless, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
 	struct gtk_webview* w = (struct gtk_webview*)calloc(1, sizeof(*w));
 	w->width = width;
 	w->height = height;
@@ -44,6 +45,7 @@ WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width,
 	w->url = url;
 	w->resizable = resizable;
 	w->debug = debug;
+  w->frameless = frameless;
 	w->external_invoke_cb = external_invoke_cb;
 	w->userdata = userdata;
 	if (webview_init(w) != 0) {
@@ -115,6 +117,9 @@ int webview_init(struct gtk_webview *w) {
                                 w->height);
   } else {
     gtk_widget_set_size_request(w->priv.window, w->width, w->height);
+  }
+  if (w->frameless) {
+    gtk_window_set_decorated(w->priv.window, w->frameless);
   }
   gtk_window_set_resizable(GTK_WINDOW(w->priv.window), !!w->resizable);
   gtk_window_set_position(GTK_WINDOW(w->priv.window), GTK_WIN_POS_CENTER);
