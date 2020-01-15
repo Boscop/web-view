@@ -68,7 +68,6 @@ public:
     browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable, bool frameless)
         : m_cb(cb)
     {
-        printf("new browser_window\n");
         HINSTANCE hInstance = GetModuleHandle(nullptr);
 
         WNDCLASSEX wc;
@@ -84,19 +83,13 @@ public:
             style = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU;
         }
 
-        // if (frameless) {
-        //     style = WS_BORDER;
-        // }
-
         RECT clientRect;
         RECT rect;
         rect.left = 0;
         rect.top = 0;
         rect.right = width;
         rect.bottom = height;
-        printf("adjusting rect\n");
         AdjustWindowRect(&rect, style, 0);
-        printf("getting rect\n");
         GetClientRect(GetDesktopWindow(), &clientRect);
         int left = (clientRect.right / 2) - ((rect.right - rect.left) / 2);
         int top = (clientRect.bottom / 2) - ((rect.bottom - rect.top) / 2);
@@ -104,25 +97,19 @@ public:
         rect.left = left;
         rect.bottom = rect.bottom - rect.top + top;
         rect.top = top;
-        printf("creating window\n");
         BSTR window_title = webview_to_bstr(title);
         m_window = CreateWindowExW(0, L"webview", window_title, style, rect.left, rect.top,
                      rect.right - rect.left, rect.bottom - rect.top,
                      HWND_DESKTOP, NULL, hInstance, (void *)this);
-        printf("seting window ptr\n");
         SysFreeString(window_title);
         SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
         if (frameless)
         {
-            SetWindowLongPtr(m_window, GWL_STYLE, 0);
+            SetWindowLongPtr(m_window, GWL_STYLE, WS_POPUP);
         }
-        printf("showing window\n");
         ShowWindow(m_window, SW_SHOW);
-        printf("updating window\n");
         UpdateWindow(m_window);
-        printf("setting focus\n");
         SetFocus(m_window);
-        printf("exiting browser_window ctor\n");
     }
 
     void run()
@@ -160,14 +147,12 @@ public:
     void exit() { PostQuitMessage(0); }
     void dispatch(dispatch_fn_t f)
     {
-    printf("dispatch\n");
 
         PostThreadMessage(m_main_thread, WM_APP, 0, (LPARAM) new dispatch_fn_t(f));
     }
 
     void set_title(const char* title)
     {
-    printf("set_title\n");
 
         BSTR window_title = webview_to_bstr(title);
         SetWindowText(m_window, window_title);
@@ -176,7 +161,6 @@ public:
 
     void set_size(int width, int height)
     {
-    printf("set_size\n");
 
         RECT r;
         r.left = 50;
@@ -190,7 +174,6 @@ public:
 
     void set_fullscreen(bool fullscreen)
     {
-    printf("set_fullscreen\n");
 
         if (this->is_fullscreen == fullscreen) {
             return;
@@ -233,7 +216,6 @@ public:
 
     void set_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     {
-    printf("set_color\n");
 
         HBRUSH brush = CreateSolidBrush(RGB(r, g, b));
         SetClassLongPtr(this->m_window, GCLP_HBRBACKGROUND, (LONG_PTR)brush);
@@ -281,7 +263,6 @@ public:
         : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), title, width, height, resizable, frameless)
         , invoke_cb(invoke_cb)
     {
-        printf("new webview::webivew\n");
         init_apartment(winrt::apartment_type::single_threaded);
         WebViewControlProcessOptions options;
         options.PrivateNetworkClientServerCapability(WebViewControlProcessCapabilityState::Enabled);
@@ -313,7 +294,6 @@ public:
 
     void navigate(const char* url)
     {
-    printf("navigate\n");
 
         std::string html = html_from_uri(url);
         if (html != "") {
@@ -325,7 +305,6 @@ public:
     }
     void init(const char* js)
     {
-    printf("init\n");
 
       init_js.append("(function(){")
              .append(js)
@@ -333,7 +312,6 @@ public:
     }
     void eval(const char* js)
     {
-    printf("eval\n");
 
         m_webview.InvokeScriptAsync(
             L"eval", single_threaded_vector<hstring>({ winrt::to_hstring(js) }));
@@ -350,7 +328,6 @@ public:
 private:
     void on_message(const char* msg)
     {
-    printf("on_message\n");
 
         this->invoke_cb(this, msg);
     }
@@ -637,7 +614,6 @@ WEBVIEW_API webview_t webview_new(
     const char* title, const char* url, int width, int height, int resizable, int debug,
     int frameless, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
 {
-    printf("webview_new\n");
     auto w = new webview::webview(external_invoke_cb, title, width, height, resizable, debug, frameless);
     w->set_user_data(userdata);
     w->navigate(url);
