@@ -119,7 +119,7 @@ int webview_init(struct gtk_webview *w) {
     gtk_widget_set_size_request(w->priv.window, w->width, w->height);
   }
   if (w->frameless) {
-    gtk_window_set_decorated(w->priv.window, w->frameless);
+    gtk_window_set_decorated(w->priv.window, !w->frameless);
   }
   gtk_window_set_resizable(GTK_WINDOW(w->priv.window), !!w->resizable);
   gtk_window_set_position(GTK_WINDOW(w->priv.window), GTK_WIN_POS_CENTER);
