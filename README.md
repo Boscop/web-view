@@ -91,7 +91,7 @@ As this library can be found as a crate on the [Rust Community Registry](https:/
 web-view = { version = "0.5.4" }
 ```
  
-If you want to make use of **Edge** on Windows environments then you'll need to use the following syntax instead:
+If you want to make use of **Edge** on Windows environments, you will need to have Windows 10 SDK installed through Visual Studio Installer and you'll need to use the following syntax instead:
  
 ```toml
 [dependencies]
