@@ -114,8 +114,7 @@ typedef struct {
   _IServiceProviderEx provider;
 } _IOleClientSiteEx;
 
-typedef BOOL (*SetThreadDpiAwareness)(DPI_AWARENESS_CONTEXT);
-typedef BOOL (*SetProcessDpiAwareness)(int);
+typedef DPI_AWARENESS_CONTEXT (WINAPI *FnSetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT);
 
 #ifdef __cplusplus
 #define iid_ref(x) &(x)
@@ -216,39 +215,26 @@ static IDispatchVtbl ExternalDispatchTable = {
     JS_QueryInterface, JS_AddRef,        JS_Release, JS_GetTypeInfoCount,
     JS_GetTypeInfo,    JS_GetIDsOfNames, JS_Invoke};
 
-
-static HRESULT EnableDpiAwareness() {
+static BOOL EnableDpiAwareness() {
+    // Use SetThreadDpiAwarenessContext if it's available (Windows 10).
+    //
+    // Use "SYSTEM_AWARE" because we haven't figure out how to make the browser
+    // control properly handle DPI changes.
     HMODULE libUser32 = GetModuleHandleW(L"user32.dll");
     if (libUser32) {
-        SetThreadDpiAwareness set_thread_dpi_awareness =
-            (SetThreadDpiAwareness) GetProcAddress(libUser32, "SetThreadDpiAwarenessContext");
-        if(set_thread_dpi_awareness == NULL) {
-            return E_NOINTERFACE;
-        } else {
-            BOOL thread_awareness_retval = set_thread_dpi_awareness(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-            if(!thread_awareness_retval) {
-                return E_NOINTERFACE;
+        FnSetThreadDpiAwarenessContext SetThreadDpiAwarenessContext =
+            (FnSetThreadDpiAwarenessContext) GetProcAddress(libUser32, "SetThreadDpiAwarenessContext");
+        if(SetThreadDpiAwarenessContext != NULL) {
+            if (SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE) != NULL) {
+                return TRUE;
             }
         }
     }
-    HMODULE lib_shcore = LoadLibraryW(L"shcore.dll");
-    if (!lib_shcore) {
-        return E_NOINTERFACE;
-    }
-    SetProcessDpiAwareness set_process_dpi_awareness =
-        (SetProcessDpiAwareness) GetProcAddress(lib_shcore, "SetProcessDpiAwareness");
-    if(set_process_dpi_awareness == NULL) {
-        return E_NOINTERFACE;
-    } else {
-        BOOL process_awareness_retval = set_process_dpi_awareness(2);
-        if(!process_awareness_retval) {
-            FreeLibrary(lib_shcore);
-            return E_NOINTERFACE;
-        }
-    }
-    FreeLibrary(lib_shcore);
-    return S_OK;
+    // Otherwise fallback to SetProcessDPIAware. It's available since Windows
+    // Vista so we link to it unconditionally.
+    return SetProcessDPIAware();
 }
+
 static ULONG STDMETHODCALLTYPE Site_AddRef(IOleClientSite FAR *This) {
   return 1;
 }
@@ -827,23 +813,6 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
     }
     return TRUE;
   }
-  case WM_DPICHANGED: {
-    RECT rect;
-    GetClientRect(hwnd, &rect);
-    auto x = rect.left;
-    auto y = rect.top;
-    auto w = rect.right - x;
-    auto h = rect.bottom - y;
-    SetWindowPos(hwnd, NULL, x, y, w, h, SWP_NOZORDER);
-    auto monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-    MONITORINFOEXW mi;
-    mi.cbSize = sizeof(MONITORINFOEXW);
-    GetMonitorInfoW(monitor, &mi);
-    auto scale = LOWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
-    auto xres = mi.rcMonitor.right - mi.rcMonitor.left;
-    auto yres = mi.rcMonitor.bottom - mi.rcMonitor.top;
-    return TRUE;
-  }
   case WM_WEBVIEW_DISPATCH: {
     webview_dispatch_fn f = (webview_dispatch_fn)wParam;
     void *arg = (void *)lParam;
@@ -903,6 +872,8 @@ int webview_init(struct mshtml_webview *wv) {
   if (oleInitCode != S_OK && oleInitCode != S_FALSE) {
     return -1;
   }
+  // Return value not checked. If this function fails, simply continue without
+  // high DPI support.
   EnableDpiAwareness();
   ZeroMemory(&wc, sizeof(WNDCLASSEX));
   wc.cbSize = sizeof(WNDCLASSEX);
@@ -919,10 +890,15 @@ int webview_init(struct mshtml_webview *wv) {
     style &= ~(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
   }
 
+  // Get DPI.
+  HDC screen = GetDC(0);
+  int DPI = GetDeviceCaps(screen, LOGPIXELSX);
+  ReleaseDC(0, screen);
+
   rect.left = 0;
   rect.top = 0;
-  rect.right = wv->width;
-  rect.bottom = wv->height;
+  rect.right = MulDiv(wv->width, DPI, 96);
+  rect.bottom = MulDiv(wv->height, DPI, 96);
   AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, 0);
 
   GetClientRect(GetDesktopWindow(), &clientRect);
