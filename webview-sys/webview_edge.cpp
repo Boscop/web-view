@@ -79,20 +79,24 @@ private:
                 return true;
             }
         }
-        auto lib_shcore = LoadLibraryW(L"shcore.dll");
-        if (!lib_shcore) {
-            return false;
-        }
-        auto fn_set_process_dpi_awareness =
-            reinterpret_cast<HRESULT (WINAPI *)(int)>(
-            GetProcAddress(lib_shcore, "SetProcessDpiAwareness")
+        // Don't worry when SetThreadDpiAwarenessContext is not available. If
+        // it's not available, we are not on a recent windows 10, and we don't
+        // have edge...
+        return false;
+    }
+    int MyGetDpiForWindow(HWND hWnd) {
+        auto lib_user32 = GetModuleHandleW(L"user32.dll");
+        if (lib_user32) {
+            auto fn_get_dpi_for_window = reinterpret_cast<decltype(&GetDpiForWindow)>(
+                GetProcAddress(lib_user32, "GetDpiForWindow")
             );
-        if (!fn_set_process_dpi_awareness || !fn_set_process_dpi_awareness(2)) {
-            FreeLibrary(lib_shcore);
-            return false;
+            if (fn_get_dpi_for_window) {
+                return fn_get_dpi_for_window(hWnd);
+            }
         }
-        FreeLibrary(lib_shcore);
-        return true;
+        // Again, don't worry when GetDpiForWindow is not available. If we are
+        // not on Windows 10, we don't have edge...
+        return 96;
     }
 public:
     browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable, bool frameless)
@@ -119,12 +123,31 @@ public:
             style &= ~(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
         }
 
+        // Create window first, because we need the window to get DPI for the window.
+        BSTR window_title = webview_to_bstr(title);
+        m_window = CreateWindowEx(0, L"webview", window_title, style, 0, 0, 0, 0,
+                     HWND_DESKTOP, NULL, hInstance, (void *)this);
+        SysFreeString(window_title);
+
+        // Have to call this before SetWindowPos or it will crash!
+        SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
+        if (frameless)
+        {
+            SetWindowLongPtr(m_window, GWL_STYLE, style);
+        }
+        this->saved_style = style;
+
+        UINT dpi = MyGetDpiForWindow(m_window);
+        if (dpi == 0) {
+            dpi = 96;
+        }
+
         RECT clientRect;
         RECT rect;
         rect.left = 0;
         rect.top = 0;
-        rect.right = width;
-        rect.bottom = height;
+        rect.right = MulDiv(width, dpi, 96);
+        rect.bottom = MulDiv(height, dpi, 96);
         AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, 0);
         GetClientRect(GetDesktopWindow(), &clientRect);
         int left = (clientRect.right / 2) - ((rect.right - rect.left) / 2);
@@ -133,18 +156,11 @@ public:
         rect.left = left;
         rect.bottom = rect.bottom - rect.top + top;
         rect.top = top;
-        BSTR window_title = webview_to_bstr(title);
-        m_window = CreateWindowExW(0, L"webview", window_title, style, rect.left, rect.top,
-                     rect.right - rect.left, rect.bottom - rect.top,
-                     HWND_DESKTOP, NULL, hInstance, (void *)this);
-        SysFreeString(window_title);
-        SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
-        if (frameless)
-        {
-            SetWindowLongPtr(m_window, GWL_STYLE, style);
-        }
-        this->saved_style = style;
-        ShowWindow(m_window, SW_SHOW);
+
+        // Set position, size and show window *atomically*.
+        SetWindowPos(m_window, HWND_TOP, rect.left, rect.top,
+            rect.right - rect.left, rect.bottom - rect.top, SWP_SHOWWINDOW);
+
         UpdateWindow(m_window);
         SetFocus(m_window);
     }
@@ -277,21 +293,15 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_SIZE:
         w->resize();
         break;
-    case WM_DPICHANGED:
+    case WM_DPICHANGED: {
         auto rect = reinterpret_cast<LPRECT>(lp);
         auto x = rect->left;
         auto y = rect->top;
         auto w = rect->right - x;
         auto h = rect->bottom - y;
-        SetWindowPos(hwnd, nullptr, x, y, w, h, SWP_NOZORDER);
-        auto monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-        MONITORINFOEXW mi{};
-        mi.cbSize = sizeof(MONITORINFOEXW);
-        GetMonitorInfoW(monitor, &mi);
-        auto scale = LOWORD(wp) / (float)USER_DEFAULT_SCREEN_DPI;
-        auto xres = mi.rcMonitor.right - mi.rcMonitor.left;
-        auto yres = mi.rcMonitor.bottom - mi.rcMonitor.top;
+        SetWindowPos(hwnd, nullptr, x, y, w, h, SWP_NOZORDER | SWP_NOACTIVATE);
         break;
+    }
     case WM_CLOSE:
         DestroyWindow(hwnd);
         break;
