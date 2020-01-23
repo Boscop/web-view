@@ -93,7 +93,7 @@ public:
         rect.top = 0;
         rect.right = width;
         rect.bottom = height;
-        AdjustWindowRect(&rect, style, 0);
+        AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, 0);
         GetClientRect(GetDesktopWindow(), &clientRect);
         int left = (clientRect.right / 2) - ((rect.right - rect.left) / 2);
         int top = (clientRect.bottom / 2) - ((rect.bottom - rect.top) / 2);
@@ -111,6 +111,7 @@ public:
         {
             SetWindowLongPtr(m_window, GWL_STYLE, style);
         }
+        this->saved_style = style;
         ShowWindow(m_window, SW_SHOW);
         UpdateWindow(m_window);
         SetFocus(m_window);
