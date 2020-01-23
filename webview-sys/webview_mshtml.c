@@ -858,7 +858,10 @@ int webview_init(struct mshtml_webview *wv) {
 
   style = WS_OVERLAPPEDWINDOW;
   if (!wv->resizable) {
-    style = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU;
+      style &= ~(WS_SIZEBOX);
+  }
+  if (wv->frameless) {
+    style &= ~(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
   }
 
   rect.left = 0;
@@ -887,7 +890,7 @@ int webview_init(struct mshtml_webview *wv) {
   SetWindowLongPtr(wv->priv.hwnd, GWLP_USERDATA, (LONG_PTR)wv);
   if (wv->frameless) 
   {
-    SetWindowLongPtr(wv->priv.hwnd, GWL_STYLE, WS_POPUP);
+    SetWindowLongPtr(wv->priv.hwnd, GWL_STYLE, style);
   }
   DisplayHTMLPage(wv);
 

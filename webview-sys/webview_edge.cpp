@@ -80,7 +80,11 @@ public:
 
         DWORD style = WS_OVERLAPPEDWINDOW;
         if (!resizable) {
-            style = WS_OVERLAPPED | WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU;
+            style &= ~(WS_SIZEBOX);
+        }
+
+        if (frameless) {
+            style &= ~(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
         }
 
         RECT clientRect;
@@ -105,7 +109,7 @@ public:
         SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
         if (frameless)
         {
-            SetWindowLongPtr(m_window, GWL_STYLE, WS_POPUP);
+            SetWindowLongPtr(m_window, GWL_STYLE, style);
         }
         ShowWindow(m_window, SW_SHOW);
         UpdateWindow(m_window);
