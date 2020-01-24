@@ -483,11 +483,20 @@ impl<'a, T> Drop for WebView<'a, T> {
 /// A thread-safe handle to a [`WebView`] instance. Used to dispatch closures onto its task queue.
 ///
 /// [`WebView`]: struct.WebView.html
-#[derive(Clone)]
 pub struct Handle<T> {
     inner: *mut CWebView,
     live: Weak<RwLock<()>>,
     _phantom: PhantomData<T>,
+}
+
+impl<T> Clone for Handle<T> {
+    fn clone(&self) -> Self {
+        Handle {
+            inner: self.inner,
+            live: self.live.clone(),
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl<T> Handle<T> {
