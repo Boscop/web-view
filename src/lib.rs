@@ -458,7 +458,7 @@ impl<'a, T> WebView<'a, T> {
     }
 
     unsafe fn _into_inner(&mut self) -> T {
-        let _lock = self
+        let lock = self
             .user_data_wrapper()
             .live
             .write()
@@ -468,6 +468,7 @@ impl<'a, T> WebView<'a, T> {
         webview_exit(self.inner);
         webview_free(self.inner);
         let user_data = *Box::from_raw(user_data_ptr);
+        std::mem::drop(lock);
         user_data.inner
     }
 }
