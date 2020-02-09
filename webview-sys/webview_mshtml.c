@@ -111,7 +111,7 @@ typedef struct {
 } _IOleClientSiteEx;
 
 typedef BOOL (*SetThreadDpiAwareness)(DPI_AWARENESS_CONTEXT);
-typedef BOOL (*SetProcessDpiAwareness)(int);
+typedef BOOL (WINAPI* SetProcessDpiAwareness)(int);
 
 #ifdef __cplusplus
 #define iid_ref(x) &(x)
@@ -826,19 +826,19 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
   case WM_DPICHANGED: {
     RECT rect;
     GetClientRect(hwnd, &rect);
-    auto x = rect.left;
-    auto y = rect.top;
-    auto w = rect.right - x;
-    auto h = rect.bottom - y;
+    LONG x = rect.left;
+    LONG y = rect.top;
+    LONG w = rect.right - x;
+    LONG h = rect.bottom - y;
     SetWindowPos(hwnd, NULL, x, y, w, h, SWP_NOZORDER);
-    auto monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    HMONITOR monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
     MONITORINFOEXW mi;
     mi.cbSize = sizeof(MONITORINFOEXW);
     GetMonitorInfoW(monitor, &mi);
-    auto scale = LOWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
-    auto xres = mi.rcMonitor.right - mi.rcMonitor.left;
-    auto yres = mi.rcMonitor.bottom - mi.rcMonitor.top;
-    return TRUE;
+    float scale = LOWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
+    LONG xres = mi.rcMonitor.right - mi.rcMonitor.left;
+    LONG yres = mi.rcMonitor.bottom - mi.rcMonitor.top;
+    return 0;
   }
   case WM_WEBVIEW_DISPATCH: {
     webview_dispatch_fn f = (webview_dispatch_fn)wParam;
