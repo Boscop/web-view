@@ -271,12 +271,13 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         w->resize();
         break;
     case WM_DPICHANGED:
+    {
         auto rect = reinterpret_cast<LPRECT>(lp);
         auto x = rect->left;
         auto y = rect->top;
-        auto w = rect->right - x;
-        auto h = rect->bottom - y;
-        SetWindowPos(hwnd, nullptr, x, y, w, h, SWP_NOZORDER);
+        auto width = rect->right - x;
+        auto height = rect->bottom - y;
+        SetWindowPos(hwnd, nullptr, x, y, width, height, SWP_NOZORDER);
         auto monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
         MONITORINFOEXW mi{};
         mi.cbSize = sizeof(MONITORINFOEXW);
@@ -284,7 +285,8 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         auto scale = LOWORD(wp) / (float)USER_DEFAULT_SCREEN_DPI;
         auto xres = mi.rcMonitor.right - mi.rcMonitor.left;
         auto yres = mi.rcMonitor.bottom - mi.rcMonitor.top;
-        break;
+        return 0;
+    }
     case WM_CLOSE:
         DestroyWindow(hwnd);
         break;
