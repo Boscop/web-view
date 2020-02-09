@@ -278,13 +278,6 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         auto width = rect->right - x;
         auto height = rect->bottom - y;
         SetWindowPos(hwnd, nullptr, x, y, width, height, SWP_NOZORDER);
-        auto monitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-        MONITORINFOEXW mi{};
-        mi.cbSize = sizeof(MONITORINFOEXW);
-        GetMonitorInfoW(monitor, &mi);
-        auto scale = LOWORD(wp) / (float)USER_DEFAULT_SCREEN_DPI;
-        auto xres = mi.rcMonitor.right - mi.rcMonitor.left;
-        auto yres = mi.rcMonitor.bottom - mi.rcMonitor.top;
         return 0;
     }
     case WM_CLOSE:
