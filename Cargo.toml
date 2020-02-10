@@ -27,3 +27,6 @@ actix-rt = "0.2"
 rust-embed = "5.1.0"
 mime_guess = "2.0.1"
 futures = "0.1"
+grep = "0.2.4"
+walkdir = "2.3.1"
+
