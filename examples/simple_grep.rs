@@ -1,17 +1,17 @@
-extern crate web_view;
 extern crate grep;
 extern crate walkdir;
+extern crate web_view;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
 
-use web_view::*;
-use std::error::Error;
 use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
-use std::ffi::OsString;
 use grep::searcher::{BinaryDetection, SearcherBuilder};
+use std::error::Error;
+use std::ffi::OsString;
 use walkdir::WalkDir;
+use web_view::*;
 
 fn main() {
     web_view::builder()
@@ -21,44 +21,46 @@ fn main() {
         .resizable(true)
         .debug(true)
         .user_data(())
-		.invoke_handler(|webview, arg| {
-			use Cmd::*;
+        .invoke_handler(|webview, arg| {
+            use Cmd::*;
 
-           match serde_json::from_str(arg).unwrap() {
-				Search {pattern, path} => {
-					let result = match search(&pattern, OsString::from(path), webview) {
-						Ok(s) => s,
-						Err(err) => {
-							let err_str = format!("{}", err);
-							webview.dialog().error("Error", err_str)?;
-							OsString::from("")
-						}
-					};
-					if result.is_empty() {
-						webview.dialog().info("Information", "No results were found!")?;
-					}
-					else {
-						let eval_str = format!("LoadTextArea({:?});", result);
-						webview.eval(&eval_str)?;
-					}
-				},
+            match serde_json::from_str(arg).unwrap() {
+                Search { pattern, path } => {
+                    let result = match search(&pattern, OsString::from(path), webview) {
+                        Ok(s) => s,
+                        Err(err) => {
+                            let err_str = format!("{}", err);
+                            webview.dialog().error("Error", err_str)?;
+                            OsString::from("")
+                        }
+                    };
+                    if result.is_empty() {
+                        webview
+                            .dialog()
+                            .info("Information", "No results were found!")?;
+                    } else {
+                        let eval_str = format!("LoadTextArea({:?});", result);
+                        webview.eval(&eval_str)?;
+                    }
+                }
 
                 Browse {} => match webview.dialog().open_file("Please choose a file...", "")? {
-					Some(path_selected) => {
-						let eval_str = format!("SetPath({:?});", path_selected.as_os_str());
-						webview.eval(&eval_str)?;
-					}
+                    Some(path_selected) => {
+                        let eval_str = format!("SetPath({:?});", path_selected.as_os_str());
+                        webview.eval(&eval_str)?;
+                    }
                     None => {
-						webview.dialog().warning("Warning", "You didn't choose a file.")?;
-					}
+                        webview
+                            .dialog()
+                            .warning("Warning", "You didn't choose a file.")?;
+                    }
                 },
 
                 Error { msg } => webview.dialog().error("Error", msg)?,
-			}
+            }
 
- 			Ok(())
-
-		})
+            Ok(())
+        })
         .run()
         .unwrap();
 }
@@ -67,53 +69,62 @@ fn main() {
 #[serde(tag = "cmd", rename_all = "camelCase")]
 pub enum Cmd {
     Search { pattern: String, path: String },
-	Browse {},
-	Error { msg: String}
+    Browse {},
+    Error { msg: String },
 }
 
-fn search(pattern: &str, path: OsString, webview: &mut WebView<()>) -> Result<OsString, Box<dyn Error>> {
-	    let matcher = RegexMatcher::new_line_matcher(&pattern)?;
-		let mut matches: OsString = OsString::new();
-    	let mut searcher = SearcherBuilder::new()
+fn search(
+    pattern: &str,
+    path: OsString,
+    webview: &mut WebView<()>,
+) -> Result<OsString, Box<dyn Error>> {
+    let matcher = RegexMatcher::new_line_matcher(&pattern)?;
+    let mut matches: OsString = OsString::new();
+    let mut searcher = SearcherBuilder::new()
         .binary_detection(BinaryDetection::quit(b'\x00'))
         .line_number(true)
         .build();
 
-	    let mut matched_line = OsString::new();
+    let mut matched_line = OsString::new();
 
-        for result in WalkDir::new(path) {
-            let entry = match result {
-                Ok(entry) => entry,
-                Err(err) => {
-					let err_str = format!("{}", err);
-					webview.dialog().error("Error", err_str)?;
-                    continue;
-                }
-            };
-            if !entry.file_type().is_file() {
+    for result in WalkDir::new(path) {
+        let entry = match result {
+            Ok(entry) => entry,
+            Err(err) => {
+                let err_str = format!("{}", err);
+                webview.dialog().error("Error", err_str)?;
                 continue;
             }
+        };
+        if !entry.file_type().is_file() {
+            continue;
+        }
 
-			match searcher.search_path(
-                &matcher,
-                entry.path(),
-				UTF8(|lnum, line| {
-					matched_line = OsString::from(format!("{:?}\t {}:\t {}", entry.path(), lnum.to_string(), line.to_string()));
-					matches.push(&matched_line);
-					matches.push("\n");
-       				Ok(true)
-    			})
-			) {
-				Ok(()) => (),
-				Err(err) => {
-					let err_str = format!("{}: {:?}", err, entry.path());
-					webview.dialog().error("Error", err_str)?;
-                    continue;
-				}
-			}
-        }   
+        match searcher.search_path(
+            &matcher,
+            entry.path(),
+            UTF8(|lnum, line| {
+                matched_line = OsString::from(format!(
+                    "{:?}\t {}:\t {}",
+                    entry.path(),
+                    lnum.to_string(),
+                    line.to_string()
+                ));
+                matches.push(&matched_line);
+                matches.push("\n");
+                Ok(true)
+            }),
+        ) {
+            Ok(()) => (),
+            Err(err) => {
+                let err_str = format!("{}: {:?}", err, entry.path());
+                webview.dialog().error("Error", err_str)?;
+                continue;
+            }
+        }
+    }
 
-	Ok(matches)
+    Ok(matches)
 }
 
 const HTML: &str = r#"
@@ -172,4 +183,3 @@ const HTML: &str = r#"
 	</body>
 </html>
 "#;
-

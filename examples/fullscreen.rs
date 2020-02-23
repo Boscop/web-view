@@ -14,7 +14,7 @@ fn main() {
             match arg {
                 "enter" => webview.set_fullscreen(true),
                 "exit" => webview.set_fullscreen(false),
-                _ => ()
+                _ => (),
             }
             Ok(())
         })

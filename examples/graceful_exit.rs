@@ -1,4 +1,3 @@
-
 extern crate web_view;
 
 use web_view::*;
@@ -14,7 +13,7 @@ fn main() {
         .invoke_handler(invoke_handler)
         .run()
         .unwrap();
-        println!("res: {:?}", res)
+    println!("res: {:?}", res)
 }
 
 fn invoke_handler(wv: &mut WebView<usize>, arg: &str) -> WVResult {

@@ -10,9 +10,7 @@ fn main() {
         .resizable(true)
         .debug(true)
         .user_data("")
-        .invoke_handler(|webview, arg| {
-            webview.set_title(arg)
-        })
+        .invoke_handler(|webview, arg| webview.set_title(arg))
         .run()
         .unwrap();
 }
