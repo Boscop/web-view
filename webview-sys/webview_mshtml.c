@@ -11,6 +11,12 @@
 
 #include <stdio.h>
 
+// For GCC.
+#ifndef DPI_AWARENESS_CONTEXT_SYSTEM_AWARE
+DECLARE_HANDLE(DPI_AWARENESS_CONTEXT);
+#define DPI_AWARENESS_CONTEXT_SYSTEM_AWARE ((DPI_AWARENESS_CONTEXT)-2)
+#endif
+
 struct webview_priv {
   HWND hwnd;
   IOleObject **browser;
@@ -115,6 +121,7 @@ typedef struct {
 } _IOleClientSiteEx;
 
 typedef DPI_AWARENESS_CONTEXT (WINAPI *FnSetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT);
+typedef BOOL (WINAPI *FnSetProcessDPIAware)();
 
 #ifdef __cplusplus
 #define iid_ref(x) &(x)
@@ -229,10 +236,14 @@ static BOOL EnableDpiAwareness() {
                 return TRUE;
             }
         }
+        // Otherwise fallback to SetProcessDPIAware. GCC can't handle the linking, so we use `GetProcAddress` too.
+        FnSetProcessDPIAware SetProcessDPIAware =
+          (FnSetProcessDPIAware) GetProcAddress(libUser32, "SetProcessDPIAware");
+        if(SetProcessDPIAware != NULL) {
+          return SetProcessDPIAware();
+        }
     }
-    // Otherwise fallback to SetProcessDPIAware. It's available since Windows
-    // Vista so we link to it unconditionally.
-    return SetProcessDPIAware();
+    return FALSE;
 }
 
 static ULONG STDMETHODCALLTYPE Site_AddRef(IOleClientSite FAR *This) {
