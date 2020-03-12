@@ -196,61 +196,6 @@ WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                        &color);
 }
 
-WEBVIEW_API void webview_dialog(webview_t w,
-                                enum webview_dialog_type dlgtype, int flags,
-                                const char *title, const char *arg,
-                                char *result, size_t resultsz) {
-  struct gtk_webview *wv = (struct webview *)w;
-  GtkWidget *dlg;
-  if (result != NULL) {
-    result[0] = '\0';
-  }
-  if (dlgtype == WEBVIEW_DIALOG_TYPE_OPEN ||
-      dlgtype == WEBVIEW_DIALOG_TYPE_SAVE) {
-    dlg = gtk_file_chooser_dialog_new(
-        title, GTK_WINDOW(wv->priv.window),
-        (dlgtype == WEBVIEW_DIALOG_TYPE_OPEN
-             ? (flags & WEBVIEW_DIALOG_FLAG_DIRECTORY
-                    ? GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER
-                    : GTK_FILE_CHOOSER_ACTION_OPEN)
-             : GTK_FILE_CHOOSER_ACTION_SAVE),
-        "_Cancel", GTK_RESPONSE_CANCEL,
-        (dlgtype == WEBVIEW_DIALOG_TYPE_OPEN ? "_Open" : "_Save"),
-        GTK_RESPONSE_ACCEPT, NULL);
-    gtk_file_chooser_set_local_only(GTK_FILE_CHOOSER(dlg), FALSE);
-    gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(dlg), FALSE);
-    gtk_file_chooser_set_show_hidden(GTK_FILE_CHOOSER(dlg), TRUE);
-    gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER(dlg), TRUE);
-    gtk_file_chooser_set_create_folders(GTK_FILE_CHOOSER(dlg), TRUE);
-    gint response = gtk_dialog_run(GTK_DIALOG(dlg));
-    if (response == GTK_RESPONSE_ACCEPT) {
-      gchar *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dlg));
-      g_strlcpy(result, filename, resultsz);
-      g_free(filename);
-    }
-    gtk_widget_destroy(dlg);
-  } else if (dlgtype == WEBVIEW_DIALOG_TYPE_ALERT) {
-    GtkMessageType type = GTK_MESSAGE_OTHER;
-    switch (flags & WEBVIEW_DIALOG_FLAG_ALERT_MASK) {
-    case WEBVIEW_DIALOG_FLAG_INFO:
-      type = GTK_MESSAGE_INFO;
-      break;
-    case WEBVIEW_DIALOG_FLAG_WARNING:
-      type = GTK_MESSAGE_WARNING;
-      break;
-    case WEBVIEW_DIALOG_FLAG_ERROR:
-      type = GTK_MESSAGE_ERROR;
-      break;
-    }
-    dlg = gtk_message_dialog_new(GTK_WINDOW(wv->priv.window), GTK_DIALOG_MODAL,
-                                 type, GTK_BUTTONS_OK, "%s", title);
-    gtk_message_dialog_format_secondary_text(GTK_MESSAGE_DIALOG(dlg), "%s",
-                                             arg);
-    gtk_dialog_run(GTK_DIALOG(dlg));
-    gtk_widget_destroy(dlg);
-  }
-}
-
 static void webview_eval_finished(GObject *object, GAsyncResult *result,
                                   gpointer userdata) {
   (void)object;

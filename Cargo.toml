@@ -14,6 +14,7 @@ exclude = ["examples/todo-ps/dist/**/*", "examples/elm-counter/index.html"]
 urlencoding = "1.0"
 webview-sys = { path = "webview-sys", version = "0.4" }
 boxfnonce = "0.1"
+tinyfiledialogs = "3.3.9"
 
 [features]
 edge = ["webview-sys/edge"]
@@ -29,4 +30,3 @@ mime_guess = "2.0.1"
 futures = "0.1"
 grep = "0.2.4"
 walkdir = "2.3.1"
-

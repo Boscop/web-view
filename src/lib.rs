@@ -21,9 +21,12 @@
 //! [the examples]: https://github.com/Boscop/web-view/tree/master/examples
 //! [original readme]: https://github.com/zserge/webview/blob/master/README.md
 
+#![allow(deprecated)] // TODO: remove this when removing dialogs
+
 extern crate boxfnonce;
 extern crate urlencoding;
 extern crate webview_sys as ffi;
+extern crate tinyfiledialogs as tfd;
 
 mod color;
 mod dialog;
@@ -428,7 +431,9 @@ impl<'a, T> WebView<'a, T> {
         unsafe { webview_set_fullscreen(self.inner, fullscreen as _) };
     }
 
+
     /// Returns a builder for opening a new dialog window.
+    #[deprecated(note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs")]
     pub fn dialog<'b>(&'b mut self) -> DialogBuilder<'a, 'b, T> {
         DialogBuilder::new(self)
     }
@@ -548,14 +553,6 @@ impl<T> Handle<T> {
 
 unsafe impl<T> Send for Handle<T> {}
 unsafe impl<T> Sync for Handle<T> {}
-
-fn read_str(s: &[u8]) -> String {
-    let end = s.iter().position(|&b| b == 0).map_or(0, |i| i + 1);
-    match CStr::from_bytes_with_nul(&s[..end]) {
-        Ok(s) => s.to_string_lossy().into_owned(),
-        Err(_) => "".to_string(),
-    }
-}
 
 extern "C" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_void) {
     unsafe {
