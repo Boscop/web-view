@@ -1,10 +1,9 @@
-use ffi::{self, DialogFlags, DialogType};
-use std::{ffi::CString, path::PathBuf};
-use {read_str, WVResult, WebView};
-
-const STR_BUF_SIZE: usize = 4096;
+use std::path::PathBuf;
+use tfd::MessageBoxIcon;
+use {WVResult, WebView};
 
 /// A builder for opening a new dialog window.
+#[deprecated(note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs")]
 #[derive(Debug)]
 pub struct DialogBuilder<'a: 'b, 'b, T: 'a> {
     webview: &'b mut WebView<'a, T>,
@@ -16,71 +15,24 @@ impl<'a: 'b, 'b, T: 'a> DialogBuilder<'a, 'b, T> {
         DialogBuilder { webview }
     }
 
-    fn dialog(
-        &mut self,
-        title: String,
-        arg: String,
-        dialog_type: DialogType,
-        dialog_flags: DialogFlags,
-    ) -> WVResult<String> {
-        let mut s = [0u8; STR_BUF_SIZE];
-
-        let title_cstr = CString::new(title)?;
-        let arg_cstr = CString::new(arg)?;
-
-        unsafe {
-            ffi::webview_dialog(
-                self.webview.inner,
-                dialog_type,
-                dialog_flags,
-                title_cstr.as_ptr(),
-                arg_cstr.as_ptr(),
-                s.as_mut_ptr() as _,
-                s.len(),
-            );
-        }
-
-        Ok(read_str(&s))
-    }
-
     /// Opens a new open file dialog and returns the chosen file path.
     pub fn open_file<S, P>(&mut self, title: S, default_file: P) -> WVResult<Option<PathBuf>>
     where
         S: Into<String>,
         P: Into<PathBuf>,
     {
-        self.dialog(
-            title.into(),
-            default_file.into().to_string_lossy().into_owned(),
-            DialogType::Open,
-            DialogFlags::FILE,
-        )
-        .map(|path| {
-            if path.is_empty() {
-                None
-            } else {
-                Some(PathBuf::from(path))
-            }
-        })
+        let default_file = default_file.into().into_os_string();
+        let default_file = default_file
+            .to_str()
+            .expect("default_file is not valid utf-8");
+
+        let result = tfd::open_file_dialog(&title.into(), default_file, None).map(|p| p.into());
+        Ok(result)
     }
 
     /// Opens a new save file dialog and returns the chosen file path.
     pub fn save_file(&mut self) -> WVResult<Option<PathBuf>> {
-        // TODO implement filters for save file dialog
-
-        self.dialog(
-            String::from(""),
-            String::from(""),
-            DialogType::Save,
-            DialogFlags::FILE,
-        )
-        .map(|path| {
-            if path.is_empty() {
-                None
-            } else {
-                Some(PathBuf::from(path))
-            }
-        })
+        Ok(tfd::save_file_dialog("", "").map(|p| p.into()))
     }
 
     /// Opens a new choose directory dialog as returns the chosen directory path.
@@ -93,19 +45,13 @@ impl<'a: 'b, 'b, T: 'a> DialogBuilder<'a, 'b, T> {
         S: Into<String>,
         P: Into<PathBuf>,
     {
-        self.dialog(
-            title.into(),
-            default_directory.into().to_string_lossy().into_owned(),
-            DialogType::Open,
-            DialogFlags::DIRECTORY,
-        )
-        .map(|path| {
-            if path.is_empty() {
-                None
-            } else {
-                Some(PathBuf::from(path))
-            }
-        })
+        let default_directory = default_directory.into().into_os_string();
+        let default_directory = default_directory
+            .to_str()
+            .expect("default_directory is not valid utf-8");
+
+        let result = tfd::select_folder_dialog(&title.into(), default_directory).map(|p| p.into());
+        Ok(result)
     }
 
     /// Opens an info alert dialog.
@@ -114,13 +60,8 @@ impl<'a: 'b, 'b, T: 'a> DialogBuilder<'a, 'b, T> {
         TS: Into<String>,
         MS: Into<String>,
     {
-        self.dialog(
-            title.into(),
-            message.into(),
-            DialogType::Alert,
-            DialogFlags::INFO,
-        )
-        .map(|_| ())
+        tfd::message_box_ok(&title.into(), &message.into(), MessageBoxIcon::Info);
+        Ok(())
     }
 
     /// Opens a warning alert dialog.
@@ -129,13 +70,8 @@ impl<'a: 'b, 'b, T: 'a> DialogBuilder<'a, 'b, T> {
         TS: Into<String>,
         MS: Into<String>,
     {
-        self.dialog(
-            title.into(),
-            message.into(),
-            DialogType::Alert,
-            DialogFlags::WARNING,
-        )
-        .map(|_| ())
+        tfd::message_box_ok(&title.into(), &message.into(), MessageBoxIcon::Warning);
+        Ok(())
     }
 
     /// Opens an error alert dialog.
@@ -144,12 +80,7 @@ impl<'a: 'b, 'b, T: 'a> DialogBuilder<'a, 'b, T> {
         TS: Into<String>,
         MS: Into<String>,
     {
-        self.dialog(
-            title.into(),
-            message.into(),
-            DialogType::Alert,
-            DialogFlags::ERROR,
-        )
-        .map(|_| ())
+        tfd::message_box_ok(&title.into(), &message.into(), MessageBoxIcon::Error);
+        Ok(())
     }
 }

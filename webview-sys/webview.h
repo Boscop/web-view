@@ -20,12 +20,6 @@ typedef void* webview_t;
 typedef void (*webview_external_invoke_cb_t)(webview_t w, const char *arg);
 typedef void (*webview_dispatch_fn)(webview_t w, void *arg);
 
-enum webview_dialog_type {
-  WEBVIEW_DIALOG_TYPE_OPEN = 0,
-  WEBVIEW_DIALOG_TYPE_SAVE = 1,
-  WEBVIEW_DIALOG_TYPE_ALERT = 2
-};
-
 WEBVIEW_API void webview_run(webview_t w);
 WEBVIEW_API int webview_loop(webview_t w, int blocking);
 WEBVIEW_API int webview_eval(webview_t w, const char *js);
@@ -34,10 +28,6 @@ WEBVIEW_API void webview_set_title(webview_t w, const char *title);
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen);
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a);
-WEBVIEW_API void webview_dialog(webview_t w,
-                                enum webview_dialog_type dlgtype, int flags,
-                                const char *title, const char *arg,
-                                char *result, size_t resultsz);
 WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
                                   void *arg);
 WEBVIEW_API void webview_exit(webview_t w);
@@ -50,14 +40,6 @@ WEBVIEW_API void webview_free(webview_t w);
 WEBVIEW_API void webview_destroy(webview_t w);
 
 // TODO WEBVIEW_API void webview_navigate(webview_t w, const char* url);
-
-#define WEBVIEW_DIALOG_FLAG_FILE (0 << 0)
-#define WEBVIEW_DIALOG_FLAG_DIRECTORY (1 << 0)
-
-#define WEBVIEW_DIALOG_FLAG_INFO (1 << 1)
-#define WEBVIEW_DIALOG_FLAG_WARNING (2 << 1)
-#define WEBVIEW_DIALOG_FLAG_ERROR (3 << 1)
-#define WEBVIEW_DIALOG_FLAG_ALERT_MASK (3 << 1)
 
 struct webview_dispatch_arg {
   webview_dispatch_fn fn;

@@ -4,12 +4,14 @@ extern crate web_view;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate tinyfiledialogs as tfd;
 
 use grep::regex::RegexMatcher;
 use grep::searcher::sinks::UTF8;
 use grep::searcher::{BinaryDetection, SearcherBuilder};
 use std::error::Error;
 use std::ffi::OsString;
+use tfd::MessageBoxIcon;
 use walkdir::WalkDir;
 use web_view::*;
 
@@ -26,37 +28,41 @@ fn main() {
 
             match serde_json::from_str(arg).unwrap() {
                 Search { pattern, path } => {
-                    let result = match search(&pattern, OsString::from(path), webview) {
+                    let result = match search(&pattern, OsString::from(path)) {
                         Ok(s) => s,
                         Err(err) => {
                             let err_str = format!("{}", err);
-                            webview.dialog().error("Error", err_str)?;
+                            tfd::message_box_ok("Error", &err_str, MessageBoxIcon::Error);
                             OsString::from("")
                         }
                     };
                     if result.is_empty() {
-                        webview
-                            .dialog()
-                            .info("Information", "No results were found!")?;
+                        tfd::message_box_ok(
+                            "Information",
+                            "No results were found!",
+                            MessageBoxIcon::Info,
+                        );
                     } else {
                         let eval_str = format!("LoadTextArea({:?});", result);
                         webview.eval(&eval_str)?;
                     }
                 }
 
-                Browse {} => match webview.dialog().open_file("Please choose a file...", "")? {
+                Browse {} => match tfd::open_file_dialog("Please choose a file...", "", None) {
                     Some(path_selected) => {
-                        let eval_str = format!("SetPath({:?});", path_selected.as_os_str());
+                        let eval_str = format!("SetPath({:?});", path_selected);
                         webview.eval(&eval_str)?;
                     }
                     None => {
-                        webview
-                            .dialog()
-                            .warning("Warning", "You didn't choose a file.")?;
+                        tfd::message_box_ok(
+                            "Warning",
+                            "You didn't choose a file.",
+                            MessageBoxIcon::Warning,
+                        );
                     }
                 },
 
-                Error { msg } => webview.dialog().error("Error", msg)?,
+                Error { msg } => tfd::message_box_ok("Error", &msg, MessageBoxIcon::Error),
             }
 
             Ok(())
@@ -73,11 +79,7 @@ pub enum Cmd {
     Error { msg: String },
 }
 
-fn search(
-    pattern: &str,
-    path: OsString,
-    webview: &mut WebView<()>,
-) -> Result<OsString, Box<dyn Error>> {
+fn search(pattern: &str, path: OsString) -> Result<OsString, Box<dyn Error>> {
     let matcher = RegexMatcher::new_line_matcher(&pattern)?;
     let mut matches: OsString = OsString::new();
     let mut searcher = SearcherBuilder::new()
@@ -92,7 +94,7 @@ fn search(
             Ok(entry) => entry,
             Err(err) => {
                 let err_str = format!("{}", err);
-                webview.dialog().error("Error", err_str)?;
+                tfd::message_box_ok("Error", &err_str, MessageBoxIcon::Error);
                 continue;
             }
         };
@@ -118,7 +120,7 @@ fn search(
             Ok(()) => (),
             Err(err) => {
                 let err_str = format!("{}: {:?}", err, entry.path());
-                webview.dialog().error("Error", err_str)?;
+                tfd::message_box_ok("Error", &err_str, MessageBoxIcon::Error);
                 continue;
             }
         }
