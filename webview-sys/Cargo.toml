@@ -1,6 +1,6 @@
 [package]
 name = "webview-sys"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Boscop", "zxey <r.hozak@seznam.cz>"]
 license = "MIT"
 repository = "https://github.com/Boscop/web-view"
@@ -16,9 +16,6 @@ path = "lib.rs"
 
 [features]
 edge = []
-
-[dependencies]
-bitflags = "1"
 
 [build-dependencies]
 cc = "1"

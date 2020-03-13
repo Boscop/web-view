@@ -131,7 +131,6 @@ You should now be able to run `cargo build` and see something similar to the out
     $ cargo build
       Updating crates.io index
       Compiling pkg-config v0.3.17
-      Compiling bitflags v1.2.1
       Compiling cc v1.0.47
       Compiling boxfnonce v0.1.1
       Compiling urlencoding v1.0.0
