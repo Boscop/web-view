@@ -488,6 +488,12 @@ impl<'a, T> WebView<'a, T> {
         std::mem::drop(lock);
         user_data.inner
     }
+
+    // Forget the `WebView`, but keep the inner webview untouched
+    fn forget(&mut self) {
+        mem::forget(self);
+    }
+
 }
 
 impl<'a, T> Drop for WebView<'a, T> {
@@ -556,6 +562,7 @@ unsafe impl<T> Sync for Handle<T> {}
 
 extern "C" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_void) {
     unsafe {
+        // The created WebView from ptr needs to be dropped manually, without destroying webview.
         let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
         let result = {
             let callback =
@@ -563,14 +570,21 @@ extern "C" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_void) 
             callback.call(&mut handle)
         };
         handle.user_data_wrapper_mut().result = result;
+
+        // Forget the temporary WebView
+        handle.forget();
     }
 }
 
 extern "C" fn ffi_invoke_handler<T>(webview: *mut CWebView, arg: *const c_char) {
     unsafe {
         let arg = CStr::from_ptr(arg).to_string_lossy().to_string();
+        // The created WebView from ptr needs to be dropped manually, without destroying webview.
         let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
         let result = ((*handle.user_data_wrapper_ptr()).invoke_handler)(&mut *handle, &arg);
         handle.user_data_wrapper_mut().result = result;
+
+        // Forget the temporary WebView
+        handle.forget();
     }
 }
