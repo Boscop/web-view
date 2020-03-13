@@ -149,9 +149,9 @@ static int iid_eq(REFIID a, const IID *b) {
   return memcmp((const void *)iid_ref(a), (const void *)b, sizeof(GUID)) == 0;
 }
 
-static HRESULT STDMETHODCALLTYPE JS_QueryInterface(IDispatch FAR *This,
+static HRESULT STDMETHODCALLTYPE JS_QueryInterface(IDispatch *This,
                                                    REFIID riid,
-                                                   LPVOID FAR *ppvObj) {
+                                                   LPVOID *ppvObj) {
   if (iid_eq(riid, &IID_IDispatch)) {
     *ppvObj = This;
     return S_OK;
@@ -159,19 +159,19 @@ static HRESULT STDMETHODCALLTYPE JS_QueryInterface(IDispatch FAR *This,
   *ppvObj = 0;
   return E_NOINTERFACE;
 }
-static ULONG STDMETHODCALLTYPE JS_AddRef(IDispatch FAR *This) { return 1; }
-static ULONG STDMETHODCALLTYPE JS_Release(IDispatch FAR *This) { return 1; }
-static HRESULT STDMETHODCALLTYPE JS_GetTypeInfoCount(IDispatch FAR *This,
+static ULONG STDMETHODCALLTYPE JS_AddRef(IDispatch *This) { return 1; }
+static ULONG STDMETHODCALLTYPE JS_Release(IDispatch *This) { return 1; }
+static HRESULT STDMETHODCALLTYPE JS_GetTypeInfoCount(IDispatch *This,
                                                      UINT *pctinfo) {
   return S_OK;
 }
-static HRESULT STDMETHODCALLTYPE JS_GetTypeInfo(IDispatch FAR *This,
+static HRESULT STDMETHODCALLTYPE JS_GetTypeInfo(IDispatch *This,
                                                 UINT iTInfo, LCID lcid,
                                                 ITypeInfo **ppTInfo) {
   return S_OK;
 }
 #define WEBVIEW_JS_INVOKE_ID 0x1000
-static HRESULT STDMETHODCALLTYPE JS_GetIDsOfNames(IDispatch FAR *This,
+static HRESULT STDMETHODCALLTYPE JS_GetIDsOfNames(IDispatch *This,
                                                   REFIID riid,
                                                   LPOLESTR *rgszNames,
                                                   UINT cNames, LCID lcid,
@@ -187,7 +187,7 @@ static HRESULT STDMETHODCALLTYPE JS_GetIDsOfNames(IDispatch FAR *This,
 }
 
 static HRESULT STDMETHODCALLTYPE
-JS_Invoke(IDispatch FAR *This, DISPID dispIdMember, REFIID riid, LCID lcid,
+JS_Invoke(IDispatch *This, DISPID dispIdMember, REFIID riid, LCID lcid,
           WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pVarResult,
           EXCEPINFO *pExcepInfo, UINT *puArgErr) {
   size_t offset = (size_t) & ((_IOleClientSiteEx *)NULL)->external;
@@ -240,38 +240,38 @@ static BOOL EnableDpiAwareness() {
     return FALSE;
 }
 
-static ULONG STDMETHODCALLTYPE Site_AddRef(IOleClientSite FAR *This) {
+static ULONG STDMETHODCALLTYPE Site_AddRef(IOleClientSite *This) {
   return 1;
 }
-static ULONG STDMETHODCALLTYPE Site_Release(IOleClientSite FAR *This) {
+static ULONG STDMETHODCALLTYPE Site_Release(IOleClientSite *This) {
   return 1;
 }
-static HRESULT STDMETHODCALLTYPE Site_SaveObject(IOleClientSite FAR *This) {
+static HRESULT STDMETHODCALLTYPE Site_SaveObject(IOleClientSite *This) {
   return E_NOTIMPL;
 }
-static HRESULT STDMETHODCALLTYPE Site_GetMoniker(IOleClientSite FAR *This,
+static HRESULT STDMETHODCALLTYPE Site_GetMoniker(IOleClientSite *This,
                                                  DWORD dwAssign,
                                                  DWORD dwWhichMoniker,
                                                  IMoniker **ppmk) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE
-Site_GetContainer(IOleClientSite FAR *This, LPOLECONTAINER FAR *ppContainer) {
+Site_GetContainer(IOleClientSite *This, LPOLECONTAINER *ppContainer) {
   *ppContainer = 0;
   return E_NOINTERFACE;
 }
-static HRESULT STDMETHODCALLTYPE Site_ShowObject(IOleClientSite FAR *This) {
+static HRESULT STDMETHODCALLTYPE Site_ShowObject(IOleClientSite *This) {
   return NOERROR;
 }
-static HRESULT STDMETHODCALLTYPE Site_OnShowWindow(IOleClientSite FAR *This,
+static HRESULT STDMETHODCALLTYPE Site_OnShowWindow(IOleClientSite *This,
                                                    BOOL fShow) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE
-Site_RequestNewObjectLayout(IOleClientSite FAR *This) {
+Site_RequestNewObjectLayout(IOleClientSite *This) {
   return E_NOTIMPL;
 }
-static HRESULT STDMETHODCALLTYPE Site_QueryInterface(IOleClientSite FAR *This,
+static HRESULT STDMETHODCALLTYPE Site_QueryInterface(IOleClientSite *This,
                                                      REFIID riid,
                                                      void **ppvObject) {
   if (iid_eq(riid, &IID_IUnknown) || iid_eq(riid, &IID_IOleClientSite)) {
@@ -289,40 +289,40 @@ static HRESULT STDMETHODCALLTYPE Site_QueryInterface(IOleClientSite FAR *This,
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE InPlace_QueryInterface(
-    IOleInPlaceSite FAR *This, REFIID riid, LPVOID FAR *ppvObj) {
+    IOleInPlaceSite *This, REFIID riid, LPVOID *ppvObj) {
   return (Site_QueryInterface(
       (IOleClientSite *)((char *)This - sizeof(IOleClientSite)), riid, ppvObj));
 }
-static ULONG STDMETHODCALLTYPE InPlace_AddRef(IOleInPlaceSite FAR *This) {
+static ULONG STDMETHODCALLTYPE InPlace_AddRef(IOleInPlaceSite *This) {
   return 1;
 }
-static ULONG STDMETHODCALLTYPE InPlace_Release(IOleInPlaceSite FAR *This) {
+static ULONG STDMETHODCALLTYPE InPlace_Release(IOleInPlaceSite *This) {
   return 1;
 }
-static HRESULT STDMETHODCALLTYPE InPlace_GetWindow(IOleInPlaceSite FAR *This,
-                                                   HWND FAR *lphwnd) {
-  *lphwnd = ((_IOleInPlaceSiteEx FAR *)This)->frame.window;
+static HRESULT STDMETHODCALLTYPE InPlace_GetWindow(IOleInPlaceSite *This,
+                                                   HWND *lphwnd) {
+  *lphwnd = ((_IOleInPlaceSiteEx *)This)->frame.window;
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_ContextSensitiveHelp(IOleInPlaceSite FAR *This, BOOL fEnterMode) {
+InPlace_ContextSensitiveHelp(IOleInPlaceSite *This, BOOL fEnterMode) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_CanInPlaceActivate(IOleInPlaceSite FAR *This) {
+InPlace_CanInPlaceActivate(IOleInPlaceSite *This) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_OnInPlaceActivate(IOleInPlaceSite FAR *This) {
+InPlace_OnInPlaceActivate(IOleInPlaceSite *This) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_OnUIActivate(IOleInPlaceSite FAR *This) {
+InPlace_OnUIActivate(IOleInPlaceSite *This) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE InPlace_GetWindowContext(
-    IOleInPlaceSite FAR *This, LPOLEINPLACEFRAME FAR *lplpFrame,
-    LPOLEINPLACEUIWINDOW FAR *lplpDoc, LPRECT lprcPosRect, LPRECT lprcClipRect,
+    IOleInPlaceSite *This, LPOLEINPLACEFRAME *lplpFrame,
+    LPOLEINPLACEUIWINDOW *lplpDoc, LPRECT lprcPosRect, LPRECT lprcClipRect,
     LPOLEINPLACEFRAMEINFO lpFrameInfo) {
   *lplpFrame = (LPOLEINPLACEFRAME) & ((_IOleInPlaceSiteEx *)This)->frame;
   *lplpDoc = 0;
@@ -332,28 +332,28 @@ static HRESULT STDMETHODCALLTYPE InPlace_GetWindowContext(
   lpFrameInfo->cAccelEntries = 0;
   return S_OK;
 }
-static HRESULT STDMETHODCALLTYPE InPlace_Scroll(IOleInPlaceSite FAR *This,
+static HRESULT STDMETHODCALLTYPE InPlace_Scroll(IOleInPlaceSite *This,
                                                 SIZE scrollExtent) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_OnUIDeactivate(IOleInPlaceSite FAR *This, BOOL fUndoable) {
+InPlace_OnUIDeactivate(IOleInPlaceSite *This, BOOL fUndoable) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_OnInPlaceDeactivate(IOleInPlaceSite FAR *This) {
+InPlace_OnInPlaceDeactivate(IOleInPlaceSite *This) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_DiscardUndoState(IOleInPlaceSite FAR *This) {
+InPlace_DiscardUndoState(IOleInPlaceSite *This) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_DeactivateAndUndo(IOleInPlaceSite FAR *This) {
+InPlace_DeactivateAndUndo(IOleInPlaceSite *This) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE
-InPlace_OnPosRectChange(IOleInPlaceSite FAR *This, LPCRECT lprcPosRect) {
+InPlace_OnPosRectChange(IOleInPlaceSite *This, LPCRECT lprcPosRect) {
   IOleObject *browserObject;
   IOleInPlaceObject *inplace;
   browserObject = *((IOleObject **)((char *)This - sizeof(IOleObject *) -
@@ -367,152 +367,152 @@ InPlace_OnPosRectChange(IOleInPlaceSite FAR *This, LPCRECT lprcPosRect) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE Frame_QueryInterface(
-    IOleInPlaceFrame FAR *This, REFIID riid, LPVOID FAR *ppvObj) {
+    IOleInPlaceFrame *This, REFIID riid, LPVOID *ppvObj) {
   return E_NOTIMPL;
 }
-static ULONG STDMETHODCALLTYPE Frame_AddRef(IOleInPlaceFrame FAR *This) {
+static ULONG STDMETHODCALLTYPE Frame_AddRef(IOleInPlaceFrame *This) {
   return 1;
 }
-static ULONG STDMETHODCALLTYPE Frame_Release(IOleInPlaceFrame FAR *This) {
+static ULONG STDMETHODCALLTYPE Frame_Release(IOleInPlaceFrame *This) {
   return 1;
 }
-static HRESULT STDMETHODCALLTYPE Frame_GetWindow(IOleInPlaceFrame FAR *This,
-                                                 HWND FAR *lphwnd) {
+static HRESULT STDMETHODCALLTYPE Frame_GetWindow(IOleInPlaceFrame *This,
+                                                 HWND *lphwnd) {
   *lphwnd = ((_IOleInPlaceFrameEx *)This)->window;
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-Frame_ContextSensitiveHelp(IOleInPlaceFrame FAR *This, BOOL fEnterMode) {
+Frame_ContextSensitiveHelp(IOleInPlaceFrame *This, BOOL fEnterMode) {
   return E_NOTIMPL;
 }
-static HRESULT STDMETHODCALLTYPE Frame_GetBorder(IOleInPlaceFrame FAR *This,
+static HRESULT STDMETHODCALLTYPE Frame_GetBorder(IOleInPlaceFrame *This,
                                                  LPRECT lprectBorder) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE Frame_RequestBorderSpace(
-    IOleInPlaceFrame FAR *This, LPCBORDERWIDTHS pborderwidths) {
+    IOleInPlaceFrame *This, LPCBORDERWIDTHS pborderwidths) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE Frame_SetBorderSpace(
-    IOleInPlaceFrame FAR *This, LPCBORDERWIDTHS pborderwidths) {
+    IOleInPlaceFrame *This, LPCBORDERWIDTHS pborderwidths) {
   return E_NOTIMPL;
 }
 static HRESULT STDMETHODCALLTYPE Frame_SetActiveObject(
-    IOleInPlaceFrame FAR *This, IOleInPlaceActiveObject *pActiveObject,
+    IOleInPlaceFrame *This, IOleInPlaceActiveObject *pActiveObject,
     LPCOLESTR pszObjName) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-Frame_InsertMenus(IOleInPlaceFrame FAR *This, HMENU hmenuShared,
+Frame_InsertMenus(IOleInPlaceFrame *This, HMENU hmenuShared,
                   LPOLEMENUGROUPWIDTHS lpMenuWidths) {
   return E_NOTIMPL;
 }
-static HRESULT STDMETHODCALLTYPE Frame_SetMenu(IOleInPlaceFrame FAR *This,
+static HRESULT STDMETHODCALLTYPE Frame_SetMenu(IOleInPlaceFrame *This,
                                                HMENU hmenuShared,
                                                HOLEMENU holemenu,
                                                HWND hwndActiveObject) {
   return S_OK;
 }
-static HRESULT STDMETHODCALLTYPE Frame_RemoveMenus(IOleInPlaceFrame FAR *This,
+static HRESULT STDMETHODCALLTYPE Frame_RemoveMenus(IOleInPlaceFrame *This,
                                                    HMENU hmenuShared) {
   return E_NOTIMPL;
 }
-static HRESULT STDMETHODCALLTYPE Frame_SetStatusText(IOleInPlaceFrame FAR *This,
+static HRESULT STDMETHODCALLTYPE Frame_SetStatusText(IOleInPlaceFrame *This,
                                                      LPCOLESTR pszStatusText) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-Frame_EnableModeless(IOleInPlaceFrame FAR *This, BOOL fEnable) {
+Frame_EnableModeless(IOleInPlaceFrame *This, BOOL fEnable) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-Frame_TranslateAccelerator(IOleInPlaceFrame FAR *This, LPMSG lpmsg, WORD wID) {
+Frame_TranslateAccelerator(IOleInPlaceFrame *This, LPMSG lpmsg, WORD wID) {
   return E_NOTIMPL;
 }
-static HRESULT STDMETHODCALLTYPE UI_QueryInterface(IDocHostUIHandler FAR *This,
+static HRESULT STDMETHODCALLTYPE UI_QueryInterface(IDocHostUIHandler *This,
                                                    REFIID riid,
-                                                   LPVOID FAR *ppvObj) {
+                                                   LPVOID *ppvObj) {
   return (Site_QueryInterface((IOleClientSite *)((char *)This -
                                                  sizeof(IOleClientSite) -
                                                  sizeof(_IOleInPlaceSiteEx)),
                               riid, ppvObj));
 }
-static ULONG STDMETHODCALLTYPE UI_AddRef(IDocHostUIHandler FAR *This) {
+static ULONG STDMETHODCALLTYPE UI_AddRef(IDocHostUIHandler *This) {
   return 1;
 }
-static ULONG STDMETHODCALLTYPE UI_Release(IDocHostUIHandler FAR *This) {
+static ULONG STDMETHODCALLTYPE UI_Release(IDocHostUIHandler *This) {
   return 1;
 }
 static HRESULT STDMETHODCALLTYPE UI_ShowContextMenu(
-    IDocHostUIHandler FAR *This, DWORD dwID, POINT __RPC_FAR *ppt,
-    IUnknown __RPC_FAR *pcmdtReserved, IDispatch __RPC_FAR *pdispReserved) {
+    IDocHostUIHandler *This, DWORD dwID, POINT *ppt,
+    IUnknown *pcmdtReserved, IDispatch *pdispReserved) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-UI_GetHostInfo(IDocHostUIHandler FAR *This, DOCHOSTUIINFO __RPC_FAR *pInfo) {
+UI_GetHostInfo(IDocHostUIHandler *This, DOCHOSTUIINFO *pInfo) {
   pInfo->cbSize = sizeof(DOCHOSTUIINFO);
   pInfo->dwFlags = DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_DPI_AWARE;
   pInfo->dwDoubleClick = DOCHOSTUIDBLCLK_DEFAULT;
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE UI_ShowUI(
-    IDocHostUIHandler FAR *This, DWORD dwID,
-    IOleInPlaceActiveObject __RPC_FAR *pActiveObject,
-    IOleCommandTarget __RPC_FAR *pCommandTarget,
-    IOleInPlaceFrame __RPC_FAR *pFrame, IOleInPlaceUIWindow __RPC_FAR *pDoc) {
+    IDocHostUIHandler *This, DWORD dwID,
+    IOleInPlaceActiveObject *pActiveObject,
+    IOleCommandTarget *pCommandTarget,
+    IOleInPlaceFrame *pFrame, IOleInPlaceUIWindow *pDoc) {
   return S_OK;
 }
-static HRESULT STDMETHODCALLTYPE UI_HideUI(IDocHostUIHandler FAR *This) {
+static HRESULT STDMETHODCALLTYPE UI_HideUI(IDocHostUIHandler *This) {
   return S_OK;
 }
-static HRESULT STDMETHODCALLTYPE UI_UpdateUI(IDocHostUIHandler FAR *This) {
+static HRESULT STDMETHODCALLTYPE UI_UpdateUI(IDocHostUIHandler *This) {
   return S_OK;
 }
-static HRESULT STDMETHODCALLTYPE UI_EnableModeless(IDocHostUIHandler FAR *This,
+static HRESULT STDMETHODCALLTYPE UI_EnableModeless(IDocHostUIHandler *This,
                                                    BOOL fEnable) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-UI_OnDocWindowActivate(IDocHostUIHandler FAR *This, BOOL fActivate) {
+UI_OnDocWindowActivate(IDocHostUIHandler *This, BOOL fActivate) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-UI_OnFrameWindowActivate(IDocHostUIHandler FAR *This, BOOL fActivate) {
+UI_OnFrameWindowActivate(IDocHostUIHandler *This, BOOL fActivate) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-UI_ResizeBorder(IDocHostUIHandler FAR *This, LPCRECT prcBorder,
-                IOleInPlaceUIWindow __RPC_FAR *pUIWindow, BOOL fRameWindow) {
+UI_ResizeBorder(IDocHostUIHandler *This, LPCRECT prcBorder,
+                IOleInPlaceUIWindow *pUIWindow, BOOL fRameWindow) {
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE
-UI_TranslateAccelerator(IDocHostUIHandler FAR *This, LPMSG lpMsg,
-                        const GUID __RPC_FAR *pguidCmdGroup, DWORD nCmdID) {
+UI_TranslateAccelerator(IDocHostUIHandler *This, LPMSG lpMsg,
+                        const GUID *pguidCmdGroup, DWORD nCmdID) {
   return S_FALSE;
 }
 static HRESULT STDMETHODCALLTYPE UI_GetOptionKeyPath(
-    IDocHostUIHandler FAR *This, LPOLESTR __RPC_FAR *pchKey, DWORD dw) {
+    IDocHostUIHandler *This, LPOLESTR *pchKey, DWORD dw) {
   return S_FALSE;
 }
 static HRESULT STDMETHODCALLTYPE UI_GetDropTarget(
-    IDocHostUIHandler FAR *This, IDropTarget __RPC_FAR *pDropTarget,
-    IDropTarget __RPC_FAR *__RPC_FAR *ppDropTarget) {
+    IDocHostUIHandler *This, IDropTarget *pDropTarget,
+    IDropTarget **ppDropTarget) {
   return S_FALSE;
 }
 static HRESULT STDMETHODCALLTYPE UI_GetExternal(
-    IDocHostUIHandler FAR *This, IDispatch __RPC_FAR *__RPC_FAR *ppDispatch) {
+    IDocHostUIHandler *This, IDispatch **ppDispatch) {
   *ppDispatch = (IDispatch *)(This + 1);
   return S_OK;
 }
 static HRESULT STDMETHODCALLTYPE UI_TranslateUrl(
-    IDocHostUIHandler FAR *This, DWORD dwTranslate, OLECHAR __RPC_FAR *pchURLIn,
-    OLECHAR __RPC_FAR *__RPC_FAR *ppchURLOut) {
+    IDocHostUIHandler *This, DWORD dwTranslate, OLECHAR *pchURLIn,
+    OLECHAR **ppchURLOut) {
   *ppchURLOut = 0;
   return S_FALSE;
 }
 static HRESULT STDMETHODCALLTYPE
-UI_FilterDataObject(IDocHostUIHandler FAR *This, IDataObject __RPC_FAR *pDO,
-                    IDataObject __RPC_FAR *__RPC_FAR *ppDORet) {
+UI_FilterDataObject(IDocHostUIHandler *This, IDataObject *pDO,
+                    IDataObject **ppDORet) {
   *ppDORet = 0;
   return S_FALSE;
 }
@@ -580,45 +580,45 @@ static IDocHostUIHandlerVtbl MyIDocHostUIHandlerTable = {
 
 
 
-static HRESULT STDMETHODCALLTYPE IS_QueryInterface(IInternetSecurityManager FAR *This, REFIID riid, void **ppvObject) {
+static HRESULT STDMETHODCALLTYPE IS_QueryInterface(IInternetSecurityManager *This, REFIID riid, void **ppvObject) {
   return E_NOTIMPL;
 }
-static ULONG STDMETHODCALLTYPE IS_AddRef(IInternetSecurityManager FAR *This) { return 1; }
-static ULONG STDMETHODCALLTYPE IS_Release(IInternetSecurityManager FAR *This) { return 1; }
-static HRESULT STDMETHODCALLTYPE IS_SetSecuritySite(IInternetSecurityManager FAR *This, IInternetSecurityMgrSite *pSited) {
+static ULONG STDMETHODCALLTYPE IS_AddRef(IInternetSecurityManager *This) { return 1; }
+static ULONG STDMETHODCALLTYPE IS_Release(IInternetSecurityManager *This) { return 1; }
+static HRESULT STDMETHODCALLTYPE IS_SetSecuritySite(IInternetSecurityManager *This, IInternetSecurityMgrSite *pSited) {
   return INET_E_DEFAULT_ACTION;
 }
-static HRESULT STDMETHODCALLTYPE IS_GetSecuritySite(IInternetSecurityManager FAR *This, IInternetSecurityMgrSite **ppSite) {
+static HRESULT STDMETHODCALLTYPE IS_GetSecuritySite(IInternetSecurityManager *This, IInternetSecurityMgrSite **ppSite) {
   return INET_E_DEFAULT_ACTION;
 }
-static HRESULT STDMETHODCALLTYPE IS_MapUrlToZone(IInternetSecurityManager FAR *This, LPCWSTR pwszUrl, DWORD *pdwZone, DWORD dwFlags) {
+static HRESULT STDMETHODCALLTYPE IS_MapUrlToZone(IInternetSecurityManager *This, LPCWSTR pwszUrl, DWORD *pdwZone, DWORD dwFlags) {
   *pdwZone = URLZONE_LOCAL_MACHINE;
   return S_OK;
 }
-static HRESULT STDMETHODCALLTYPE IS_GetSecurityId(IInternetSecurityManager FAR *This, LPCWSTR pwszUrl, BYTE *pbSecurityId, DWORD *pcbSecurityId, DWORD_PTR dwReserved) {
+static HRESULT STDMETHODCALLTYPE IS_GetSecurityId(IInternetSecurityManager *This, LPCWSTR pwszUrl, BYTE *pbSecurityId, DWORD *pcbSecurityId, DWORD_PTR dwReserved) {
   return INET_E_DEFAULT_ACTION;
 }
-static HRESULT STDMETHODCALLTYPE IS_ProcessUrlAction(IInternetSecurityManager FAR *This, LPCWSTR pwszUrl, DWORD dwAction, BYTE *pPolicy,  DWORD cbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwFlags, DWORD dwReserved) {
+static HRESULT STDMETHODCALLTYPE IS_ProcessUrlAction(IInternetSecurityManager *This, LPCWSTR pwszUrl, DWORD dwAction, BYTE *pPolicy,  DWORD cbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwFlags, DWORD dwReserved) {
   return INET_E_DEFAULT_ACTION;
 }
-static HRESULT STDMETHODCALLTYPE IS_QueryCustomPolicy(IInternetSecurityManager FAR *This, LPCWSTR pwszUrl, REFGUID guidKey, BYTE **ppPolicy, DWORD *pcbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwReserved) {
+static HRESULT STDMETHODCALLTYPE IS_QueryCustomPolicy(IInternetSecurityManager *This, LPCWSTR pwszUrl, REFGUID guidKey, BYTE **ppPolicy, DWORD *pcbPolicy, BYTE *pContext, DWORD cbContext, DWORD dwReserved) {
   return INET_E_DEFAULT_ACTION;
 }
-static HRESULT STDMETHODCALLTYPE IS_SetZoneMapping(IInternetSecurityManager FAR *This, DWORD dwZone, LPCWSTR lpszPattern, DWORD dwFlags) {
+static HRESULT STDMETHODCALLTYPE IS_SetZoneMapping(IInternetSecurityManager *This, DWORD dwZone, LPCWSTR lpszPattern, DWORD dwFlags) {
   return INET_E_DEFAULT_ACTION;
 }
-static HRESULT STDMETHODCALLTYPE IS_GetZoneMappings(IInternetSecurityManager FAR *This, DWORD dwZone, IEnumString **ppenumString, DWORD dwFlags) {
+static HRESULT STDMETHODCALLTYPE IS_GetZoneMappings(IInternetSecurityManager *This, DWORD dwZone, IEnumString **ppenumString, DWORD dwFlags) {
   return INET_E_DEFAULT_ACTION;
 }
 static IInternetSecurityManagerVtbl MyInternetSecurityManagerTable = {IS_QueryInterface, IS_AddRef, IS_Release, IS_SetSecuritySite, IS_GetSecuritySite, IS_MapUrlToZone, IS_GetSecurityId, IS_ProcessUrlAction, IS_QueryCustomPolicy, IS_SetZoneMapping, IS_GetZoneMappings};
 
-static HRESULT STDMETHODCALLTYPE SP_QueryInterface(IServiceProvider FAR *This, REFIID riid, void **ppvObject) {
+static HRESULT STDMETHODCALLTYPE SP_QueryInterface(IServiceProvider *This, REFIID riid, void **ppvObject) {
   return (Site_QueryInterface(
       (IOleClientSite *)((char *)This - sizeof(IOleClientSite) - sizeof(_IOleInPlaceSiteEx) - sizeof(_IDocHostUIHandlerEx) - sizeof(IDispatch)), riid, ppvObject));
 }
-static ULONG STDMETHODCALLTYPE SP_AddRef(IServiceProvider FAR *This) { return 1; }
-static ULONG STDMETHODCALLTYPE SP_Release(IServiceProvider FAR *This) { return 1; }
-static HRESULT STDMETHODCALLTYPE SP_QueryService(IServiceProvider FAR *This, REFGUID siid, REFIID riid, void **ppvObject) {
+static ULONG STDMETHODCALLTYPE SP_AddRef(IServiceProvider *This) { return 1; }
+static ULONG STDMETHODCALLTYPE SP_Release(IServiceProvider *This) { return 1; }
+static HRESULT STDMETHODCALLTYPE SP_QueryService(IServiceProvider *This, REFGUID siid, REFIID riid, void **ppvObject) {
   if (iid_eq(siid, &IID_IInternetSecurityManager) && iid_eq(riid, &IID_IInternetSecurityManager)) {
     *ppvObject = &((_IServiceProviderEx *)This)->mgr;
   } else {
