@@ -11,6 +11,13 @@
 
 #include <stdio.h>
 
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "comctl32.lib")
+#pragma comment(lib, "oleaut32.lib")
+#pragma comment(lib, "uuid.lib")
+#pragma comment(lib, "gdi32.lib")
+#pragma comment(lib, "user32.lib")
+
 // For GCC.
 #ifndef DPI_AWARENESS_CONTEXT_SYSTEM_AWARE
 DECLARE_HANDLE(DPI_AWARENESS_CONTEXT);
@@ -34,7 +41,9 @@ struct mshtml_webview {
   RECT saved_rect;
 };
 
-int webview_init(struct mshtml_webview *wv);
+LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static BOOL EnableDpiAwareness();
+static int DisplayHTMLPage(struct mshtml_webview *wv);
 
 WEBVIEW_API void webview_free(webview_t w) {
 	free(w);
@@ -55,31 +64,132 @@ static inline BSTR webview_to_bstr(const char *s) {
   return bs;
 }
 
+#define WEBVIEW_KEY_FEATURE_BROWSER_EMULATION                                  \
+  L"Software\\Microsoft\\Internet "                                            \
+   "Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION"
+
+static int webview_fix_ie_compat_mode() {
+  HKEY hKey;
+  DWORD ie_version = 11000;
+  WCHAR appname[MAX_PATH + 1];
+  WCHAR *p;
+  if (GetModuleFileNameW(NULL, appname, MAX_PATH + 1) == 0) {
+    return -1;
+  }
+  for (p = &appname[wcslen(appname) - 1]; p != appname && *p != L'\\'; p--) {
+  }
+  p++;
+  if (RegCreateKeyW(HKEY_CURRENT_USER, WEBVIEW_KEY_FEATURE_BROWSER_EMULATION,
+                    &hKey) != ERROR_SUCCESS) {
+    return -1;
+  }
+  if (RegSetValueExW(hKey, p, 0, REG_DWORD, (BYTE *)&ie_version,
+                     sizeof(ie_version)) != ERROR_SUCCESS) {
+    RegCloseKey(hKey);
+    return -1;
+  }
+  RegCloseKey(hKey);
+  return 0;
+}
+
+static const TCHAR *classname = "WebView";
+
 WEBVIEW_API webview_t webview_new(
   const char* title, const char* url, int width, int height, int resizable, int debug, 
   int frameless, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
-	struct mshtml_webview* wv = (struct mshtml_webview*)calloc(1, sizeof(*wv));
-	wv->width = width;
-	wv->height = height;
-	wv->url = url;
-	wv->resizable = resizable;
-	wv->debug = debug;
-  wv->frameless = frameless;
-	wv->external_invoke_cb = external_invoke_cb;
-	wv->userdata = userdata;
-	if (webview_init(wv, title) != 0) {
-		webview_free(wv);
-		return NULL;
-	}
-	return wv;
-}
 
-#pragma comment(lib, "ole32.lib")
-#pragma comment(lib, "comctl32.lib")
-#pragma comment(lib, "oleaut32.lib")
-#pragma comment(lib, "uuid.lib")
-#pragma comment(lib, "gdi32.lib")
-#pragma comment(lib, "user32.lib")
+  if (webview_fix_ie_compat_mode() < 0) {
+    return NULL;
+  }
+
+  HINSTANCE hInstance = GetModuleHandle(NULL);
+  if (hInstance == NULL) {
+    return NULL;
+  }
+
+  HRESULT oleInitCode = OleInitialize(NULL);
+  if (oleInitCode != S_OK && oleInitCode != S_FALSE) {
+    return NULL;
+  }
+
+  // Return value not checked. If this function fails, simply continue without
+  // high DPI support.
+  EnableDpiAwareness();
+
+  WNDCLASSEX wc;
+  ZeroMemory(&wc, sizeof(WNDCLASSEX));
+  wc.cbSize = sizeof(WNDCLASSEX);
+  wc.hInstance = hInstance;
+  wc.lpfnWndProc = wndproc;
+  wc.lpszClassName = classname;
+  RegisterClassEx(&wc);
+
+  DWORD style = WS_OVERLAPPEDWINDOW;
+  if (!resizable) {
+      style &= ~(WS_SIZEBOX);
+  }
+  if (frameless) {
+    style &= ~(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+  }
+
+  // Get DPI.
+  HDC screen = GetDC(0);
+  int DPI = GetDeviceCaps(screen, LOGPIXELSX);
+  ReleaseDC(0, screen);
+
+  RECT rect;
+  rect.left = 0;
+  rect.top = 0;
+  rect.right = MulDiv(width, DPI, 96);
+  rect.bottom = MulDiv(height, DPI, 96);
+  AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, 0);
+
+  RECT clientRect;
+  GetClientRect(GetDesktopWindow(), &clientRect);
+  int left = (clientRect.right / 2) - ((rect.right - rect.left) / 2);
+  int top = (clientRect.bottom / 2) - ((rect.bottom - rect.top) / 2);
+  rect.right = rect.right - rect.left + left;
+  rect.left = left;
+  rect.bottom = rect.bottom - rect.top + top;
+  rect.top = top;
+
+  BSTR window_title = webview_to_bstr(title);
+  struct mshtml_webview* wv = (struct mshtml_webview*)calloc(1, sizeof(*wv));
+
+  wv->width = width;
+  wv->height = height;
+  wv->url = url;
+  wv->resizable = resizable;
+  wv->debug = debug;
+  wv->frameless = frameless;
+  wv->external_invoke_cb = external_invoke_cb;
+  wv->userdata = userdata;
+  wv->hwnd =
+      CreateWindowEx(0, classname, window_title, style, rect.left, rect.top,
+                     rect.right - rect.left, rect.bottom - rect.top,
+                     HWND_DESKTOP, NULL, hInstance, (void *)wv);
+
+  SysFreeString(window_title);
+  if (wv->hwnd == 0) {
+    webview_free(wv);
+    OleUninitialize();
+    return NULL;
+  }
+
+  SetWindowLongPtr(wv->hwnd, GWLP_USERDATA, (LONG_PTR)wv);
+
+  if (wv->frameless) {
+    SetWindowLongPtr(wv->hwnd, GWL_STYLE, style);
+  }
+
+  DisplayHTMLPage(wv);
+
+  ShowWindow(wv->hwnd, SW_SHOWDEFAULT);
+  UpdateWindow(wv->hwnd);
+  SetFocus(wv->hwnd);
+
+  return wv;
+}
 
 #define WM_WEBVIEW_DISPATCH (WM_APP + 1)
 
@@ -517,7 +627,6 @@ UI_FilterDataObject(IDocHostUIHandler *This, IDataObject *pDO,
   return S_FALSE;
 }
 
-static const TCHAR *classname = "WebView";
 static const SAFEARRAYBOUND ArrayBound = {1, 0};
 
 static IOleClientSiteVtbl MyIOleClientSiteTable = {
@@ -794,8 +903,7 @@ static int DisplayHTMLPage(struct mshtml_webview *wv) {
   return (-5);
 }
 
-static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
-                                LPARAM lParam) {
+LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
   struct mshtml_webview *wv = (struct mshtml_webview *)GetWindowLongPtr(hwnd, GWLP_USERDATA);
   switch (uMsg) {
   case WM_CREATE:
@@ -826,119 +934,6 @@ static LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam,
   }
   }
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
-}
-
-#define WEBVIEW_KEY_FEATURE_BROWSER_EMULATION                                  \
-  L"Software\\Microsoft\\Internet "                                            \
-   "Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION"
-
-static int webview_fix_ie_compat_mode() {
-  HKEY hKey;
-  DWORD ie_version = 11000;
-  WCHAR appname[MAX_PATH + 1];
-  WCHAR *p;
-  if (GetModuleFileNameW(NULL, appname, MAX_PATH + 1) == 0) {
-    return -1;
-  }
-  for (p = &appname[wcslen(appname) - 1]; p != appname && *p != L'\\'; p--) {
-  }
-  p++;
-  if (RegCreateKeyW(HKEY_CURRENT_USER, WEBVIEW_KEY_FEATURE_BROWSER_EMULATION,
-                    &hKey) != ERROR_SUCCESS) {
-    return -1;
-  }
-  if (RegSetValueExW(hKey, p, 0, REG_DWORD, (BYTE *)&ie_version,
-                     sizeof(ie_version)) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
-    return -1;
-  }
-  RegCloseKey(hKey);
-  return 0;
-}
-
-int webview_init(struct mshtml_webview *wv, const char* title) {
-  WNDCLASSEX wc;
-  HINSTANCE hInstance;
-  DWORD style;
-  RECT clientRect;
-  RECT rect;
-  HRESULT oleInitCode;
-
-  if (webview_fix_ie_compat_mode() < 0) {
-    return -1;
-  }
-
-  hInstance = GetModuleHandle(NULL);
-  if (hInstance == NULL) {
-    return -1;
-  }
-
-  oleInitCode = OleInitialize(NULL);
-  if (oleInitCode != S_OK && oleInitCode != S_FALSE) {
-    return -1;
-  }
-  // Return value not checked. If this function fails, simply continue without
-  // high DPI support.
-  EnableDpiAwareness();
-  ZeroMemory(&wc, sizeof(WNDCLASSEX));
-  wc.cbSize = sizeof(WNDCLASSEX);
-  wc.hInstance = hInstance;
-  wc.lpfnWndProc = wndproc;
-  wc.lpszClassName = classname;
-  RegisterClassEx(&wc);
-
-  style = WS_OVERLAPPEDWINDOW;
-  if (!wv->resizable) {
-      style &= ~(WS_SIZEBOX);
-  }
-  if (wv->frameless) {
-    style &= ~(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
-  }
-
-  // Get DPI.
-  HDC screen = GetDC(0);
-  int DPI = GetDeviceCaps(screen, LOGPIXELSX);
-  ReleaseDC(0, screen);
-
-  rect.left = 0;
-  rect.top = 0;
-  rect.right = MulDiv(wv->width, DPI, 96);
-  rect.bottom = MulDiv(wv->height, DPI, 96);
-  AdjustWindowRect(&rect, WS_OVERLAPPEDWINDOW, 0);
-
-  GetClientRect(GetDesktopWindow(), &clientRect);
-  int left = (clientRect.right / 2) - ((rect.right - rect.left) / 2);
-  int top = (clientRect.bottom / 2) - ((rect.bottom - rect.top) / 2);
-  rect.right = rect.right - rect.left + left;
-  rect.left = left;
-  rect.bottom = rect.bottom - rect.top + top;
-  rect.top = top;
-
-  BSTR window_title = webview_to_bstr(title);
-  wv->hwnd =
-      CreateWindowEx(0, classname, window_title, style, rect.left, rect.top,
-                     rect.right - rect.left, rect.bottom - rect.top,
-                     HWND_DESKTOP, NULL, hInstance, (void *)wv);
-
-  SysFreeString(window_title);
-
-  if (wv->hwnd == 0) {
-    OleUninitialize();
-    return -1;
-  }
-
-  SetWindowLongPtr(wv->hwnd, GWLP_USERDATA, (LONG_PTR)wv);
-  if (wv->frameless) 
-  {
-    SetWindowLongPtr(wv->hwnd, GWL_STYLE, style);
-  }
-  DisplayHTMLPage(wv);
-
-  ShowWindow(wv->hwnd, SW_SHOWDEFAULT);
-  UpdateWindow(wv->hwnd);
-  SetFocus(wv->hwnd);
-
-  return 0;
 }
 
 WEBVIEW_API int webview_loop(webview_t w, int blocking) {
