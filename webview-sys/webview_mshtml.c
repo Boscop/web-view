@@ -46,9 +46,9 @@ WEBVIEW_API void* webview_get_user_data(webview_t w) {
 	return wv->userdata;
 }
 
-static inline BSTR *webview_to_bstr(const char *s) {
+static inline BSTR webview_to_bstr(const char *s) {
   DWORD size = MultiByteToWideChar(CP_UTF8, 0, s, -1, 0, 0);
-  BSTR *bs = SysAllocStringLen(0, size);
+  BSTR bs = SysAllocStringLen(0, size);
   if (bs == NULL) {
     return NULL;
   }
