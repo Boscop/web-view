@@ -19,7 +19,6 @@ DECLARE_HANDLE(DPI_AWARENESS_CONTEXT);
 
 struct mshtml_webview {
   const char *url;
-  const BSTR *title;
   int width;
   int height;
   int resizable;
@@ -62,14 +61,13 @@ WEBVIEW_API webview_t webview_new(
 	struct mshtml_webview* wv = (struct mshtml_webview*)calloc(1, sizeof(*wv));
 	wv->width = width;
 	wv->height = height;
-	wv->title = webview_to_bstr(title);
 	wv->url = url;
 	wv->resizable = resizable;
 	wv->debug = debug;
   wv->frameless = frameless;
 	wv->external_invoke_cb = external_invoke_cb;
 	wv->userdata = userdata;
-	if (webview_init(wv) != 0) {
+	if (webview_init(wv, title) != 0) {
 		webview_free(wv);
 		return NULL;
 	}
@@ -858,7 +856,7 @@ static int webview_fix_ie_compat_mode() {
   return 0;
 }
 
-int webview_init(struct mshtml_webview *wv) {
+int webview_init(struct mshtml_webview *wv, const char* title) {
   WNDCLASSEX wc;
   HINSTANCE hInstance;
   DWORD style;
@@ -916,10 +914,14 @@ int webview_init(struct mshtml_webview *wv) {
   rect.bottom = rect.bottom - rect.top + top;
   rect.top = top;
 
+  BSTR window_title = webview_to_bstr(title);
   wv->hwnd =
-      CreateWindowEx(0, classname, wv->title, style, rect.left, rect.top,
+      CreateWindowEx(0, classname, window_title, style, rect.left, rect.top,
                      rect.right - rect.left, rect.bottom - rect.top,
                      HWND_DESKTOP, NULL, hInstance, (void *)wv);
+
+  SysFreeString(window_title);
+
   if (wv->hwnd == 0) {
     OleUninitialize();
     return -1;
@@ -932,7 +934,6 @@ int webview_init(struct mshtml_webview *wv) {
   }
   DisplayHTMLPage(wv);
 
-  SetWindowText(wv->hwnd, wv->title);
   ShowWindow(wv->hwnd, SW_SHOWDEFAULT);
   UpdateWindow(wv->hwnd);
   SetFocus(wv->hwnd);
@@ -950,11 +951,6 @@ WEBVIEW_API int webview_loop(webview_t w, int blocking) {
   }
   switch (msg.message) {
   case WM_QUIT:
-    if (wv->title != NULL)
-    {
-      SysFreeString(wv->title);
-      wv->title = NULL;
-    }
     return -1;
   case WM_COMMAND:
   case WM_KEYDOWN:
@@ -1059,12 +1055,9 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
 
 WEBVIEW_API void webview_set_title(webview_t w, const char *title) {
   struct mshtml_webview* wv = (struct mshtml_webview*)w;
-  if (wv->title != NULL)
-  {
-    SysFreeString(wv->title);
-  }
-  wv->title = webview_to_bstr(title);
-  SetWindowText(wv->hwnd, wv->title);
+  BSTR window_title = webview_to_bstr(title);
+  SetWindowText(wv->hwnd, window_title);
+  SysFreeString(window_title);
 }
 
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
@@ -1117,11 +1110,6 @@ WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
 
 WEBVIEW_API void webview_exit(webview_t w) {
   struct mshtml_webview* wv = (struct mshtml_webview*)w;
-  if (wv->title != NULL)
-  {
-    SysFreeString(wv->title);
-    wv->title = NULL;
-  }
   DestroyWindow(wv->hwnd);
   OleUninitialize();
 }
