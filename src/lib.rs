@@ -49,6 +49,17 @@ use std::{
 };
 use urlencoding::encode;
 
+/// JavaScript function used to insert new css rules to webview.
+/// This function should be called with only one argument
+/// and that is the css to insert int webview.
+/// With every call of this function new style element
+/// will get created with css pasted as its children.
+const CSS_INJECT_FUNCTION: &str = "(function(e){var \
+    t=document.createElement('style'),d=document.head||document.\
+    getElementsByTagName('head')[0];t.setAttribute('type','text/\
+    css'),t.styleSheet?t.styleSheet.cssText=e:t.appendChild(document.\
+    createTextNode(e)),d.appendChild(t)})";
+
 /// Content displayable inside a [`WebView`].
 ///
 /// # Variants
@@ -386,13 +397,8 @@ impl<'a, T> WebView<'a, T> {
 
     /// Injects the provided string as CSS within the `WebView` instance.
     pub fn inject_css(&mut self, css: &str) -> WVResult {
-        let css = CString::new(css)?;
-        let ret = unsafe { webview_inject_css(self.inner, css.as_ptr()) };
-        if ret != 0 {
-            Err(Error::CssInjection)
-        } else {
-            Ok(())
-        }
+        let inject_func = format!("{}({})", CSS_INJECT_FUNCTION, escape(css));
+        self.eval(&inject_func).map_err(|_| Error::CssInjection)
     }
 
     /// Sets the color of the title bar.
