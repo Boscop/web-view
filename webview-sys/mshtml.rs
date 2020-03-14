@@ -4,12 +4,15 @@
 use com::{com_interface, interfaces::iunknown::IUnknown};
 use libc::{c_char, c_int, c_void};
 use std::ffi::{CStr, OsStr};
-use std::os::windows::ffi::{OsStrExt, OsStringExt};
-use std::ffi::{OsString, CString};
-use std::ptr;
+use std::ffi::{CString, OsString};
 use std::mem;
+use std::os::windows::ffi::{OsStrExt, OsStringExt};
+use std::ptr;
 use winapi::shared::{basetsd, minwindef, ntdef, windef, winerror, wtypesbase};
-use winapi::um::{winbase, errhandlingapi, libloaderapi, ole2, wingdi, winuser, combaseapi, shobjidl_core, shobjidl};
+use winapi::um::{
+    combaseapi, errhandlingapi, libloaderapi, ole2, shobjidl, shobjidl_core, winbase, wingdi,
+    winuser,
+};
 use winreg::{enums, RegKey};
 
 type ExternalInvokeCallback = extern "C" fn(webview: *mut WebView, arg: *const c_char);
@@ -146,7 +149,10 @@ extern "C" fn webview_new(
         }
 
         if frameless != 0 {
-            style &= !(winuser::WS_SYSMENU | winuser::WS_CAPTION | winuser::WS_MINIMIZEBOX | winuser::WS_MAXIMIZEBOX);
+            style &= !(winuser::WS_SYSMENU
+                | winuser::WS_CAPTION
+                | winuser::WS_MINIMIZEBOX
+                | winuser::WS_MAXIMIZEBOX);
         }
 
         // Get DPI.
@@ -223,7 +229,11 @@ extern "C" fn webview_new(
 
         (*webview_ptr).hwnd = handle;
 
-        winuser::SetWindowLongPtrW(handle, winuser::GWLP_USERDATA, std::mem::transmute(webview_ptr));
+        winuser::SetWindowLongPtrW(
+            handle,
+            winuser::GWLP_USERDATA,
+            std::mem::transmute(webview_ptr),
+        );
 
         if frameless != 0 {
             winuser::SetWindowLongPtrW(handle, winuser::GWL_STYLE, style as _);
