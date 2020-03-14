@@ -1,6 +1,6 @@
 [package]
 name = "webview-sys"
-version = "0.4.2"
+version = "0.5.0"
 authors = ["Boscop", "zxey <r.hozak@seznam.cz>"]
 license = "MIT"
 repository = "https://github.com/Boscop/web-view"

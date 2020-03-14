@@ -1,6 +1,6 @@
 [package]
 name = "web-view"
-version = "0.6.1"
+version = "0.6.2"
 authors = ["Boscop", "zxey <r.hozak@seznam.cz>", "Sam Green <sam.green81@gmail.com>"]
 readme = "README.md"
 license = "MIT"
@@ -12,7 +12,7 @@ exclude = ["examples/todo-ps/dist/**/*", "examples/elm-counter/index.html"]
 
 [dependencies]
 urlencoding = "1.0"
-webview-sys = { path = "webview-sys", version = "0.4" }
+webview-sys = { path = "webview-sys", version = "0.5" }
 boxfnonce = "0.1"
 tinyfiledialogs = "3.3.9"
 
