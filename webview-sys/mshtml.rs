@@ -29,7 +29,6 @@ extern "system" {
 
 extern "C" {
     fn DisplayHTMLPage(webview: *mut WebView) -> c_int;
-    fn EnableDpiAwareness() -> minwindef::BOOL;
 }
 
 #[repr(C)]
@@ -140,7 +139,7 @@ extern "C" fn webview_new(
 
         // Return value not checked. If this function fails, simply continue without
         // high DPI support.
-        let _ = EnableDpiAwareness();
+        let _ = enable_dpi_awareness();
         let mut style = winuser::WS_OVERLAPPEDWINDOW;
         if resizable == 0 {
             style &= !winuser::WS_SIZEBOX;
@@ -237,6 +236,47 @@ extern "C" fn webview_new(
         winuser::SetFocus(handle);
 
         webview_ptr
+    }
+}
+
+fn enable_dpi_awareness() -> bool {
+    type FnSetThreadDpiAwarenessContext = extern "system" fn(
+        dpi_context: windef::DPI_AWARENESS_CONTEXT,
+    ) -> windef::DPI_AWARENESS_CONTEXT;
+
+    type FnSetProcessDpiAware = extern "system" fn() -> minwindef::BOOL;
+
+    let user32 = "user32.dll";
+    let user32 = to_wstring(user32);
+
+    unsafe {
+        let hmodule = libloaderapi::GetModuleHandleW(user32.as_ptr());
+        if hmodule.is_null() {
+            return false;
+        }
+
+        let set_thread_dpi_awareness = CString::new("SetThreadDpiAwarenessContext").unwrap();
+        let set_thread_dpi_awareness =
+            libloaderapi::GetProcAddress(hmodule, set_thread_dpi_awareness.as_ptr());
+
+        if !set_thread_dpi_awareness.is_null() {
+            let set_thread_dpi_awareness: FnSetThreadDpiAwarenessContext =
+                mem::transmute(set_thread_dpi_awareness);
+            if !set_thread_dpi_awareness(windef::DPI_AWARENESS_CONTEXT_SYSTEM_AWARE).is_null() {
+                return true;
+            }
+        }
+
+        let set_process_dpi_aware = CString::new("SetProcessDPIAware").unwrap();
+        let set_process_dpi_aware =
+            libloaderapi::GetProcAddress(hmodule, set_process_dpi_aware.as_ptr());
+
+        if set_process_dpi_aware.is_null() {
+            return false;
+        }
+
+        let set_process_dpi_aware: FnSetProcessDpiAware = mem::transmute(set_process_dpi_aware);
+        set_process_dpi_aware() != 0
     }
 }
 

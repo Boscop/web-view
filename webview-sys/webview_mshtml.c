@@ -42,7 +42,6 @@ struct mshtml_webview {
 };
 
 LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-BOOL EnableDpiAwareness();
 int DisplayHTMLPage(struct mshtml_webview *wv);
 
 WEBVIEW_API void webview_free(webview_t w) {
@@ -234,9 +233,6 @@ typedef struct {
   _IServiceProviderEx provider;
 } _IOleClientSiteEx;
 
-typedef DPI_AWARENESS_CONTEXT (WINAPI *FnSetThreadDpiAwarenessContext)(DPI_AWARENESS_CONTEXT);
-typedef BOOL (WINAPI *FnSetProcessDPIAware)();
-
 #ifdef __cplusplus
 #define iid_ref(x) &(x)
 #define iid_unref(x) *(x)
@@ -335,30 +331,6 @@ JS_Invoke(IDispatch *This, DISPID dispIdMember, REFIID riid, LCID lcid,
 static IDispatchVtbl ExternalDispatchTable = {
     JS_QueryInterface, JS_AddRef,        JS_Release, JS_GetTypeInfoCount,
     JS_GetTypeInfo,    JS_GetIDsOfNames, JS_Invoke};
-
-BOOL EnableDpiAwareness() {
-    // Use SetThreadDpiAwarenessContext if it's available (Windows 10).
-    //
-    // Use "SYSTEM_AWARE" because we haven't figure out how to make the browser
-    // control properly handle DPI changes.
-    HMODULE libUser32 = GetModuleHandleW(L"user32.dll");
-    if (libUser32) {
-        FnSetThreadDpiAwarenessContext SetThreadDpiAwarenessContext =
-            (FnSetThreadDpiAwarenessContext) GetProcAddress(libUser32, "SetThreadDpiAwarenessContext");
-        if(SetThreadDpiAwarenessContext != NULL) {
-            if (SetThreadDpiAwarenessContext(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE) != NULL) {
-                return TRUE;
-            }
-        }
-        // Otherwise fallback to SetProcessDPIAware. GCC can't handle the linking, so we use `GetProcAddress` too.
-        FnSetProcessDPIAware SetProcessDPIAware =
-          (FnSetProcessDPIAware) GetProcAddress(libUser32, "SetProcessDPIAware");
-        if(SetProcessDPIAware != NULL) {
-          return SetProcessDPIAware();
-        }
-    }
-    return FALSE;
-}
 
 static ULONG STDMETHODCALLTYPE Site_AddRef(IOleClientSite *This) {
   return 1;
