@@ -42,8 +42,8 @@ struct mshtml_webview {
 };
 
 LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL EnableDpiAwareness();
-static int DisplayHTMLPage(struct mshtml_webview *wv);
+BOOL EnableDpiAwareness();
+int DisplayHTMLPage(struct mshtml_webview *wv);
 
 WEBVIEW_API void webview_free(webview_t w) {
 	free(w);
@@ -336,7 +336,7 @@ static IDispatchVtbl ExternalDispatchTable = {
     JS_QueryInterface, JS_AddRef,        JS_Release, JS_GetTypeInfoCount,
     JS_GetTypeInfo,    JS_GetIDsOfNames, JS_Invoke};
 
-static BOOL EnableDpiAwareness() {
+BOOL EnableDpiAwareness() {
     // Use SetThreadDpiAwarenessContext if it's available (Windows 10).
     //
     // Use "SYSTEM_AWARE" because we haven't figure out how to make the browser
@@ -839,7 +839,7 @@ error:
 }
 
 #define WEBVIEW_DATA_URL_PREFIX "data:text/html,"
-static int DisplayHTMLPage(struct mshtml_webview *wv) {
+int DisplayHTMLPage(struct mshtml_webview *wv) {
   IWebBrowser2 *webBrowser2;
   VARIANT myURL;
   LPDISPATCH lpDispatch;

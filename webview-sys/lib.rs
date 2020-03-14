@@ -10,6 +10,9 @@ mod gtk;
 
 use std::os::raw::*;
 
+#[cfg(target_os = "windows")]
+mod mshtml;
+
 pub enum CWebView {} // opaque type, only used in ffi pointers
 
 type ErasedExternalInvokeFn = extern "C" fn(webview: *mut CWebView, arg: *const c_char);

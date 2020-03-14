@@ -321,7 +321,7 @@ impl<'a, T> WebView<'a, T> {
                 resizable as _,
                 debug as _,
                 frameless as _,
-                Some(ffi_invoke_handler::<T>),
+                ffi_invoke_handler::<T>,
                 user_data_ptr as _,
             );
 
