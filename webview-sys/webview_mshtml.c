@@ -840,7 +840,7 @@ static int DisplayHTMLPage(struct mshtml_webview *wv) {
   VARIANT *pVar;
   browserObject = *wv->browser;
   int isDataURL = 0;
-  const char *webview_url = webview_check_url(wv->url);
+  const char *webview_url = wv->url == NULL ? "" : wv->url;
   if (!browserObject->lpVtbl->QueryInterface(
           browserObject, iid_unref(&IID_IWebBrowser2), (void **)&webBrowser2)) {
     LPCSTR webPageName;

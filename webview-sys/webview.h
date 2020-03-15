@@ -46,21 +46,6 @@ struct webview_dispatch_arg {
   void *arg;
 };
 
-#define DEFAULT_URL                                                            \
-  "data:text/"                                                                 \
-  "html,%3C%21DOCTYPE%20html%3E%0A%3Chtml%20lang=%22en%22%3E%0A%3Chead%3E%"    \
-  "3Cmeta%20charset=%22utf-8%22%3E%3Cmeta%20http-equiv=%22X-UA-Compatible%22%" \
-  "20content=%22IE=edge%22%3E%3C%2Fhead%3E%0A%3Cbody%3E%3Cdiv%20id=%22app%22%" \
-  "3E%3C%2Fdiv%3E%3Cscript%20type=%22text%2Fjavascript%22%3E%3C%2Fscript%3E%"  \
-  "3C%2Fbody%3E%0A%3C%2Fhtml%3E"
-
-const char *webview_check_url(const char *url) {
-  if (url == NULL || strlen(url) == 0) {
-    return DEFAULT_URL;
-  }
-  return url;
-}
-
 // Convert ASCII hex digit to a nibble (four bits, 0 - 15).
 //
 // Use unsigned to avoid signed overflow UB.

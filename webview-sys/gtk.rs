@@ -126,7 +126,14 @@ unsafe extern "C" fn webview_new(
 
     let webview = webkit_web_view_new_with_user_content_manager(m);
     (*w).webview = webview;
-    webkit_web_view_load_uri(mem::transmute(webview), webview_check_url(url));
+    webkit_web_view_load_uri(
+        mem::transmute(webview),
+        if url.is_null() {
+            b"\0".as_ptr() as *const i8
+        } else {
+            url
+        },
+    );
     g_signal_connect_data(
         mem::transmute(webview),
         CStr::from_bytes_with_nul_unchecked(b"load-changed\0").as_ptr(),
@@ -176,10 +183,6 @@ unsafe extern "C" fn webview_new(
     );
 
     w
-}
-
-extern "C" {
-    fn webview_check_url(url: *const c_char) -> *const c_char;
 }
 
 extern "C" fn webview_context_menu_cb(
