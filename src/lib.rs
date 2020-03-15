@@ -24,9 +24,9 @@
 #![allow(deprecated)] // TODO: remove this when removing dialogs
 
 extern crate boxfnonce;
+extern crate tinyfiledialogs as tfd;
 extern crate urlencoding;
 extern crate webview_sys as ffi;
-extern crate tinyfiledialogs as tfd;
 
 mod color;
 mod dialog;
@@ -188,7 +188,7 @@ where
         self
     }
     /// The window crated will be frameless
-    /// 
+    ///
     /// defaults to `false`
     pub fn frameless(mut self, frameless: bool) -> Self {
         self.frameless = frameless;
@@ -437,9 +437,10 @@ impl<'a, T> WebView<'a, T> {
         unsafe { webview_set_fullscreen(self.inner, fullscreen as _) };
     }
 
-
     /// Returns a builder for opening a new dialog window.
-    #[deprecated(note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs")]
+    #[deprecated(
+        note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs"
+    )]
     pub fn dialog<'b>(&'b mut self) -> DialogBuilder<'a, 'b, T> {
         DialogBuilder::new(self)
     }
