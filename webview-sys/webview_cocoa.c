@@ -438,7 +438,7 @@ WEBVIEW_API int webview_init(webview_t w) {
 
   id nsURL = objc_msgSend((id)objc_getClass("NSURL"),
                           sel_registerName("URLWithString:"),
-                          get_nsstring(webview_check_url(wv->url)));
+                          get_nsstring(wv->url == NULL ? "" : wv->url));
 
   objc_msgSend(wv->priv.webview, sel_registerName("loadRequest:"),
                objc_msgSend((id)objc_getClass("NSURLRequest"),

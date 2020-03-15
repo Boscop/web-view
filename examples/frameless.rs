@@ -13,7 +13,7 @@ fn main() {
         .invoke_handler(|webview, arg| {
             match arg {
                 "exit" => webview.exit(),
-                _ => ()
+                _ => (),
             }
             Ok(())
         })

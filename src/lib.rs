@@ -24,9 +24,9 @@
 #![allow(deprecated)] // TODO: remove this when removing dialogs
 
 extern crate boxfnonce;
+extern crate tinyfiledialogs as tfd;
 extern crate urlencoding;
 extern crate webview_sys as ffi;
-extern crate tinyfiledialogs as tfd;
 
 mod color;
 mod dialog;
@@ -48,6 +48,17 @@ use std::{
     sync::{Arc, RwLock, Weak},
 };
 use urlencoding::encode;
+
+/// JavaScript function used to insert new css rules to webview.
+/// This function should be called with only one argument
+/// and that is the css to insert int webview.
+/// With every call of this function new style element
+/// will get created with css pasted as its children.
+const CSS_INJECT_FUNCTION: &str = "(function(e){var \
+    t=document.createElement('style'),d=document.head||document.\
+    getElementsByTagName('head')[0];t.setAttribute('type','text/\
+    css'),t.styleSheet?t.styleSheet.cssText=e:t.appendChild(document.\
+    createTextNode(e)),d.appendChild(t)})";
 
 /// Content displayable inside a [`WebView`].
 ///
@@ -177,7 +188,7 @@ where
         self
     }
     /// The window crated will be frameless
-    /// 
+    ///
     /// defaults to `false`
     pub fn frameless(mut self, frameless: bool) -> Self {
         self.frameless = frameless;
@@ -386,13 +397,8 @@ impl<'a, T> WebView<'a, T> {
 
     /// Injects the provided string as CSS within the `WebView` instance.
     pub fn inject_css(&mut self, css: &str) -> WVResult {
-        let css = CString::new(css)?;
-        let ret = unsafe { webview_inject_css(self.inner.unwrap(), css.as_ptr()) };
-        if ret != 0 {
-            Err(Error::CssInjection)
-        } else {
-            Ok(())
-        }
+        let inject_func = format!("{}({})", CSS_INJECT_FUNCTION, escape(css));
+        self.eval(&inject_func).map_err(|_| Error::CssInjection)
     }
 
     /// Sets the color of the title bar.
@@ -431,9 +437,10 @@ impl<'a, T> WebView<'a, T> {
         unsafe { webview_set_fullscreen(self.inner.unwrap(), fullscreen as _) };
     }
 
-
     /// Returns a builder for opening a new dialog window.
-    #[deprecated(note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs")]
+    #[deprecated(
+        note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs"
+    )]
     pub fn dialog<'b>(&'b mut self) -> DialogBuilder<'a, 'b, T> {
         DialogBuilder::new(self)
     }

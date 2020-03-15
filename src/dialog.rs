@@ -3,7 +3,9 @@ use tfd::MessageBoxIcon;
 use {WVResult, WebView};
 
 /// A builder for opening a new dialog window.
-#[deprecated(note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs")]
+#[deprecated(
+    note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs"
+)]
 #[derive(Debug)]
 pub struct DialogBuilder<'a: 'b, 'b, T: 'a> {
     webview: &'b mut WebView<'a, T>,
