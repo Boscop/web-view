@@ -284,7 +284,7 @@ struct UserData<'a, T> {
 /// [`WebViewBuilder`]: struct.WebViewBuilder.html
 #[derive(Debug)]
 pub struct WebView<'a, T: 'a> {
-    inner: *mut CWebView,
+    inner: Option<*mut CWebView>,
     _phantom: PhantomData<&'a mut T>,
 }
 
@@ -336,7 +336,7 @@ impl<'a, T> WebView<'a, T> {
 
     unsafe fn from_ptr(inner: *mut CWebView) -> WebView<'a, T> {
         WebView {
-            inner,
+            inner: Some(inner),
             _phantom: PhantomData,
         }
     }
@@ -346,14 +346,14 @@ impl<'a, T> WebView<'a, T> {
     /// [`Handle`]: struct.Handle.html
     pub fn handle(&self) -> Handle<T> {
         Handle {
-            inner: self.inner,
+            inner: self.inner.unwrap(),
             live: Arc::downgrade(&self.user_data_wrapper().live),
             _phantom: PhantomData,
         }
     }
 
     fn user_data_wrapper_ptr(&self) -> *mut UserData<'a, T> {
-        unsafe { webview_get_user_data(self.inner) as _ }
+        unsafe { webview_get_user_data(self.inner.unwrap()) as _ }
     }
 
     fn user_data_wrapper(&self) -> &UserData<'a, T> {
@@ -381,13 +381,13 @@ impl<'a, T> WebView<'a, T> {
 
     /// Gracefully exits the webview
     pub fn exit(&mut self) {
-        unsafe { webview_exit(self.inner) }
+        unsafe { webview_exit(self.inner.unwrap()) }
     }
 
     /// Executes the provided string as JavaScript code within the `WebView` instance.
     pub fn eval(&mut self, js: &str) -> WVResult {
         let js = CString::new(js)?;
-        let ret = unsafe { webview_eval(self.inner, js.as_ptr()) };
+        let ret = unsafe { webview_eval(self.inner.unwrap(), js.as_ptr()) };
         if ret != 0 {
             Err(Error::JsEvaluation)
         } else {
@@ -416,7 +416,7 @@ impl<'a, T> WebView<'a, T> {
     /// ```
     pub fn set_color<C: Into<Color>>(&mut self, color: C) {
         let color = color.into();
-        unsafe { webview_set_color(self.inner, color.r, color.g, color.b, color.a) }
+        unsafe { webview_set_color(self.inner.unwrap(), color.r, color.g, color.b, color.a) }
     }
 
     /// Sets the title displayed at the top of the window.
@@ -428,13 +428,13 @@ impl<'a, T> WebView<'a, T> {
     /// [`Error::NulByte`]: enum.Error.html#variant.NulByte
     pub fn set_title(&mut self, title: &str) -> WVResult {
         let title = CString::new(title)?;
-        unsafe { webview_set_title(self.inner, title.as_ptr()) }
+        unsafe { webview_set_title(self.inner.unwrap(), title.as_ptr()) }
         Ok(())
     }
 
     /// Enables or disables fullscreen.
     pub fn set_fullscreen(&mut self, fullscreen: bool) {
-        unsafe { webview_set_fullscreen(self.inner, fullscreen as _) };
+        unsafe { webview_set_fullscreen(self.inner.unwrap(), fullscreen as _) };
     }
 
     /// Returns a builder for opening a new dialog window.
@@ -448,7 +448,7 @@ impl<'a, T> WebView<'a, T> {
     /// Iterates the event loop. Returns `None` if the view has been closed or terminated.
     pub fn step(&mut self) -> Option<WVResult> {
         unsafe {
-            match webview_loop(self.inner, 1) {
+            match webview_loop(self.inner.unwrap(), 1) {
                 0 => {
                     let closure_result = &mut self.user_data_wrapper_mut().result;
                     match closure_result {
@@ -489,8 +489,8 @@ impl<'a, T> WebView<'a, T> {
             .expect("A dispatch channel thread panicked while holding mutex to WebView.");
 
         let user_data_ptr = self.user_data_wrapper_ptr();
-        webview_exit(self.inner);
-        webview_free(self.inner);
+        webview_exit(self.inner.unwrap());
+        webview_free(self.inner.unwrap());
         let user_data = *Box::from_raw(user_data_ptr);
         std::mem::drop(lock);
         user_data.inner
@@ -499,8 +499,11 @@ impl<'a, T> WebView<'a, T> {
 
 impl<'a, T> Drop for WebView<'a, T> {
     fn drop(&mut self) {
-        unsafe {
-            self._into_inner();
+        if self.inner.is_some() {
+            unsafe {
+                self._into_inner();
+            }
+            self.inner = None;
         }
     }
 }
@@ -563,21 +566,25 @@ unsafe impl<T> Sync for Handle<T> {}
 
 extern "C" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_void) {
     unsafe {
-        let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
+        let mut handle = WebView::<T>::from_ptr(webview);
         let result = {
             let callback =
                 Box::<SendBoxFnOnce<'static, (&mut WebView<T>,), WVResult>>::from_raw(arg as _);
             callback.call(&mut handle)
         };
         handle.user_data_wrapper_mut().result = result;
+        // Do not clean up the webview on drop of the temporary WebView in handle
+        handle.inner = None;
     }
 }
 
 extern "C" fn ffi_invoke_handler<T>(webview: *mut CWebView, arg: *const c_char) {
     unsafe {
         let arg = CStr::from_ptr(arg).to_string_lossy().to_string();
-        let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
-        let result = ((*handle.user_data_wrapper_ptr()).invoke_handler)(&mut *handle, &arg);
+        let mut handle = WebView::<T>::from_ptr(webview);
+        let result = ((*handle.user_data_wrapper_ptr()).invoke_handler)(&mut handle, &arg);
         handle.user_data_wrapper_mut().result = result;
+        // Do not clean up the webview on drop of the temporary WebView in handle
+        handle.inner = None;
     }
 }
