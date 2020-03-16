@@ -116,12 +116,22 @@ WEBVIEW_API webview_t webview_new(
   // high DPI support.
   EnableDpiAwareness();
 
+  HICON winresIcon = (HICON)LoadImage(
+      hInstance, 
+      (LPWSTR)(1), 
+      IMAGE_ICON, 
+      0, 
+      0,
+      LR_DEFAULTSIZE
+  );
+  
   WNDCLASSEX wc;
   ZeroMemory(&wc, sizeof(WNDCLASSEX));
   wc.cbSize = sizeof(WNDCLASSEX);
   wc.hInstance = hInstance;
   wc.lpfnWndProc = wndproc;
   wc.lpszClassName = classname;
+  wc.hIcon = winresIcon;
   RegisterClassEx(&wc);
 
   DWORD style = WS_OVERLAPPEDWINDOW;
