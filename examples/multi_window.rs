@@ -31,7 +31,7 @@ fn main() {
         if webview1.step().is_none() {
             break;
         }
-        
+
         if webview2.step().is_none() {
             break;
         }

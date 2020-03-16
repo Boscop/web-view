@@ -21,7 +21,10 @@
 //! [the examples]: https://github.com/Boscop/web-view/tree/master/examples
 //! [original readme]: https://github.com/zserge/webview/blob/master/README.md
 
+#![allow(deprecated)] // TODO: remove this when removing dialogs
+
 extern crate boxfnonce;
+extern crate tinyfiledialogs as tfd;
 extern crate urlencoding;
 extern crate webview_sys as ffi;
 
@@ -45,6 +48,17 @@ use std::{
     sync::{Arc, RwLock, Weak},
 };
 use urlencoding::encode;
+
+/// JavaScript function used to insert new css rules to webview.
+/// This function should be called with only one argument
+/// and that is the css to insert int webview.
+/// With every call of this function new style element
+/// will get created with css pasted as its children.
+const CSS_INJECT_FUNCTION: &str = "(function(e){var \
+    t=document.createElement('style'),d=document.head||document.\
+    getElementsByTagName('head')[0];t.setAttribute('type','text/\
+    css'),t.styleSheet?t.styleSheet.cssText=e:t.appendChild(document.\
+    createTextNode(e)),d.appendChild(t)})";
 
 /// Content displayable inside a [`WebView`].
 ///
@@ -95,6 +109,7 @@ pub struct WebViewBuilder<'a, T: 'a, I, C> {
     pub debug: bool,
     pub invoke_handler: Option<I>,
     pub user_data: Option<T>,
+    pub frameless: bool,
 }
 
 impl<'a, T: 'a, I, C> Default for WebViewBuilder<'a, T, I, C>
@@ -117,6 +132,7 @@ where
             debug,
             invoke_handler: None,
             user_data: None,
+            frameless: false,
         }
     }
 }
@@ -171,6 +187,13 @@ where
         self.debug = debug;
         self
     }
+    /// The window crated will be frameless
+    ///
+    /// defaults to `false`
+    pub fn frameless(mut self, frameless: bool) -> Self {
+        self.frameless = frameless;
+        self
+    }
 
     /// Sets the invoke handler callback. This will be called when a message is received from
     /// JavaScript.
@@ -219,6 +242,7 @@ where
             self.height,
             self.resizable,
             self.debug,
+            self.frameless,
             user_data,
             invoke_handler,
         )
@@ -260,7 +284,7 @@ struct UserData<'a, T> {
 /// [`WebViewBuilder`]: struct.WebViewBuilder.html
 #[derive(Debug)]
 pub struct WebView<'a, T: 'a> {
-    inner: *mut CWebView,
+    inner: Option<*mut CWebView>,
     _phantom: PhantomData<&'a mut T>,
 }
 
@@ -273,6 +297,7 @@ impl<'a, T> WebView<'a, T> {
         height: i32,
         resizable: bool,
         debug: bool,
+        frameless: bool,
         user_data: T,
         invoke_handler: I,
     ) -> WVResult<WebView<'a, T>>
@@ -295,6 +320,7 @@ impl<'a, T> WebView<'a, T> {
                 height,
                 resizable as _,
                 debug as _,
+                frameless as _,
                 Some(ffi_invoke_handler::<T>),
                 user_data_ptr as _,
             );
@@ -310,7 +336,7 @@ impl<'a, T> WebView<'a, T> {
 
     unsafe fn from_ptr(inner: *mut CWebView) -> WebView<'a, T> {
         WebView {
-            inner,
+            inner: Some(inner),
             _phantom: PhantomData,
         }
     }
@@ -320,14 +346,14 @@ impl<'a, T> WebView<'a, T> {
     /// [`Handle`]: struct.Handle.html
     pub fn handle(&self) -> Handle<T> {
         Handle {
-            inner: self.inner,
+            inner: self.inner.unwrap(),
             live: Arc::downgrade(&self.user_data_wrapper().live),
             _phantom: PhantomData,
         }
     }
 
     fn user_data_wrapper_ptr(&self) -> *mut UserData<'a, T> {
-        unsafe { webview_get_user_data(self.inner) as _ }
+        unsafe { webview_get_user_data(self.inner.unwrap()) as _ }
     }
 
     fn user_data_wrapper(&self) -> &UserData<'a, T> {
@@ -355,13 +381,13 @@ impl<'a, T> WebView<'a, T> {
 
     /// Gracefully exits the webview
     pub fn exit(&mut self) {
-        unsafe { webview_exit(self.inner) }
+        unsafe { webview_exit(self.inner.unwrap()) }
     }
 
     /// Executes the provided string as JavaScript code within the `WebView` instance.
     pub fn eval(&mut self, js: &str) -> WVResult {
         let js = CString::new(js)?;
-        let ret = unsafe { webview_eval(self.inner, js.as_ptr()) };
+        let ret = unsafe { webview_eval(self.inner.unwrap(), js.as_ptr()) };
         if ret != 0 {
             Err(Error::JsEvaluation)
         } else {
@@ -371,13 +397,8 @@ impl<'a, T> WebView<'a, T> {
 
     /// Injects the provided string as CSS within the `WebView` instance.
     pub fn inject_css(&mut self, css: &str) -> WVResult {
-        let css = CString::new(css)?;
-        let ret = unsafe { webview_inject_css(self.inner, css.as_ptr()) };
-        if ret != 0 {
-            Err(Error::CssInjection)
-        } else {
-            Ok(())
-        }
+        let inject_func = format!("{}({})", CSS_INJECT_FUNCTION, escape(css));
+        self.eval(&inject_func).map_err(|_| Error::CssInjection)
     }
 
     /// Sets the color of the title bar.
@@ -395,7 +416,7 @@ impl<'a, T> WebView<'a, T> {
     /// ```
     pub fn set_color<C: Into<Color>>(&mut self, color: C) {
         let color = color.into();
-        unsafe { webview_set_color(self.inner, color.r, color.g, color.b, color.a) }
+        unsafe { webview_set_color(self.inner.unwrap(), color.r, color.g, color.b, color.a) }
     }
 
     /// Sets the title displayed at the top of the window.
@@ -407,16 +428,19 @@ impl<'a, T> WebView<'a, T> {
     /// [`Error::NulByte`]: enum.Error.html#variant.NulByte
     pub fn set_title(&mut self, title: &str) -> WVResult {
         let title = CString::new(title)?;
-        unsafe { webview_set_title(self.inner, title.as_ptr()) }
+        unsafe { webview_set_title(self.inner.unwrap(), title.as_ptr()) }
         Ok(())
     }
 
     /// Enables or disables fullscreen.
     pub fn set_fullscreen(&mut self, fullscreen: bool) {
-        unsafe { webview_set_fullscreen(self.inner, fullscreen as _) };
+        unsafe { webview_set_fullscreen(self.inner.unwrap(), fullscreen as _) };
     }
 
     /// Returns a builder for opening a new dialog window.
+    #[deprecated(
+        note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs"
+    )]
     pub fn dialog<'b>(&'b mut self) -> DialogBuilder<'a, 'b, T> {
         DialogBuilder::new(self)
     }
@@ -424,7 +448,7 @@ impl<'a, T> WebView<'a, T> {
     /// Iterates the event loop. Returns `None` if the view has been closed or terminated.
     pub fn step(&mut self) -> Option<WVResult> {
         unsafe {
-            match webview_loop(self.inner, 1) {
+            match webview_loop(self.inner.unwrap(), 1) {
                 0 => {
                     let closure_result = &mut self.user_data_wrapper_mut().result;
                     match closure_result {
@@ -458,24 +482,28 @@ impl<'a, T> WebView<'a, T> {
     }
 
     unsafe fn _into_inner(&mut self) -> T {
-        let _lock = self
+        let lock = self
             .user_data_wrapper()
             .live
             .write()
             .expect("A dispatch channel thread panicked while holding mutex to WebView.");
 
         let user_data_ptr = self.user_data_wrapper_ptr();
-        webview_exit(self.inner);
-        webview_free(self.inner);
+        webview_exit(self.inner.unwrap());
+        webview_free(self.inner.unwrap());
         let user_data = *Box::from_raw(user_data_ptr);
+        std::mem::drop(lock);
         user_data.inner
     }
 }
 
 impl<'a, T> Drop for WebView<'a, T> {
     fn drop(&mut self) {
-        unsafe {
-            self._into_inner();
+        if self.inner.is_some() {
+            unsafe {
+                self._into_inner();
+            }
+            self.inner = None;
         }
     }
 }
@@ -483,11 +511,20 @@ impl<'a, T> Drop for WebView<'a, T> {
 /// A thread-safe handle to a [`WebView`] instance. Used to dispatch closures onto its task queue.
 ///
 /// [`WebView`]: struct.WebView.html
-#[derive(Clone)]
 pub struct Handle<T> {
     inner: *mut CWebView,
     live: Weak<RwLock<()>>,
     _phantom: PhantomData<T>,
+}
+
+impl<T> Clone for Handle<T> {
+    fn clone(&self) -> Self {
+        Handle {
+            inner: self.inner,
+            live: self.live.clone(),
+            _phantom: PhantomData,
+        }
+    }
 }
 
 impl<T> Handle<T> {
@@ -527,31 +564,27 @@ impl<T> Handle<T> {
 unsafe impl<T> Send for Handle<T> {}
 unsafe impl<T> Sync for Handle<T> {}
 
-fn read_str(s: &[u8]) -> String {
-    let end = s.iter().position(|&b| b == 0).map_or(0, |i| i + 1);
-    match CStr::from_bytes_with_nul(&s[..end]) {
-        Ok(s) => s.to_string_lossy().into_owned(),
-        Err(_) => "".to_string(),
-    }
-}
-
 extern "C" fn ffi_dispatch_handler<T>(webview: *mut CWebView, arg: *mut c_void) {
     unsafe {
-        let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
+        let mut handle = WebView::<T>::from_ptr(webview);
         let result = {
             let callback =
                 Box::<SendBoxFnOnce<'static, (&mut WebView<T>,), WVResult>>::from_raw(arg as _);
             callback.call(&mut handle)
         };
         handle.user_data_wrapper_mut().result = result;
+        // Do not clean up the webview on drop of the temporary WebView in handle
+        handle.inner = None;
     }
 }
 
 extern "C" fn ffi_invoke_handler<T>(webview: *mut CWebView, arg: *const c_char) {
     unsafe {
         let arg = CStr::from_ptr(arg).to_string_lossy().to_string();
-        let mut handle = mem::ManuallyDrop::new(WebView::<T>::from_ptr(webview));
-        let result = ((*handle.user_data_wrapper_ptr()).invoke_handler)(&mut *handle, &arg);
+        let mut handle = WebView::<T>::from_ptr(webview);
+        let result = ((*handle.user_data_wrapper_ptr()).invoke_handler)(&mut handle, &arg);
         handle.user_data_wrapper_mut().result = result;
+        // Do not clean up the webview on drop of the temporary WebView in handle
+        handle.inner = None;
     }
 }

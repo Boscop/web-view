@@ -15,7 +15,7 @@ fn main() {
                 "red" => webview.set_color((255, 0, 0)),
                 "green" => webview.set_color((0, 255, 0)),
                 "blue" => webview.set_color((0, 0, 255)),
-                _ => ()
+                _ => (),
             }
 
             Ok(())

@@ -8,7 +8,8 @@ extern crate web_view;
 use web_view::*;
 
 fn main() {
-    let html = format!(r#"
+    let html = format!(
+        r#"
 		<!doctype html>
 		<html>
 			<head>
@@ -27,9 +28,10 @@ fn main() {
 			</body>
 		</html>
 		"#,
-		styles = inline_style(include_str!("todo/styles.css")),
-		scripts = inline_script(include_str!("todo/picodom.js")) + &inline_script(include_str!("todo/app.js")),
-	);
+        styles = inline_style(include_str!("todo/styles.css")),
+        scripts = inline_script(include_str!("todo/picodom.js"))
+            + &inline_script(include_str!("todo/app.js")),
+    );
 
     let mut webview = web_view::builder()
         .title("Rust Todo App")

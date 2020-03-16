@@ -91,7 +91,7 @@ As this library can be found as a crate on the [Rust Community Registry](https:/
 web-view = { version = "0.5.4" }
 ```
  
-If you want to make use of **Edge** on Windows environments then you'll need to use the following syntax instead:
+If you want to make use of **Edge** on Windows environments, you will need to have Windows 10 SDK installed through Visual Studio Installer and you'll need to use the following syntax instead:
  
 ```toml
 [dependencies]
@@ -131,7 +131,6 @@ You should now be able to run `cargo build` and see something similar to the out
     $ cargo build
       Updating crates.io index
       Compiling pkg-config v0.3.17
-      Compiling bitflags v1.2.1
       Compiling cc v1.0.47
       Compiling boxfnonce v0.1.1
       Compiling urlencoding v1.0.0

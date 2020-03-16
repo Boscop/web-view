@@ -1,6 +1,6 @@
 [package]
 name = "web-view"
-version = "0.5.4"
+version = "0.6.2"
 authors = ["Boscop", "zxey <r.hozak@seznam.cz>", "Sam Green <sam.green81@gmail.com>"]
 readme = "README.md"
 license = "MIT"
@@ -12,8 +12,9 @@ exclude = ["examples/todo-ps/dist/**/*", "examples/elm-counter/index.html"]
 
 [dependencies]
 urlencoding = "1.0"
-webview-sys = { path = "webview-sys", version = "0.3.1" }
+webview-sys = { path = "webview-sys", version = "0.5" }
 boxfnonce = "0.1"
+tinyfiledialogs = "3.3.9"
 
 [features]
 edge = ["webview-sys/edge"]
@@ -27,3 +28,5 @@ actix-rt = "0.2"
 rust-embed = "5.1.0"
 mime_guess = "2.0.1"
 futures = "0.1"
+grep = "0.2.4"
+walkdir = "2.3.1"

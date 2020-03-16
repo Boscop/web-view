@@ -38,16 +38,10 @@ fn main() {
             }
         }
     } else if target.contains("linux") || target.contains("bsd") {
-        let webkit = pkg_config::Config::new()
+        pkg_config::Config::new()
             .atleast_version("2.8")
             .probe("webkit2gtk-4.0")
             .unwrap();
-
-        build.file("webview_gtk.c");
-
-        for path in webkit.include_paths {
-            build.include(path);
-        }
     } else if target.contains("apple") {
         build
             .file("webview_cocoa.c")

@@ -4,16 +4,15 @@ use web_view::*;
 
 fn main() {
     web_view::builder()
-        .title("Fullscreen example")
+        .title("Frameless example")
         .content(Content::Html(HTML))
-        .size(800, 100)
-        .resizable(true)
+        .size(150, 150)
+        .frameless(true)
         .debug(true)
         .user_data("")
         .invoke_handler(|webview, arg| {
             match arg {
-                "enter" => webview.set_fullscreen(true),
-                "exit" => webview.set_fullscreen(false),
+                "exit" => webview.exit(),
                 _ => (),
             }
             Ok(())
@@ -26,8 +25,7 @@ const HTML: &str = r#"
 <!doctype html>
 <html>
 	<body>
-        <button onclick="external.invoke('enter')">enter fullscreen</button>
-        <button onclick="external.invoke('exit')">exit fullscreen</button>
+        <button onclick="external.invoke('exit')" style="display:block;width:100px;height:100px;font-size:24pt;margin:25px auto;">exit</button>
 	</body>
 </html>
 "#;

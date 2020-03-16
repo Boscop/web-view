@@ -8,7 +8,8 @@ extern crate web_view;
 use web_view::*;
 
 fn main() {
-    let html = format!(r#"<!doctype html>
+    let html = format!(
+        r#"<!doctype html>
         <html>
         <head>
             <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -27,9 +28,10 @@ fn main() {
         </body>
         </html>
 		"#,
-		styles = inline_style(include_str!("todo-elm/styles.css")),
-		scripts = inline_script(include_str!("todo-elm/elm.js")) + &inline_script(include_str!("todo-elm/app.js")),
-	);
+        styles = inline_style(include_str!("todo-elm/styles.css")),
+        scripts = inline_script(include_str!("todo-elm/elm.js"))
+            + &inline_script(include_str!("todo-elm/app.js")),
+    );
 
     let mut webview = web_view::builder()
         .title("Rust Todo App")
@@ -46,13 +48,11 @@ fn main() {
 
                 match serde_json::from_str(arg).unwrap() {
                     Init => {
-                        *tasks = vec![
-                            Task { 
-                                name: "Create Elm example".to_string(),
-                                done: true,
-                            },
-                        ];
-                    },
+                        *tasks = vec![Task {
+                            name: "Create Elm example".to_string(),
+                            done: true,
+                        }];
+                    }
                     Log { text } => println!("{}", text),
                     AddTask { name } => tasks.push(Task { name, done: false }),
                     MarkTask { index, done } => tasks[index].done = done,
@@ -79,7 +79,10 @@ fn render(webview: &mut WebView<Vec<Task>>) -> WVResult {
     let render_tasks = {
         let tasks = webview.user_data();
         println!("{:#?}", tasks);
-        format!("app.ports.fromRust.send({})", serde_json::to_string(tasks).unwrap())
+        format!(
+            "app.ports.fromRust.send({})",
+            serde_json::to_string(tasks).unwrap()
+        )
     };
     webview.eval(&render_tasks)
 }

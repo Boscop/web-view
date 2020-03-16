@@ -1,6 +1,6 @@
 [package]
 name = "webview-sys"
-version = "0.3.3"
+version = "0.5.0"
 authors = ["Boscop", "zxey <r.hozak@seznam.cz>"]
 license = "MIT"
 repository = "https://github.com/Boscop/web-view"
@@ -9,6 +9,7 @@ keywords = ["web", "gui", "desktop", "electron", "webkit"]
 categories = ["gui", "web-programming", "api-bindings", "rendering", "visualization"]
 build = "build.rs"
 links = "webview"
+edition = "2018"
 
 [lib]
 name = "webview_sys"
@@ -17,8 +18,15 @@ path = "lib.rs"
 [features]
 edge = []
 
-[dependencies]
-bitflags = "1"
+[target.'cfg(all(target_family = "unix", not(target_os = "macos")))'.dependencies]
+javascriptcore-rs-sys = "0.2"
+gtk-sys = "0.9"
+glib-sys = "0.9"
+gobject-sys = "0.9"
+webkit2gtk-sys = { version = "0.10", features = ["v2_8"] }
+gdk-sys = "0.9"
+gio-sys = "0.9"
+libc = "0.2"
 
 [build-dependencies]
 cc = "1"

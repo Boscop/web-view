@@ -1,7 +1,9 @@
 //#![windows_subsystem = "windows"]
 
+extern crate tinyfiledialogs as tfd;
 extern crate web_view;
 
+use tfd::MessageBoxIcon;
 use web_view::*;
 
 fn main() -> WVResult {
@@ -14,23 +16,33 @@ fn main() -> WVResult {
         .user_data(())
         .invoke_handler(|webview, arg| {
             match arg {
-                "open" => match webview.dialog().open_file("Please choose a file...", "")? {
-                    Some(path) => webview.dialog().info("File chosen", path.to_string_lossy()),
-                    None => webview
-                        .dialog()
-                        .warning("Warning", "You didn't choose a file."),
-                }?,
-                "save" => match webview.dialog().save_file()? {
-                    Some(path) => webview.dialog().info("File chosen", path.to_string_lossy()),
-                    None => webview
-                        .dialog()
-                        .warning("Warning", "You didn't choose a file."),
-                }?,
-                "info" => webview.dialog().info("Info", "This is a info dialog")?,
-                "warning" => webview
-                    .dialog()
-                    .warning("Warning", "This is a warning dialog")?,
-                "error" => webview.dialog().error("Error", "This is a error dialog")?,
+                "open" => match tfd::open_file_dialog("Please choose a file...", "", None) {
+                    Some(path) => tfd::message_box_ok("File chosen", &path, MessageBoxIcon::Info),
+                    None => tfd::message_box_ok(
+                        "Warning",
+                        "You didn't choose a file.",
+                        MessageBoxIcon::Warning,
+                    ),
+                },
+                "save" => match tfd::save_file_dialog("Save file...", "") {
+                    Some(path) => tfd::message_box_ok("File chosen", &path, MessageBoxIcon::Info),
+                    None => tfd::message_box_ok(
+                        "Warning",
+                        "You didn't choose a file.",
+                        MessageBoxIcon::Warning,
+                    ),
+                },
+                "info" => {
+                    tfd::message_box_ok("Info", "This is a info dialog", MessageBoxIcon::Info)
+                }
+                "warning" => tfd::message_box_ok(
+                    "Warning",
+                    "This is a warning dialog",
+                    MessageBoxIcon::Warning,
+                ),
+                "error" => {
+                    tfd::message_box_ok("Error", "This is a error dialog", MessageBoxIcon::Error)
+                }
                 "exit" => webview.exit(),
                 _ => unimplemented!(),
             };
