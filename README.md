@@ -126,19 +126,19 @@ fn main() {
 ```
 
 You should now be able to run `cargo build` and see something similar to the output below:
- 
-    ```text
-    $ cargo build
-      Updating crates.io index
-      Compiling pkg-config v0.3.17
-      Compiling cc v1.0.47
-      Compiling boxfnonce v0.1.1
-      Compiling urlencoding v1.0.0
-      Compiling webview-sys v0.3.3
-      Compiling web-view v0.5.4
-      Compiling my-project v0.1.0 (C:\Users\Username\source\rust-projects\my-project)
-      Finished dev [unoptimized + debuginfo] target(s) in 8.36s
-    ```
+
+```text
+$ cargo build
+Updating crates.io index
+Compiling pkg-config v0.3.17
+Compiling cc v1.0.47
+Compiling boxfnonce v0.1.1
+Compiling urlencoding v1.0.0
+Compiling webview-sys v0.3.3
+Compiling web-view v0.5.4
+Compiling my-project v0.1.0 (C:\Users\Username\source\rust-projects\my-project)
+Finished dev [unoptimized + debuginfo] target(s) in 8.36s
+```
  
 Assuming you get a successful build all you have to do now is run it with: `cargo run`. Hopefully you'll see the same as below:
 
