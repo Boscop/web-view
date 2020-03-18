@@ -30,12 +30,8 @@ fn main() {
             for &lib in &["windowsapp", "user32", "gdi32", "ole32"] {
                 println!("cargo:rustc-link-lib={}", lib);
             }
-        } else {
-            build.file("webview_mshtml.c");
 
-            for &lib in &["ole32", "comctl32", "oleaut32", "uuid", "gdi32", "user32"] {
-                println!("cargo:rustc-link-lib={}", lib);
-            }
+            build.compile("webview");
         }
     } else if target.contains("linux") || target.contains("bsd") {
         pkg_config::Config::new()
@@ -50,9 +46,9 @@ fn main() {
             .flag("objective-c");
         println!("cargo:rustc-link-lib=framework=Cocoa");
         println!("cargo:rustc-link-lib=framework=WebKit");
+
+        build.compile("webview");
     } else {
         panic!("unsupported target");
     }
-
-    build.compile("webview");
 }

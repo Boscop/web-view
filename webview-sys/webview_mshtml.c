@@ -34,11 +34,11 @@ struct mshtml_webview {
   webview_external_invoke_cb_t external_invoke_cb;
   void *userdata;
   HWND hwnd;
-  IOleObject **browser;
   BOOL is_fullscreen;
   DWORD saved_style;
   DWORD saved_ex_style;
   RECT saved_rect;
+  IOleObject **browser;
 };
 
 LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);

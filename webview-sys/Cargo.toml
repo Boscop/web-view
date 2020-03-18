@@ -29,9 +29,9 @@ gio-sys = "0.9"
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["windef", "minwindef", "winuser", "ole2", "libloaderapi", "errhandlingapi", "ntdef", "basetsd", "winerror", "wingdi", "combaseapi", "shobjidl_core", "wtypesbase", "shobjidl"] }
+winapi = { version = "0.3", features = ["windef", "minwindef", "winuser", "ole2", "libloaderapi", "errhandlingapi", "ntdef", "winerror", "wingdi", "oleauto"] }
 libc = "0.2"
-com = "0.1"
+com = { git = "https://github.com/microsoft/com-rs.git" }
 winreg = "0.6"
 
 [build-dependencies]
