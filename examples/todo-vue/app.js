@@ -1,35 +1,26 @@
 'use strict';
 
-var data = {
-  description: "",
-  items: []
-}
-
-function submit(e) {
-  e.preventDefault();
-  e.stopImmediatePropagation();
-  rpc.addTask(data.description);
-  data.description = "";
-  e.target.reset();
-}
-function clearTasks() { rpc.clearDoneTasks(); }
-function markTask(i) { return function () { rpc.markTask(i, !data.items[i].done); } };
-
-var app = new Vue({
-  el: "#app",
-  data,
-  render: (h) => {
-    var taskItems = [];
-    for (var i = 0; i < data.items.length; i++) {
-      var checked = (data.items[i].done ? 'checked' : 'unchecked');
-      taskItems.push(h('div', {
-        attrs: { class: 'task-item ' + checked },
-        on: { click: markTask(i) }
-      }, data.items[i].name))
-    };
-
-    return h('div', { attrs: { class: 'container' } }, [
-      h('form', { on: { submit: submit } }, [
+Vue.component('input-form', {
+  data() {
+    return {
+      description: ""
+    }
+  },
+  methods: {
+    submit(e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      rpc.addTask(this.description);
+      this.description = "";
+      e.target.reset();
+    },
+    input(e) {
+      this.description = e.target.value
+    }
+  },
+  render(h) {
+    return (
+      h('form', { on: { submit: this.submit } }, [
         h('input', {
           attrs: {
             id: 'task-name-input',
@@ -37,13 +28,44 @@ var app = new Vue({
             type: 'text',
             autofocus: true
           },
-          on: {
-            input: (e) => {
-              data.description = e.target.value
-            }
-          }
-        })]),
-      h('div', { attrs: { class: 'task-list' } }, taskItems),
+          on: { input: this.input }
+        })
+      ])
+    )
+  }
+})
+
+function markTask(i, done) { return () => rpc.markTask(i, !done) }
+Vue.component('task-list', {
+  functional: true,
+  props: {
+    items: {
+      type: Array,
+      required: true
+    }
+  },
+  render(h, ctx) {
+    let items = ctx.props.items  // alias
+    let taskItems = [];
+    for (var i = 0; i < items.length; i++) {
+      let checked = (items[i].done ? 'checked' : 'unchecked');
+      taskItems.push(h('div', {
+        attrs: { class: 'task-item ' + checked },
+        on: { click: markTask(i, items[i].done) }
+      }, items[i].name))
+    };
+
+    return (
+      h('div', { attrs: { class: 'task-list' } }, taskItems)
+    )
+  }
+})
+
+function clearTasks() { rpc.clearDoneTasks(); }
+Vue.component('app-footer', {
+  functional: true,
+  render(h, ctx) {
+    return (
       h('div', { attrs: { class: 'footer' } }, [
         h('div', {
           attrs: { class: 'btn-clear-tasks' },
@@ -51,11 +73,28 @@ var app = new Vue({
         },
           'Delete completed')
       ])
+    )
+  }
+})
+
+let app = new Vue({
+  el: "#app",
+  data() {
+    return {
+      items: []
+    }
+  },
+  render(h) {
+
+    return h('div', { attrs: { class: 'container' } }, [
+      h('input-form'),
+      h('task-list', { attrs: { items: this.items } }),
+      h('app-footer')
     ])
   }
 })
 
-var rpc = {
+let rpc = {
   invoke: function (arg) { window.external.invoke(JSON.stringify(arg)); },
   init: function () { rpc.invoke({ cmd: 'init' }); },
   log: function () {
@@ -74,8 +113,8 @@ var rpc = {
     rpc.invoke({ cmd: 'markTask', index: index, done: done });
   },
   render: function (items) {
-    data.items = items
+    app.items = items
   },
 };
 
-window.onload = function () { rpc.init(); };
+window.onload = function () { rpc.init(); };;
