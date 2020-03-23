@@ -30,7 +30,7 @@ fn main() {
 		</html>
 		"#,
         styles = inline_style(include_str!("todo-vue/styles.css")),
-        scripts = inline_script(include_str!("todo-vue/vue-2.6.11.js"))
+        scripts = inline_script(include_str!("todo-vue/vue.runtime.min.js"))
             + &inline_script(include_str!("todo-vue/app.js")),
     );
 
