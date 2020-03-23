@@ -1,24 +1,24 @@
 'use strict';
 
 Vue.component('input-form', {
-  data() {
+  data: function () {
     return {
       description: ""
     }
   },
   methods: {
-    submit(e) {
+    submit: function (e) {
       e.preventDefault();
       e.stopImmediatePropagation();
       rpc.addTask(this.description);
       this.description = "";
       e.target.reset();
     },
-    input(e) {
+    input: function (e) {
       this.description = e.target.value
     }
   },
-  render(h) {
+  render: function (h) {
     return (
       h('form', { attrs: { class: 'text-input-wrapper' }, on: { submit: this.submit } }, [
         h('input', {
@@ -35,7 +35,7 @@ Vue.component('input-form', {
   }
 })
 
-function markTask(i, done) { return () => rpc.markTask(i, !done) }
+function markTask(i, done) { return function () { rpc.markTask(i, !done) } }
 Vue.component('task-list', {
   functional: true,
   props: {
@@ -44,7 +44,7 @@ Vue.component('task-list', {
       required: true
     }
   },
-  render(h, ctx) {
+  render: function (h, ctx) {
     let items = ctx.props.items  // alias
     let taskItems = [];
     for (var i = 0; i < items.length; i++) {
@@ -64,7 +64,7 @@ Vue.component('task-list', {
 function clearTasks() { rpc.clearDoneTasks(); }
 Vue.component('app-footer', {
   functional: true,
-  render(h, ctx) {
+  render: function (h) {
     return (
       h('div', { attrs: { class: 'footer' } }, [
         h('div', {
@@ -79,13 +79,12 @@ Vue.component('app-footer', {
 
 let app = new Vue({
   el: "#app",
-  data() {
+  data: function () {
     return {
       items: []
     }
   },
-  render(h) {
-
+  render: function (h) {
     return h('div', { attrs: { class: 'container' } }, [
       h('input-form'),
       h('task-list', { attrs: { items: this.items } }),
