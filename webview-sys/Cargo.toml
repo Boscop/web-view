@@ -33,6 +33,7 @@ winapi = { version = "0.3", features = ["windef", "minwindef", "winuser", "ole2"
 libc = "0.2"
 com = { git = "https://github.com/microsoft/com-rs.git" }
 winreg = "0.6"
+percent-encoding = "2.1.0"
 
 [build-dependencies]
 cc = "1"

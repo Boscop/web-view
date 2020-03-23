@@ -14,11 +14,13 @@ use winapi::shared::minwindef::DWORD;
 use winapi::shared::ntdef::LOCALE_SYSTEM_DEFAULT;
 use winapi::shared::winerror::FAILED;
 use winapi::shared::winerror::HRESULT;
-use winapi::shared::wtypes::VT_BSTR;
+use winapi::shared::wtypes::{VT_BSTR, VT_VARIANT};
 use winapi::shared::{minwindef, ntdef, windef, winerror};
 use winapi::um::oaidl::{DISPID, DISPPARAMS, VARIANT};
 use winapi::um::objidl::FORMATETC;
-use winapi::um::oleauto::{SysAllocString, SysFreeString};
+use winapi::um::oleauto::{
+    SafeArrayAccessData, SafeArrayCreateVector, SafeArrayDestroy, SysAllocString, SysFreeString,
+};
 use winapi::um::winuser::DefWindowProcW;
 use winapi::um::winuser::DestroyWindow;
 use winapi::um::winuser::GetClientRect;
@@ -33,6 +35,8 @@ use winapi::um::winuser::{DispatchMessageW, GetMessageW, PeekMessageW};
 use winapi::um::winuser::{WM_APP, WM_CREATE, WM_DESTROY, WM_QUIT, WM_SIZE};
 use winapi::um::{errhandlingapi, libloaderapi, ole2, winbase, wingdi, winuser};
 use winreg::{enums, RegKey};
+
+use percent_encoding::percent_decode_str;
 
 mod interface;
 use interface::*;
@@ -271,7 +275,15 @@ extern "C" fn webview_new(
 
         let url = CStr::from_ptr(url);
         let url = url.to_str().expect("could not convert url");
-        browser.navigate(url);
+
+        if url.starts_with("data:text/html,") {
+            let url = &url["data:text/html,".len()..];
+            let url = percent_decode_str(url).decode_utf8().unwrap();
+            browser.navigate("about:blank");
+            browser.write(&url);
+        } else {
+            browser.navigate(url);
+        }
 
         (*webview_ptr).browser = Some(browser);
 
@@ -420,9 +432,10 @@ unsafe extern "C" fn webview_loop(_webview: *mut WebView, blocking: c_int) -> c_
 
 #[no_mangle]
 unsafe extern "C" fn webview_eval(webview: *mut WebView, js: *const c_char) -> c_int {
-    // let js = CStr::from_ptr(js);
-    // let js = js.to_str().expect("js is not valid utf8");
-    // (*webview).browser.as_ref().unwrap().eval(js);
+    let js = CStr::from_ptr(js);
+    let js = js.to_str().expect("js is not valid utf8");
+    println!("eval {}", js);
+    (*webview).browser.as_ref().unwrap().eval(js);
     return 0;
 }
 
@@ -573,6 +586,54 @@ impl WebBrowser {
                 ptr::null_mut(),
                 ptr::null_mut(),
             );
+        }
+    }
+
+    fn write(&self, document: &str) {
+        println!("writing {}", document);
+        let inner = self.inner.as_ref().unwrap();
+        unsafe {
+            let mut document_dispatch = ptr::null_mut::<c_void>();
+            let h_result = inner.web_browser.get_document(&mut document_dispatch);
+            if FAILED(h_result) || document_dispatch.is_null() {
+                panic!("get_document failed {}", h_result);
+            }
+
+            let document_dispatch =
+                ComRc::<dyn IDispatch>::from_raw(document_dispatch as *mut *mut _);
+
+            let html_document2 = document_dispatch
+                .get_interface::<dyn IHTMLDocument2>()
+                .expect("cannot get IHTMLDocument2 interface");
+
+            let safe_array = SafeArrayCreateVector(VT_VARIANT as _, 0, 1);
+            if safe_array.is_null() {
+                panic!("SafeArrayCreate failed");
+            }
+            let mut data: [*mut VARIANT; 1] = [ptr::null_mut()];
+            let h_result = SafeArrayAccessData(safe_array, data.as_mut_ptr() as _);
+            if FAILED(h_result) {
+                panic!("SafeArrayAccessData failed");
+            }
+
+            let document = to_wstring(document);
+            let document = SysAllocString(document.as_ptr());
+
+            if document.is_null() {
+                panic!("SysAllocString document failed");
+            }
+            let variant = &mut (*data[0]);
+            variant.n1.n2_mut().vt = VT_BSTR as _;
+            *variant.n1.n2_mut().n3.bstrVal_mut() = document;
+            if FAILED(html_document2.write(safe_array)) {
+                panic!("html_document2.write() failed");
+            }
+            if FAILED(html_document2.close()) {
+                panic!("html_document2.close() failed");
+            }
+
+            SysFreeString(document);
+            SafeArrayDestroy(safe_array);
         }
     }
 
