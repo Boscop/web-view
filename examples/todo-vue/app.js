@@ -20,7 +20,7 @@ Vue.component('input-form', {
   },
   render(h) {
     return (
-      h('form', { on: { submit: this.submit } }, [
+      h('form', { attrs: { class: 'text-input-wrapper' }, on: { submit: this.submit } }, [
         h('input', {
           attrs: {
             id: 'task-name-input',
