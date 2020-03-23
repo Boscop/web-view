@@ -1,42 +1,33 @@
 #![cfg(target_os = "windows")]
 #![allow(unused_variables)]
 
-use com::{co_class, interfaces::IUnknown, ComPtr, ComRc};
-use libc::{c_char, c_int, c_void};
 use std::ffi::{CStr, OsStr};
 use std::ffi::{CString, OsString};
 use std::mem;
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::ptr;
+
+use com::{co_class, interfaces::IUnknown, ComPtr, ComRc};
+use libc::{c_char, c_int, c_void};
+use percent_encoding::percent_decode_str;
 use winapi::shared::guiddef::IID_NULL;
-use winapi::shared::minwindef::BOOL;
-use winapi::shared::minwindef::DWORD;
+use winapi::shared::minwindef::{BOOL, DWORD, LPARAM, LRESULT, UINT, WPARAM};
 use winapi::shared::ntdef::LOCALE_SYSTEM_DEFAULT;
-use winapi::shared::winerror::FAILED;
-use winapi::shared::winerror::HRESULT;
+use winapi::shared::winerror::{FAILED, HRESULT};
 use winapi::shared::wtypes::{VT_BSTR, VT_VARIANT};
-use winapi::shared::{minwindef, ntdef, windef, winerror};
+use winapi::shared::{ntdef, windef, winerror};
+use winapi::um::errhandlingapi::GetLastError;
+use winapi::um::libloaderapi::{GetModuleHandleW, GetProcAddress};
 use winapi::um::oaidl::{DISPID, DISPPARAMS, VARIANT};
 use winapi::um::objidl::FORMATETC;
+use winapi::um::ole2::OleInitialize;
 use winapi::um::oleauto::{
     SafeArrayAccessData, SafeArrayCreateVector, SafeArrayDestroy, SysAllocString, SysFreeString,
 };
-use winapi::um::winuser::DefWindowProcW;
-use winapi::um::winuser::DestroyWindow;
-use winapi::um::winuser::GetClientRect;
-use winapi::um::winuser::GetWindowLongPtrW;
-use winapi::um::winuser::PostMessageW;
-use winapi::um::winuser::PostQuitMessage;
-use winapi::um::winuser::TranslateMessage;
-use winapi::um::winuser::GWLP_USERDATA;
-use winapi::um::winuser::MSG;
-use winapi::um::winuser::PM_REMOVE;
-use winapi::um::winuser::{DispatchMessageW, GetMessageW, PeekMessageW};
-use winapi::um::winuser::{WM_APP, WM_CREATE, WM_DESTROY, WM_QUIT, WM_SIZE};
-use winapi::um::{errhandlingapi, libloaderapi, ole2, winbase, wingdi, winuser};
+use winapi::um::winbase::MulDiv;
+use winapi::um::wingdi::{GetDeviceCaps, LOGPIXELSX};
+use winapi::um::winuser::*;
 use winreg::{enums, RegKey};
-
-use percent_encoding::percent_decode_str;
 
 mod interface;
 use interface::*;
@@ -86,7 +77,7 @@ struct WebView {
     external_invoke_cb: ExternalInvokeCallback,
     userdata: *mut c_void,
     hwnd: windef::HWND,
-    is_fullscreen: minwindef::BOOL,
+    is_fullscreen: BOOL,
     saved_style: ntdef::LONG,
     saved_ex_style: ntdef::LONG,
     saved_rect: windef::RECT,
@@ -144,37 +135,34 @@ extern "C" fn webview_new(
     }
 
     unsafe {
-        let result = ole2::OleInitialize(ptr::null_mut());
+        let result = OleInitialize(ptr::null_mut());
         if result != winerror::S_OK && result != winerror::S_FALSE {
             return ptr::null_mut();
         }
 
-        let h_instance = libloaderapi::GetModuleHandleA(ptr::null_mut()); // check A vs W
+        let h_instance = GetModuleHandleW(ptr::null_mut()); // check A vs W
         if h_instance.is_null() {
             return ptr::null_mut();
         }
 
         let class_name = to_wstring("webview");
-        let class = winuser::WNDCLASSW {
+        let class = WNDCLASSW {
             style: 0,
             lpfnWndProc: Some(wndproc),
             cbClsExtra: 0,
             cbWndExtra: 0,
             hInstance: h_instance,
             hIcon: ptr::null_mut(),
-            hCursor: winuser::LoadCursorW(ptr::null_mut(), winuser::IDC_ARROW),
+            hCursor: LoadCursorW(ptr::null_mut(), IDC_ARROW),
             hbrBackground: ptr::null_mut(),
             lpszMenuName: ptr::null(),
             lpszClassName: class_name.as_ptr(),
         };
 
-        if winuser::RegisterClassW(&class) == 0 {
+        if RegisterClassW(&class) == 0 {
             // ignore the "Class already exists" error for multiple windows
-            if errhandlingapi::GetLastError() as u32 != 1410 {
-                eprintln!(
-                    "Unable to register class, error {}",
-                    errhandlingapi::GetLastError() as u32
-                );
+            if GetLastError() as u32 != 1410 {
+                eprintln!("Unable to register class, error {}", GetLastError() as u32);
 
                 OleUninitialize();
                 return ptr::null_mut();
@@ -184,34 +172,31 @@ extern "C" fn webview_new(
         // Return value not checked. If this function fails, simply continue without
         // high DPI support.
         let _ = enable_dpi_awareness();
-        let mut style = winuser::WS_OVERLAPPEDWINDOW;
+        let mut style = WS_OVERLAPPEDWINDOW;
         if resizable == 0 {
-            style &= !winuser::WS_SIZEBOX;
+            style &= !WS_SIZEBOX;
         }
 
         if frameless != 0 {
-            style &= !(winuser::WS_SYSMENU
-                | winuser::WS_CAPTION
-                | winuser::WS_MINIMIZEBOX
-                | winuser::WS_MAXIMIZEBOX);
+            style &= !(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
         }
 
         // Get DPI.
-        let screen = winuser::GetDC(ptr::null_mut());
-        let dpi = wingdi::GetDeviceCaps(screen, wingdi::LOGPIXELSX);
-        winuser::ReleaseDC(ptr::null_mut(), screen);
+        let screen = GetDC(ptr::null_mut());
+        let dpi = GetDeviceCaps(screen, LOGPIXELSX);
+        ReleaseDC(ptr::null_mut(), screen);
 
         let mut rect = windef::RECT {
             left: 0,
-            right: winbase::MulDiv(width, dpi, 96),
+            right: MulDiv(width, dpi, 96),
             top: 0,
-            bottom: winbase::MulDiv(height, dpi, 96),
+            bottom: MulDiv(height, dpi, 96),
         };
 
-        winuser::AdjustWindowRect(&mut rect, winuser::WS_OVERLAPPEDWINDOW, 0);
+        AdjustWindowRect(&mut rect, WS_OVERLAPPEDWINDOW, 0);
 
         let mut client_rect = windef::RECT::default();
-        winuser::GetClientRect(winuser::GetDesktopWindow(), &mut client_rect);
+        GetClientRect(GetDesktopWindow(), &mut client_rect);
         let left = (client_rect.right / 2) - ((rect.right - rect.left) / 2);
         let top = (client_rect.bottom / 2) - ((rect.bottom - rect.top) / 2);
         rect.right = rect.right - rect.left + left;
@@ -242,7 +227,7 @@ extern "C" fn webview_new(
 
         let webview_ptr = Box::into_raw(webview);
 
-        let handle = winuser::CreateWindowExW(
+        let handle = CreateWindowExW(
             0,
             class_name.as_ptr(),
             title.as_ptr(),
@@ -251,17 +236,14 @@ extern "C" fn webview_new(
             rect.top,
             rect.right - rect.left,
             rect.bottom - rect.top,
-            winuser::HWND_DESKTOP,
+            HWND_DESKTOP,
             ptr::null_mut(),
             h_instance,
             webview_ptr as *mut winapi::ctypes::c_void,
         );
 
         if handle.is_null() {
-            eprintln!(
-                "Unable to create window, error {}",
-                errhandlingapi::GetLastError() as u32
-            );
+            eprintln!("Unable to create window, error {}", GetLastError() as u32);
 
             let _ = Box::from_raw(webview_ptr); // properly drop webview on failure
             OleUninitialize();
@@ -287,21 +269,17 @@ extern "C" fn webview_new(
 
         (*webview_ptr).browser = Some(browser);
 
-        winuser::SetWindowLongPtrW(
-            handle,
-            winuser::GWLP_USERDATA,
-            std::mem::transmute(webview_ptr),
-        );
+        SetWindowLongPtrW(handle, GWLP_USERDATA, std::mem::transmute(webview_ptr));
 
         if frameless != 0 {
-            winuser::SetWindowLongPtrW(handle, winuser::GWL_STYLE, style as _);
+            SetWindowLongPtrW(handle, GWL_STYLE, style as _);
         }
 
         // DisplayHTMLPage(webview_ptr);
 
-        winuser::ShowWindow(handle, winuser::SW_SHOWDEFAULT);
-        winuser::UpdateWindow(handle);
-        winuser::SetFocus(handle);
+        ShowWindow(handle, SW_SHOWDEFAULT);
+        UpdateWindow(handle);
+        SetFocus(handle);
 
         webview_ptr
     }
@@ -381,10 +359,10 @@ extern "C" fn webview_new(
 
 unsafe extern "system" fn wndproc(
     window: windef::HWND,
-    msg: minwindef::UINT,
-    wparam: minwindef::WPARAM,
-    lparam: minwindef::LPARAM,
-) -> minwindef::LRESULT {
+    msg: UINT,
+    wparam: WPARAM,
+    lparam: LPARAM,
+) -> LRESULT {
     match msg {
         WM_CREATE => DefWindowProcW(window, msg, wparam, lparam),
         WM_DESTROY => {
@@ -474,20 +452,19 @@ fn enable_dpi_awareness() -> bool {
         dpi_context: windef::DPI_AWARENESS_CONTEXT,
     ) -> windef::DPI_AWARENESS_CONTEXT;
 
-    type FnSetProcessDpiAware = extern "system" fn() -> minwindef::BOOL;
+    type FnSetProcessDpiAware = extern "system" fn() -> BOOL;
 
     let user32 = "user32.dll";
     let user32 = to_wstring(user32);
 
     unsafe {
-        let hmodule = libloaderapi::GetModuleHandleW(user32.as_ptr());
+        let hmodule = GetModuleHandleW(user32.as_ptr());
         if hmodule.is_null() {
             return false;
         }
 
         let set_thread_dpi_awareness = CString::new("SetThreadDpiAwarenessContext").unwrap();
-        let set_thread_dpi_awareness =
-            libloaderapi::GetProcAddress(hmodule, set_thread_dpi_awareness.as_ptr());
+        let set_thread_dpi_awareness = GetProcAddress(hmodule, set_thread_dpi_awareness.as_ptr());
 
         if !set_thread_dpi_awareness.is_null() {
             let set_thread_dpi_awareness: FnSetThreadDpiAwarenessContext =
@@ -498,8 +475,7 @@ fn enable_dpi_awareness() -> bool {
         }
 
         let set_process_dpi_aware = CString::new("SetProcessDPIAware").unwrap();
-        let set_process_dpi_aware =
-            libloaderapi::GetProcAddress(hmodule, set_process_dpi_aware.as_ptr());
+        let set_process_dpi_aware = GetProcAddress(hmodule, set_process_dpi_aware.as_ptr());
 
         if set_process_dpi_aware.is_null() {
             return false;
