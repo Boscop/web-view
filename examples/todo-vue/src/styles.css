@@ -9,6 +9,7 @@
 html, body {
 	height: 100%;
 	overflow: none;
+	background-color: #9c27b0;
 }
 
 .ie-upgrade-container {

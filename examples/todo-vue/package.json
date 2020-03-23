@@ -1,0 +1,22 @@
+{
+  "name": "todo-vue",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "build": "parcel build src/index.html --out-dir public --global ctrl",
+    "start": "parcel src/index.html --global ctrl",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "dskkato",
+  "license": "ISC",
+  "devDependencies": {
+    "@vue/component-compiler-utils": "^3.1.1",
+    "parcel-bundler": "^1.12.4",
+    "vue": "^2.6.11",
+    "vue-template-compiler": "^2.6.11"
+  },
+  "dependencies": {
+    "vue-hot-reload-api": "^2.3.4"
+  }
+}
