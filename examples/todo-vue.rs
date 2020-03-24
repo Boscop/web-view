@@ -22,14 +22,14 @@ fn main() {
 					<a class="ie-upgrade-link" target="_blank" href="https://www.microsoft.com/en-us/download/internet-explorer.aspx">Upgrade</a>
 				</div>
 				<![endif]-->
-        <!--[if gte IE 9 | !IE ]> <!-->
-        <div id="app"></div>
+				<!--[if gte IE 9 | !IE ]> <!-->
+				<div id="app"></div>
 				{scripts}
 				<![endif]-->
 			</body>
 		</html>
 		"#,
-        styles = inline_style(include_str!("todo-vue/src/styles.css")),
+        styles = inline_style(include_str!("todo-vue/build/app.css")),
         scripts = inline_script(include_str!("todo-vue/build/app.js"))
     );
 
