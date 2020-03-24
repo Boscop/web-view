@@ -20,9 +20,9 @@ export default {
     }
   },
   methods: {
-    isDone: function (item) {
-     let checked = item.done ? "checked" : "unchecked";
-      return "task-item " + checked
+    isDone: function(item) {
+      let checked = item.done ? "checked" : "unchecked";
+      return "task-item " + checked;
     },
     _markTask: function(i, done) {
       markTask(i, !done);

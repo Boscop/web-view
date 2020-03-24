@@ -1,6 +1,6 @@
 <template>
   <form class="text-input-wrapper" @submit.prevent="submit">
-    <input id="task-name-input" class="text-input" type="text" autofocus="true" v-on:input="input" />
+    <input id="task-name-input" class="text-input" type="text" autofocus="true" v-model="text" />
   </form>
 </template>
 
@@ -10,17 +10,13 @@ import { addTask } from "../rpc";
 export default {
   data: function() {
     return {
-      description: ""
+      text: ""
     };
   },
   methods: {
     submit: function(e) {
-      addTask(this.description);
-      this.description = "";
-      e.target.reset();
-    },
-    input: function(e) {
-      this.description = e.target.value;
+      addTask(this.text);
+      this.text = "";
     }
   }
 };
