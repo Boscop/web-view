@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <input-form></input-form>
-    <task-list :items="items"></task-list>
+    <task-list :tasks="tasks"></task-list>
     <app-fotter></app-fotter>
   </div>
 </template>
@@ -13,7 +13,7 @@ import AppFotter from "./components/Footer.vue";
 
 export default {
   props: {
-    items: {
+    tasks: {
       type: Array,
       required: true
     }

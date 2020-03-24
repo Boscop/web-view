@@ -2,22 +2,22 @@ import Vue from 'vue';
 import App from './App.vue';
 import { init } from './rpc';
 
-let app = new Vue({
+let vm = new Vue({
   el: "#app",
   data: function () {
     return {
-      items: []
+      tasks: []
     }
   },
   render: function (h) {
-    return h(App, { attrs: { items: this.items } })
+    return h(App, { attrs: { tasks: this.tasks } })
   }
 });
 
 window.onload = function () { init(); };
 
 function fromRust(tasks) {
-  app.items = tasks;
+  vm.tasks = tasks;
 }
 
 export { fromRust };

@@ -23,8 +23,5 @@ function clearDoneTasks() {
 function markTask(index, done) {
     invoke({ cmd: 'markTask', index: index, done: done });
 }
-function render(items) {
-    app.items = items
-}
 
-export { invoke, init, log, addTask, clearDoneTasks, markTask, render };
+export { init, log, addTask, clearDoneTasks, markTask };

@@ -1,11 +1,11 @@
 <template>
   <div class="task-list">
     <div
-      :class="isDone(item)"
-      v-for="(item, index) in items"
-      :key="`item.name-${index}`"
-      @click="_markTask(index, item.done)"
-    >{{item.name}}</div>
+      :class="isDone(task)"
+      v-for="(task, index) in tasks"
+      :key="`task.name-${index}`"
+      @click="_markTask(index, task.done)"
+    >{{task.name}}</div>
   </div>
 </template>
 
@@ -14,14 +14,14 @@ import { markTask } from "../rpc";
 
 export default {
   props: {
-    items: {
+    tasks: {
       type: Array,
       required: true
     }
   },
   methods: {
-    isDone: function(item) {
-      let checked = item.done ? "checked" : "unchecked";
+    isDone: function(task) {
+      let checked = task.done ? "checked" : "unchecked";
       return "task-item " + checked;
     },
     _markTask: function(i, done) {
