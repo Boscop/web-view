@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { addTask } from "./rpc";
+import { addTask } from "../rpc";
 
 export default {
   data: function() {

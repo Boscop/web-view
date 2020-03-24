@@ -4,8 +4,8 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "build": "parcel build src/index.html --out-dir public --global ctrl",
-    "start": "parcel src/index.html --global ctrl",
+    "build": "parcel build src/app.js --out-dir build --global app",
+    "start": "parcel src/index.html --global app",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "dskkato",

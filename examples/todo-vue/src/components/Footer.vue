@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { clearDoneTasks } from "./rpc";
+import { clearDoneTasks } from "../rpc";
 export default {
   methods: {
     clearTasks: function() {

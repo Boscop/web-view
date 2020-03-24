@@ -29,9 +29,8 @@ fn main() {
 			</body>
 		</html>
 		"#,
-        styles = inline_style(include_str!("todo-vue/styles.css")),
-        scripts = inline_script(include_str!("todo-vue/vue.runtime.min.js"))
-            + &inline_script(include_str!("todo-vue/app.js")),
+        styles = inline_style(include_str!("todo-vue/src/styles.css")),
+        scripts = inline_script(include_str!("todo-vue/build/app.js"))
     );
 
     let mut webview = web_view::builder()

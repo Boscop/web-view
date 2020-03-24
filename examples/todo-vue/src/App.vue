@@ -7,9 +7,9 @@
 </template>
 
 <script>
-import InputForm from "./InputForm.vue";
-import TaskList from "./TaskList.vue";
-import AppFotter from "./Footer.vue";
+import InputForm from "./components/InputForm.vue";
+import TaskList from "./components/TaskList.vue";
+import AppFotter from "./components/Footer.vue";
 
 export default {
   props: {

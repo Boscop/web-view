@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { markTask } from "./rpc";
+import { markTask } from "../rpc";
 
 export default {
   props: {

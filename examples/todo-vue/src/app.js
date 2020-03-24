@@ -16,4 +16,8 @@ let app = new Vue({
 
 // window.onload = function () { init(); };
 
-export { app };
+function fromRust(tasks) {
+  app.items = tasks;
+}
+
+export { fromRust };
