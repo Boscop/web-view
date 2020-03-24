@@ -1,6 +1,11 @@
 <template>
   <div class="task-list">
-    <div class="task-item" v-for="item in items" :key="item.name" @click="_markTask">{{item.name}}</div>
+    <div
+      :class="isDone(item)"
+      v-for="(item, index) in items"
+      :key="`item.name-${index}`"
+      @click="_markTask(index, item.done)"
+    >{{item.name}}</div>
   </div>
 </template>
 
@@ -15,27 +20,13 @@ export default {
     }
   },
   methods: {
+    isDone: function (item) {
+     let checked = item.done ? "checked" : "unchecked";
+      return "task-item " + checked
+    },
     _markTask: function(i, done) {
-      return function() {
-        markTask(i, !done);
-      };
+      markTask(i, !done);
     }
   }
-  //   render: function(h, ctx) {
-  //     let items = ctx.props.items; // alias
-  //     let taskItems = [];
-  //     for (var i = 0; i < items.length; i++) {
-  //       let checked = items[i].done ? "checked" : "unchecked";
-  //       taskItems.push(
-  //         h(
-  //           "div",
-  //           {
-  //             attrs: { class: "task-item " + checked },
-  //             on: { click: _markTask(i, items[i].done) }
-  //           },
-  //           items[i].name
-  //         )
-  //       );
-  //     }
 };
 </script>

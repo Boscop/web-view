@@ -15,7 +15,7 @@ export default {
   },
   methods: {
     submit: function(e) {
-      addtask(this.description);
+      addTask(this.description);
       this.description = "";
       e.target.reset();
     },

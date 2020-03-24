@@ -14,7 +14,7 @@ let app = new Vue({
   }
 });
 
-// window.onload = function () { init(); };
+window.onload = function () { init(); };
 
 function fromRust(tasks) {
   app.items = tasks;
