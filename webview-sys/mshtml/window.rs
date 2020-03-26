@@ -15,10 +15,10 @@ use winapi::{
 };
 
 use super::to_wstring;
-use crate::mshtml::CWebView;
 use crate::mshtml::web_view::WebView;
-use crate::mshtml::ExternalInvokeCallback;
+use crate::mshtml::CWebView;
 use crate::mshtml::ErasedDispatchFn;
+use crate::mshtml::ExternalInvokeCallback;
 
 pub(crate) const WM_WEBVIEW_DISPATCH: UINT = WM_APP + 1;
 pub(crate) const INVOKE_CALLBACK_MSG: UINT = WM_USER + 1;

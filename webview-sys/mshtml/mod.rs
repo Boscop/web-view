@@ -23,8 +23,8 @@ use percent_encoding::percent_decode_str;
 use winapi::{shared::windef::RECT, um::winuser::*};
 
 use web_view::WebView;
-use window::Window;
 use window::DispatchData;
+use window::Window;
 
 pub(crate) type ExternalInvokeCallback = extern "C" fn(webview: *mut CWebView, arg: *const c_char);
 type ErasedDispatchFn = extern "C" fn(webview: *mut CWebView, arg: *mut c_void);
@@ -140,7 +140,6 @@ extern "C" fn webview_new(
             external_invoke_cb(wv_ptr, c_result.as_ptr());
         })));
     }
-    
 
     wv_ptr
 }

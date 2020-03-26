@@ -127,7 +127,9 @@ impl WebView {
             panic!("cannot set callback, invoke receiver is null");
         }
 
-        unsafe { (*inner.invoke_receiver).set_callback(callback); }
+        unsafe {
+            (*inner.invoke_receiver).set_callback(callback);
+        }
     }
 
     pub(crate) fn set_rect(&self, mut rect: RECT) {
