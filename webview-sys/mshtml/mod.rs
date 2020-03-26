@@ -6,8 +6,8 @@ mod web_view;
 mod window;
 
 use crate::mshtml::window::WM_WEBVIEW_DISPATCH;
-use std::ffi::{CString, CStr, OsStr};
-use std::os::windows::ffi::{OsStrExt};
+use std::ffi::{CStr, CString, OsStr};
+use std::os::windows::ffi::OsStrExt;
 use std::ptr;
 
 use libc::{c_char, c_int, c_void};
@@ -218,7 +218,13 @@ unsafe extern "C" fn webview_set_title(webview: *mut CWebView, title: *mut c_cha
 }
 
 #[no_mangle]
-unsafe extern "C" fn webview_set_color(this: *mut CWebView, red: u8, green: u8, blue: u8, alpha: u8) {
+unsafe extern "C" fn webview_set_color(
+    this: *mut CWebView,
+    red: u8,
+    green: u8,
+    blue: u8,
+    alpha: u8,
+) {
     unimplemented!()
 }
 

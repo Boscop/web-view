@@ -1,15 +1,17 @@
-use std::{ffi::{CString}, ptr};
+use std::{ffi::CString, ptr};
 
 use libc::c_void;
 use winapi::{
     shared::{
-        minwindef::{LPARAM, LRESULT, UINT, WPARAM, BOOL},
+        minwindef::{BOOL, LPARAM, LRESULT, UINT, WPARAM},
         ntdef::LONG,
-        windef::{HWND, RECT, DPI_AWARENESS_CONTEXT, DPI_AWARENESS_CONTEXT_SYSTEM_AWARE},
+        windef::{DPI_AWARENESS_CONTEXT, DPI_AWARENESS_CONTEXT_SYSTEM_AWARE, HWND, RECT},
         winerror::{S_FALSE, S_OK},
     },
     um::{
-        errhandlingapi::GetLastError, libloaderapi::{GetModuleHandleW, GetProcAddress}, ole2::OleInitialize,
+        errhandlingapi::GetLastError,
+        libloaderapi::{GetModuleHandleW, GetProcAddress},
+        ole2::OleInitialize,
         winuser::*,
     },
 };
@@ -228,7 +230,8 @@ fn enable_dpi_awareness() -> bool {
             return false;
         }
 
-        let set_process_dpi_aware: FnSetProcessDpiAware = std::mem::transmute(set_process_dpi_aware);
+        let set_process_dpi_aware: FnSetProcessDpiAware =
+            std::mem::transmute(set_process_dpi_aware);
         set_process_dpi_aware() != 0
     }
 }
