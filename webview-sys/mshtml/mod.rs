@@ -219,13 +219,13 @@ unsafe extern "C" fn webview_set_title(webview: *mut CWebView, title: *mut c_cha
 
 #[no_mangle]
 unsafe extern "C" fn webview_set_color(
-    this: *mut CWebView,
+    webview: *mut CWebView,
     red: u8,
     green: u8,
     blue: u8,
     alpha: u8,
 ) {
-    unimplemented!()
+    (*webview).window.set_color(red, green, blue, alpha);
 }
 
 fn to_wstring(s: &str) -> Vec<u16> {

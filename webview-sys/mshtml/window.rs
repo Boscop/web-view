@@ -12,6 +12,7 @@ use winapi::{
         errhandlingapi::GetLastError,
         libloaderapi::{GetModuleHandleW, GetProcAddress},
         ole2::OleInitialize,
+        wingdi::{CreateSolidBrush, RGB},
         winuser::*,
     },
 };
@@ -193,6 +194,13 @@ impl Window {
         let title = to_wstring(title);
         unsafe {
             SetWindowTextW(self.h_wnd, title.as_ptr());
+        }
+    }
+
+    pub(crate) fn set_color(&self, red: u8, green: u8, blue: u8, _alpha: u8) {
+        unsafe {
+            let brush = CreateSolidBrush(RGB(red, green, blue));
+            SetClassLongPtrW(self.h_wnd, GCLP_HBRBACKGROUND, brush as _);
         }
     }
 }
