@@ -1,13 +1,9 @@
-#![cfg(target_os = "windows")]
-
 use com::{com_interface, interfaces::IUnknown};
 use libc::{c_char, c_void};
-use std::ptr;
 use winapi::shared::guiddef::*;
 use winapi::shared::minwindef::*;
 use winapi::shared::ntdef::*;
 use winapi::shared::windef::*;
-use winapi::shared::winerror::{E_FAIL, E_NOINTERFACE, E_NOTIMPL, E_PENDING, S_OK};
 use winapi::shared::wtypes::BSTR;
 use winapi::shared::wtypesbase::*;
 use winapi::um::oaidl::{DISPID, DISPPARAMS, EXCEPINFO, SAFEARRAY, VARIANT};
@@ -15,8 +11,6 @@ use winapi::um::objidl::SNB;
 use winapi::um::objidlbase::STATSTG;
 use winapi::um::wingdi::LOGPALETTE;
 use winapi::um::winuser::*;
-
-use crate::mshtml::WebBrowser;
 
 #[com_interface("00000118-0000-0000-C000-000000000046")]
 pub trait IOleClientSite: IUnknown {
@@ -215,10 +209,87 @@ impl Default for OLEINPLACEFRAMEINFO {
     }
 }
 
-// Following are the interfaces that we do not implement, only use
+#[com_interface("bd3f23c0-d43e-11cf-893b-00aa00bdce1a")]
+pub trait IDocHostUIHandler: IUnknown {
+    unsafe fn show_context_menu(
+        &self,
+        dw_id: DWORD,
+        ppt: *mut POINT,
+        pcmdt_reserved: *mut c_void, /*IUnknown*/
+        pdisp_reserved: *mut c_void, /*IDispatch*/
+    ) -> HRESULT;
+    unsafe fn get_host_info(&self, p_info: *mut c_void /*DOCHOSTUIINFO*/) -> HRESULT;
+    unsafe fn show_ui(
+        &self,
+        dw_id: DWORD,
+        p_active_object: *mut c_void,  /*IOleInPlaceActiveObject*/
+        p_command_target: *mut c_void, /*IOleCommandTarget*/
+        p_frame: *mut c_void,          /*IOleInPlaceFrame*/
+        p_doc: *mut c_void,            /*IOleInPlaceUIWindow*/
+    ) -> HRESULT;
+    unsafe fn hide_ui(&self) -> HRESULT;
+    unsafe fn update_ui(&self) -> HRESULT;
+    unsafe fn enable_modeless(&self, f_enable: BOOL) -> HRESULT;
+    unsafe fn on_doc_window_activate(&self, f_activate: BOOL) -> HRESULT;
+    unsafe fn on_frame_window_activate(&self, f_activate: BOOL) -> HRESULT;
+    unsafe fn resize_border(
+        &self,
+        prc_border: LPCRECT,
+        p_ui_window: *mut c_void, /*IOleInPlaceUIWindow*/
+        f_rame_window: BOOL,
+    ) -> HRESULT;
+    unsafe fn translate_accelerator(
+        &self,
+        lp_msg: LPMSG,
+        pguid_cmd_group: *const GUID,
+        n_cmd_id: DWORD,
+    ) -> HRESULT;
+    unsafe fn get_option_key_path(&self, pch_key: *mut LPOLESTR, dw: DWORD) -> HRESULT;
+    unsafe fn get_drop_target(
+        &self,
+        p_drop_target: *mut c_void,       /*IDropTarget*/
+        pp_drop_target: *mut *mut c_void, /*IDropTarget*/
+    ) -> HRESULT;
+    unsafe fn get_external(&self, pp_dispatch: *mut *mut c_void /*IDispatch*/) -> HRESULT;
+    unsafe fn translate_url(
+        &self,
+        dw_translate: DWORD,
+        pch_url_in: LPWSTR,
+        ppch_url_out: *mut LPWSTR,
+    ) -> HRESULT;
+    unsafe fn filter_data_object(
+        &self,
+        p_do: *mut c_void,           /*IDataObject*/
+        pp_do_ret: *mut *mut c_void, /*IDataObject*/
+    ) -> HRESULT;
+}
 
-// #[com_interface("8856F961-340A-11D0-A96B-00C04FD705A2")] // CLSID
-// pub trait WebBrowserCLS : IUnknown {}
+// #[com_interface("00020400-0000-0000-C000-000000000046")]
+// pub trait IDispatch: IUnknown {
+//     unsafe fn get_type_info_count(pctinfo: *mut UINT) -> HRESULT;
+//     unsafe fn get_type_info(
+//         i_t_info: UINT,
+//         lcid: LCID,
+//         pp_t_info: *mut *mut c_void, /*ITypeInfo*/
+//     ) -> HRESULT;
+//     unsafe fn get_i_ds_of_names(
+//         riid: REFIID,
+//         rgsz_names: *mut LPOLESTR,
+//         c_names: UINT,
+//         lcid: LCID,
+//         rg_disp_id: *mut DISPID,
+//     ) -> HRESULT;
+//     unsafe fn invoke(
+//         disp_id_member: DISPID,
+//         riid: REFIID,
+//         lcid: LCID,
+//         w_flags: WORD,
+//         p_disp_params: *mut DISPPARAMS,
+//         p_var_result: *mut VARIANT,
+//         p_excep_info: *mut EXCEPINFO,
+//         pu_arg_err: *mut UINT,
+//     ) -> HRESULT;
+// }
 
 #[com_interface("00020400-0000-0000-C000-000000000046")]
 pub trait IDispatch: IUnknown {
@@ -249,6 +320,11 @@ pub trait IDispatch: IUnknown {
         pu_arg_err: *mut UINT,
     ) -> HRESULT;
 }
+
+// #[com_interface("8856F961-340A-11D0-A96B-00C04FD705A2")] // CLSID
+// pub trait WebBrowserCLS : IUnknown {}
+
+// Following are the interfaces that we do not implement, only use
 
 // not all of these function have correct signatures,
 // we do not need to use them all,
@@ -461,204 +537,4 @@ pub trait IHTMLDocument2: IHTMLDocument {
     unsafe fn get_onerrorupdate(&self) -> HRESULT;
     unsafe fn to_string(&self) -> HRESULT;
     unsafe fn create_style_sheet(&self) -> HRESULT;
-}
-
-impl IOleClientSite for WebBrowser {
-    unsafe fn save_object(&self) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn get_moniker(
-        &self,
-        dw_assign: u32,
-        dw_which_moniker: u32,
-        _: *mut *mut std::ffi::c_void,
-    ) -> i32 {
-        // dw_assign: OLEGETMONIKER_ONLYIFTHERE = 1
-        // dw_which_moniker: OLEWHICHMK_CONTAINER = 1
-
-        if dw_assign == 1 || dw_which_moniker == 1 {
-            eprintln!("assign faield");
-            E_FAIL
-        } else {
-            E_NOTIMPL
-        }
-    }
-    unsafe fn get_container(&self, _: *mut *mut std::ffi::c_void) -> i32 {
-        E_NOINTERFACE
-    }
-    unsafe fn show_object(&self) -> i32 {
-        S_OK
-    }
-    unsafe fn on_show_window(&self, _: i32) -> i32 {
-        S_OK
-    }
-    unsafe fn request_new_object_layout(&self) -> i32 {
-        E_NOTIMPL
-    }
-}
-
-impl IOleWindow for WebBrowser {
-    unsafe fn get_window(&self, phwnd: *mut *mut winapi::shared::windef::HWND__) -> i32 {
-        if self.inner.is_none() {
-            *phwnd = ptr::null_mut();
-            return E_PENDING;
-        }
-
-        *phwnd = self.inner.as_ref().unwrap().hwnd_parent;
-        S_OK
-    }
-    unsafe fn context_sensitive_help(&self, _: i32) -> i32 {
-        E_NOTIMPL
-    }
-}
-
-impl IOleInPlaceSite for WebBrowser {
-    unsafe fn can_in_place_activate(&self) -> i32 {
-        S_OK
-    }
-    unsafe fn on_in_place_activate(&self) -> i32 {
-        S_OK
-    }
-    unsafe fn on_ui_activate(&self) -> i32 {
-        S_OK
-    }
-    unsafe fn get_window_context(
-        &self,
-        pp_frame: *mut *mut std::ffi::c_void,
-        pp_doc: *mut *mut std::ffi::c_void,
-        lprc_pos_rect: *mut winapi::shared::windef::RECT,
-        lprc_clip_rect: *mut winapi::shared::windef::RECT,
-        lp_frame_info: *mut OLEINPLACEFRAMEINFO,
-    ) -> i32 {
-        *pp_frame = ptr::null_mut();
-        *pp_doc = ptr::null_mut();
-        *lprc_pos_rect = self.inner.as_ref().unwrap().rect;
-        *lprc_clip_rect = *lprc_pos_rect;
-
-        (*lp_frame_info).fMDIApp = 0;
-        (*lp_frame_info).hwndFrame = self.inner.as_ref().unwrap().hwnd_parent;
-        (*lp_frame_info).haccel = ptr::null_mut();
-        (*lp_frame_info).cAccelEntries = 0;
-        S_OK
-    }
-    unsafe fn scroll(&self, _: winapi::shared::windef::SIZE) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn on_ui_deactivate(&self, _: i32) -> i32 {
-        S_OK
-    }
-    unsafe fn on_in_place_deactivate(&self) -> i32 {
-        // implement null fields
-        S_OK
-    }
-    unsafe fn discard_undo_state(&self) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn deactivate_and_undo(&self) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn on_pos_rect_change(&self, _: *mut winapi::shared::windef::RECT) -> i32 {
-        E_NOTIMPL
-    }
-}
-
-impl IStorage for WebBrowser {
-    unsafe fn create_stream(
-        &self,
-        _: *const u16,
-        _: u32,
-        _: u32,
-        _: u32,
-        _: *mut *mut std::ffi::c_void,
-    ) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn open_stream(
-        &self,
-        _: *const u16,
-        _: *mut std::ffi::c_void,
-        _: u32,
-        _: u32,
-        _: *mut *mut std::ffi::c_void,
-    ) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn create_storage(
-        &self,
-        _: *const u16,
-        _: u32,
-        _: u32,
-        _: u32,
-        _: *mut *mut std::ffi::c_void,
-    ) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn open_storage(
-        &self,
-        _: *const u16,
-        _: *mut std::ffi::c_void,
-        _: u32,
-        _: *const *const u16,
-        _: u32,
-        _: *mut *mut std::ffi::c_void,
-    ) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn copy_to(
-        &self,
-        _: u32,
-        _: *const winapi::shared::guiddef::GUID,
-        _: *const *const u16,
-        _: *mut std::ffi::c_void,
-    ) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn move_element_to(
-        &self,
-        _: *const u16,
-        _: *mut std::ffi::c_void,
-        _: *const u16,
-        _: u32,
-    ) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn commit(&self, _: u32) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn revert(&self) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn enum_elements(
-        &self,
-        _: u32,
-        _: *mut std::ffi::c_void,
-        _: u32,
-        _: *mut *mut std::ffi::c_void,
-    ) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn destroy_element(&self, _: *const u16) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn rename_element(&self, _: *const u16, _: *const u16) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn set_element_times(
-        &self,
-        _: *const u16,
-        _: *const winapi::shared::minwindef::FILETIME,
-        _: *const winapi::shared::minwindef::FILETIME,
-        _: *const winapi::shared::minwindef::FILETIME,
-    ) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn set_class(&self, _: *const winapi::shared::guiddef::GUID) -> i32 {
-        S_OK
-    }
-    unsafe fn set_state_bits(&self, _: u32, _: u32) -> i32 {
-        E_NOTIMPL
-    }
-    unsafe fn stat(&self, _: *mut winapi::um::objidlbase::STATSTG, _: u32) -> i32 {
-        E_NOTIMPL
-    }
 }
