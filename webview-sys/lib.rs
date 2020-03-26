@@ -28,7 +28,7 @@ extern "C" {
         resizable: c_int,
         debug: c_int,
         frameless: c_int,
-        external_invoke_cb: Option<ErasedExternalInvokeFn>,
+        external_invoke_cb: ErasedExternalInvokeFn,
         userdata: *mut c_void,
     ) -> *mut CWebView;
     pub fn webview_loop(this: *mut CWebView, blocking: c_int) -> c_int;
