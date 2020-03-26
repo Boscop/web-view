@@ -29,7 +29,6 @@ use winapi::{
 };
 
 use crate::mshtml::interface::*;
-use crate::mshtml::window::INVOKE_CALLBACK_MSG;
 
 type LPFORMATETC = *mut FORMATETC;
 
@@ -87,15 +86,6 @@ impl ExternalInvokeReceiver {
         if let Some(callback) = &self.callback {
             callback(data);
         }
-
-        // unsafe {
-        //     SendMessageW(
-        //         self.h_wnd,
-        //         INVOKE_CALLBACK_MSG,
-        //         0,
-        //         std::mem::transmute(data),
-        //     );
-        // }
     }
 }
 
@@ -132,7 +122,7 @@ impl WebView {
         }
     }
 
-    pub(crate) fn set_rect(&self, mut rect: RECT) {
+    pub(crate) fn set_rect(&self, rect: RECT) {
         if self.inner.is_none() {
             return;
         }
@@ -291,24 +281,6 @@ impl WebView {
         }
     }
 
-    pub(crate) fn prev(&self) {
-        unsafe {
-            self.inner.as_ref().unwrap().web_browser.go_back();
-        }
-    }
-
-    pub(crate) fn next(&self) {
-        unsafe {
-            self.inner.as_ref().unwrap().web_browser.go_forward();
-        }
-    }
-
-    pub(crate) fn refresh(&self) {
-        unsafe {
-            self.inner.as_ref().unwrap().web_browser.refresh();
-        }
-    }
-
     pub(crate) fn initialize(&mut self, h_wnd: HWND, rect: RECT) {
         unsafe {
             let iole_client_site = self
@@ -354,8 +326,7 @@ impl WebView {
                 .get_interface::<dyn IWebBrowser>()
                 .expect("get interface IWebBrowser failed");
 
-            let mut invoke_receiver = ExternalInvokeReceiver::new();
-            //invoke_receiver.set_target(h_wnd);
+            let invoke_receiver = ExternalInvokeReceiver::new();
             let invoke_receiver = Box::into_raw(invoke_receiver);
 
             self.inner = Some(WebViewInner {

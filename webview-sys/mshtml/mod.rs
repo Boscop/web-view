@@ -6,16 +6,9 @@ mod web_view;
 mod window;
 
 use crate::mshtml::window::WM_WEBVIEW_DISPATCH;
-use std::ffi::{CStr, OsStr};
-use std::ffi::{CString, OsString};
-use std::mem;
-use std::os::windows::ffi::{OsStrExt, OsStringExt};
+use std::ffi::{CString, CStr, OsStr};
+use std::os::windows::ffi::{OsStrExt};
 use std::ptr;
-use winapi::shared::minwindef::BOOL;
-use winapi::shared::windef::DPI_AWARENESS_CONTEXT;
-use winapi::shared::windef::DPI_AWARENESS_CONTEXT_SYSTEM_AWARE;
-use winapi::um::libloaderapi::GetModuleHandleW;
-use winapi::um::libloaderapi::GetProcAddress;
 
 use libc::{c_char, c_int, c_void};
 
@@ -211,42 +204,22 @@ unsafe extern "C" fn webview_dispatch(
     );
 }
 
-fn enable_dpi_awareness() -> bool {
-    type FnSetThreadDpiAwarenessContext =
-        extern "system" fn(dpi_context: DPI_AWARENESS_CONTEXT) -> DPI_AWARENESS_CONTEXT;
+#[no_mangle]
+unsafe extern "C" fn webview_set_fullscreen(webview: *mut CWebView, fullscreen: c_int) {
+    let fullscreen = fullscreen > 0;
+    (*webview).window.set_fullscreen(fullscreen);
+}
 
-    type FnSetProcessDpiAware = extern "system" fn() -> BOOL;
+#[no_mangle]
+unsafe extern "C" fn webview_set_title(webview: *mut CWebView, title: *mut c_char) {
+    let title = CStr::from_ptr(title);
+    let title = title.to_str().expect("title is not valid utf8");
+    (*webview).window.set_title(title);
+}
 
-    let user32 = "user32.dll";
-    let user32 = to_wstring(user32);
-
-    unsafe {
-        let hmodule = GetModuleHandleW(user32.as_ptr());
-        if hmodule.is_null() {
-            return false;
-        }
-
-        let set_thread_dpi_awareness = CString::new("SetThreadDpiAwarenessContext").unwrap();
-        let set_thread_dpi_awareness = GetProcAddress(hmodule, set_thread_dpi_awareness.as_ptr());
-
-        if !set_thread_dpi_awareness.is_null() {
-            let set_thread_dpi_awareness: FnSetThreadDpiAwarenessContext =
-                mem::transmute(set_thread_dpi_awareness);
-            if !set_thread_dpi_awareness(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE).is_null() {
-                return true;
-            }
-        }
-
-        let set_process_dpi_aware = CString::new("SetProcessDPIAware").unwrap();
-        let set_process_dpi_aware = GetProcAddress(hmodule, set_process_dpi_aware.as_ptr());
-
-        if set_process_dpi_aware.is_null() {
-            return false;
-        }
-
-        let set_process_dpi_aware: FnSetProcessDpiAware = mem::transmute(set_process_dpi_aware);
-        set_process_dpi_aware() != 0
-    }
+#[no_mangle]
+unsafe extern "C" fn webview_set_color(this: *mut CWebView, red: u8, green: u8, blue: u8, alpha: u8) {
+    unimplemented!()
 }
 
 fn to_wstring(s: &str) -> Vec<u16> {
@@ -254,14 +227,4 @@ fn to_wstring(s: &str) -> Vec<u16> {
         .encode_wide()
         .chain(Some(0).into_iter())
         .collect()
-}
-
-unsafe fn from_wstring(wide: *const u16) -> OsString {
-    assert!(!wide.is_null());
-    for i in 0.. {
-        if *wide.offset(i) == 0 {
-            return OsStringExt::from_wide(std::slice::from_raw_parts(wide, i as usize));
-        }
-    }
-    unreachable!()
 }

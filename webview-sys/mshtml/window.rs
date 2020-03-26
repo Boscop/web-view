@@ -1,15 +1,15 @@
-use std::{ffi::OsString, os::windows::ffi::OsStringExt, ptr};
+use std::{ffi::{CString}, ptr};
 
 use libc::c_void;
 use winapi::{
     shared::{
-        minwindef::{LOWORD, LPARAM, LRESULT, UINT, WORD, WPARAM},
+        minwindef::{LPARAM, LRESULT, UINT, WPARAM, BOOL},
         ntdef::LONG,
-        windef::{HWND, RECT},
+        windef::{HWND, RECT, DPI_AWARENESS_CONTEXT, DPI_AWARENESS_CONTEXT_SYSTEM_AWARE},
         winerror::{S_FALSE, S_OK},
     },
     um::{
-        errhandlingapi::GetLastError, libloaderapi::GetModuleHandleW, ole2::OleInitialize,
+        errhandlingapi::GetLastError, libloaderapi::{GetModuleHandleW, GetProcAddress}, ole2::OleInitialize,
         winuser::*,
     },
 };
@@ -18,7 +18,6 @@ use super::to_wstring;
 use crate::mshtml::web_view::WebView;
 use crate::mshtml::CWebView;
 use crate::mshtml::ErasedDispatchFn;
-use crate::mshtml::ExternalInvokeCallback;
 
 pub(crate) const WM_WEBVIEW_DISPATCH: UINT = WM_APP + 1;
 pub(crate) const INVOKE_CALLBACK_MSG: UINT = WM_USER + 1;
@@ -57,6 +56,9 @@ impl Window {
             if h_instance.is_null() {
                 panic!("could not retrieve module handle");
             }
+
+            let _ = enable_dpi_awareness();
+
             let class_name = to_wstring("webview");
             let class = WNDCLASSW {
                 style: 0,
@@ -193,12 +195,43 @@ impl Window {
     }
 }
 
-const BTN_BACK: WORD = 1;
-const BTN_NEXT: WORD = 2;
-const BTN_REFRESH: WORD = 3;
-const BTN_GO: WORD = 4;
-const BTN_EVAL: WORD = 5;
-const BTN_WRITE_DOC: WORD = 6;
+fn enable_dpi_awareness() -> bool {
+    type FnSetThreadDpiAwarenessContext =
+        extern "system" fn(dpi_context: DPI_AWARENESS_CONTEXT) -> DPI_AWARENESS_CONTEXT;
+
+    type FnSetProcessDpiAware = extern "system" fn() -> BOOL;
+
+    let user32 = "user32.dll";
+    let user32 = to_wstring(user32);
+
+    unsafe {
+        let hmodule = GetModuleHandleW(user32.as_ptr());
+        if hmodule.is_null() {
+            return false;
+        }
+
+        let set_thread_dpi_awareness = CString::new("SetThreadDpiAwarenessContext").unwrap();
+        let set_thread_dpi_awareness = GetProcAddress(hmodule, set_thread_dpi_awareness.as_ptr());
+
+        if !set_thread_dpi_awareness.is_null() {
+            let set_thread_dpi_awareness: FnSetThreadDpiAwarenessContext =
+                std::mem::transmute(set_thread_dpi_awareness);
+            if !set_thread_dpi_awareness(DPI_AWARENESS_CONTEXT_SYSTEM_AWARE).is_null() {
+                return true;
+            }
+        }
+
+        let set_process_dpi_aware = CString::new("SetProcessDPIAware").unwrap();
+        let set_process_dpi_aware = GetProcAddress(hmodule, set_process_dpi_aware.as_ptr());
+
+        if set_process_dpi_aware.is_null() {
+            return false;
+        }
+
+        let set_process_dpi_aware: FnSetProcessDpiAware = std::mem::transmute(set_process_dpi_aware);
+        set_process_dpi_aware() != 0
+    }
+}
 
 unsafe extern "system" fn wndproc(
     hwnd: HWND,
@@ -206,44 +239,7 @@ unsafe extern "system" fn wndproc(
     wparam: WPARAM,
     lparam: LPARAM,
 ) -> LRESULT {
-    static mut EDIT_HWND: HWND = ptr::null_mut();
-
     match message {
-        WM_COMMAND => {
-            let wb_ptr: *mut WebView = std::mem::transmute(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
-            if wb_ptr.is_null() {
-                return 1;
-            }
-            let cmd = LOWORD(wparam as _);
-            match cmd {
-                BTN_BACK => (*wb_ptr).prev(),
-                BTN_NEXT => (*wb_ptr).next(),
-                BTN_REFRESH => (*wb_ptr).refresh(),
-                BTN_GO => {
-                    let mut buf: [u16; 4096] = [0; 4096];
-
-                    let len = GetWindowTextW(EDIT_HWND, buf.as_mut_ptr(), buf.len() as _);
-                    let len = len as usize;
-
-                    if len == 0 {
-                        return 1;
-                    }
-
-                    let input = OsString::from_wide(&buf[..len + 1]);
-                    (*wb_ptr).navigate(&input.to_string_lossy());
-                }
-                BTN_EVAL => {
-                    (*wb_ptr).eval("external.invoke('test');");
-                    // (*wb_ptr).eval("alert('hello');");
-                }
-                BTN_WRITE_DOC => {
-                    (*wb_ptr).write("<p>Hello world!</p>");
-                }
-                _ => {}
-            }
-
-            1
-        }
         WM_SIZE => {
             let wb_ptr: *mut WebView = std::mem::transmute(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
             if wb_ptr.is_null() {
