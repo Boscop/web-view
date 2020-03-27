@@ -12,7 +12,8 @@ use winapi::{
         errhandlingapi::GetLastError,
         libloaderapi::{GetModuleHandleW, GetProcAddress},
         ole2::OleInitialize,
-        wingdi::{CreateSolidBrush, RGB},
+        wingdi::{CreateSolidBrush, RGB, LOGPIXELSX, GetDeviceCaps},
+        winbase::MulDiv,
         winuser::*,
     },
 };
@@ -45,7 +46,7 @@ pub(crate) struct Window {
 }
 
 impl Window {
-    pub(crate) fn new() -> Self {
+    pub(crate) fn new(width: i32, height: i32, resizable: bool, frameless: bool) -> Self {
         // TODO: move some of this logic into some sort of event loop or main application
         // the idea is to have application, that can spawn windows and webviews that
         // can be spawned multiple times into these windows
@@ -82,21 +83,56 @@ impl Window {
                     panic!("could not register window class {}", GetLastError() as u32);
                 }
             }
+
+            let screen = GetDC(ptr::null_mut());
+            let dpi = GetDeviceCaps(screen, LOGPIXELSX);
+            ReleaseDC(ptr::null_mut(), screen);
+
+            let mut rect = RECT {
+                left: 0,
+                top: 0,
+                right: MulDiv(width, dpi, 96),
+                bottom: MulDiv(height, dpi, 96),
+            };
+            AdjustWindowRect(&mut rect, WS_OVERLAPPEDWINDOW, 0);
+
+            let mut client_rect = Default::default();
+            GetClientRect(GetDesktopWindow(), &mut client_rect);
+            let left = (client_rect.right / 2) - ((rect.right - rect.left) / 2);
+            let top = (client_rect.bottom / 2) - ((rect.bottom - rect.top) / 2);
+
+            rect.right = rect.right - rect.left + left;
+            rect.left = left;
+            rect.bottom = rect.bottom - rect.top + top;
+            rect.top = top;
+
+            let mut style = WS_OVERLAPPEDWINDOW;
+
+            if !resizable {
+                style &= !(WS_SIZEBOX);
+            }
+
+            if frameless {
+                style &= !(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+            }
+
             let title = to_wstring("mshtml_webview");
             let h_wnd = CreateWindowExW(
                 0,
                 class_name.as_ptr(),
                 title.as_ptr(),
-                WS_OVERLAPPEDWINDOW,
-                CW_USEDEFAULT,
-                CW_USEDEFAULT,
-                CW_USEDEFAULT,
-                CW_USEDEFAULT,
+                style,
+                rect.left,
+                rect.top,
+                rect.right - rect.left,
+                rect.bottom - rect.top,
                 HWND_DESKTOP,
                 ptr::null_mut(),
                 h_instance,
                 ptr::null_mut(),
             );
+
+            SetWindowLongPtrW(h_wnd, GWL_STYLE, style as _);
 
             Window {
                 h_wnd,

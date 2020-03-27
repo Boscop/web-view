@@ -89,7 +89,7 @@ extern "C" fn webview_new(
     }
 
     let mut cwebview = Box::new(CWebView {
-        window: Window::new(),
+        window: Window::new(width as _, height as _, resizable > 0, frameless > 0),
         webview: WebView::new(),
         external_invoke_cb,
         userdata,
