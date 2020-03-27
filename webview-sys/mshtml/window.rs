@@ -12,8 +12,8 @@ use winapi::{
         errhandlingapi::GetLastError,
         libloaderapi::{GetModuleHandleW, GetProcAddress},
         ole2::OleInitialize,
-        wingdi::{CreateSolidBrush, RGB, LOGPIXELSX, GetDeviceCaps},
         winbase::MulDiv,
+        wingdi::{CreateSolidBrush, GetDeviceCaps, LOGPIXELSX, RGB},
         winuser::*,
     },
 };

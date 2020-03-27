@@ -108,12 +108,10 @@ extern "C" fn webview_new(
     let url = unsafe { CStr::from_ptr(url) };
     let url = url.to_str().expect("url is not valid utf8");
 
-    println!("url {}", url);
     if url.starts_with(DATA_URL_PREFIX) {
         let content = percent_decode_str(&url[DATA_URL_PREFIX.len()..])
             .decode_utf8()
             .unwrap();
-        println!("{}", &content);
         cwebview.webview.navigate("about:blank");
         cwebview.webview.write(&content);
     } else {
