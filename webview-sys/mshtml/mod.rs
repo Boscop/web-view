@@ -73,7 +73,7 @@ fn fix_ie_compat_mode() -> bool {
 const DATA_URL_PREFIX: &str = "data:text/html,";
 
 #[no_mangle]
-extern "C" fn webview_new(
+unsafe extern "C" fn webview_new(
     title: *const c_char,
     url: *const c_char,
     width: c_int,
@@ -105,32 +105,28 @@ extern "C" fn webview_new(
         },
     );
 
-    let url = unsafe { CStr::from_ptr(url) };
+    let wv_ptr = Box::into_raw(cwebview);
+
+    (*wv_ptr).webview.set_callback(Some(Box::new(move |result| {
+        let c_result = CString::new(result).unwrap();
+        external_invoke_cb(wv_ptr, c_result.as_ptr());
+    })));
+
+    let url = CStr::from_ptr(url);
     let url = url.to_str().expect("url is not valid utf8");
 
     if url.starts_with(DATA_URL_PREFIX) {
         let content = percent_decode_str(&url[DATA_URL_PREFIX.len()..])
             .decode_utf8()
             .unwrap();
-        cwebview.webview.navigate("about:blank");
-        cwebview.webview.write(&content);
+
+        (*wv_ptr).webview.navigate("about:blank");
+        (*wv_ptr).webview.write(&content);
     } else {
-        cwebview.webview.navigate(url);
+        (*wv_ptr).webview.navigate(url);
     }
 
-    unsafe {
-        ShowWindow(cwebview.window.handle(), SW_SHOWDEFAULT);
-    }
-
-    let wv_ptr = Box::into_raw(cwebview);
-
-    unsafe {
-        (*wv_ptr).webview.set_callback(Some(Box::new(move |result| {
-            println!("result {}", result);
-            let c_result = CString::new(result).unwrap();
-            external_invoke_cb(wv_ptr, c_result.as_ptr());
-        })));
-    }
+    ShowWindow((*wv_ptr).window.handle(), SW_SHOWDEFAULT);
 
     wv_ptr
 }
