@@ -157,14 +157,12 @@ unsafe extern "C" fn webview_loop(_webview: *mut CWebView, blocking: c_int) -> c
 unsafe extern "C" fn webview_eval(webview: *mut CWebView, js: *const c_char) -> c_int {
     let js = CStr::from_ptr(js);
     let js = js.to_str().expect("js is not valid utf8");
-    println!("eval {}", js);
     (*webview).webview.eval(js);
     return 0;
 }
 
 #[no_mangle]
 unsafe extern "C" fn webview_exit(webview: *mut CWebView) {
-    println!("exit");
     DestroyWindow((*webview).window.handle());
     OleUninitialize();
 }
