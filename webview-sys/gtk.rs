@@ -129,7 +129,7 @@ unsafe extern "C" fn webview_new(
     webkit_web_view_load_uri(
         mem::transmute(webview),
         if url.is_null() {
-            b"\0".as_ptr() as *const i8
+            b"\0".as_ptr() as *const _
         } else {
             url
         },
