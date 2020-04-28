@@ -1,4 +1,4 @@
-# web-view &emsp; [![Build Status]][travis] [![Latest Version]][crates.io] <!-- omit in toc -->
+# web-view &emsp; ![.github/workflows/ci.yml](https://github.com/Boscop/web-view/workflows/.github/workflows/ci.yml/badge.svg) [![Latest Version]][crates.io] <!-- omit in toc -->
 
 [Build Status]: https://api.travis-ci.org/Boscop/web-view.svg?branch=master
 [travis]: https://travis-ci.org/Boscop/web-view
