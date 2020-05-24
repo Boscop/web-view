@@ -174,7 +174,7 @@ const HTML: &str = r#"
 		</script>
 	</head>
 	<body>
-		<label for="pattern">Patern to search for:</label>
+		<label for="pattern">Pattern to search for:</label>
 		<input style="font-size:16px" id="pattern" type="text" size="35" />
 		<label style="font-size:14px"> (prefix text with "(?i)" to ignore case)</label><br><br>
 		<label for="path">Path (directory or file):</label>
