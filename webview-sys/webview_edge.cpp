@@ -14,6 +14,7 @@
 #include <wingdi.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Web.UI.Interop.h>
+#include <winrt/Windows.Foundation.Collections.h>
 
 #pragma comment(lib, "windowsapp.lib")
 #pragma comment(lib, "user32.lib")
