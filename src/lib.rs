@@ -437,6 +437,10 @@ impl<'a, T> WebView<'a, T> {
         unsafe { webview_set_fullscreen(self.inner.unwrap(), fullscreen as _) };
     }
 
+    pub fn set_maximized(&mut self, maximize: bool) {
+        unsafe { webview_set_maximized(self.inner.unwrap(), maximize as _) };
+    }
+
     /// Returns a builder for opening a new dialog window.
     #[deprecated(
         note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs"
