@@ -437,14 +437,17 @@ impl<'a, T> WebView<'a, T> {
         unsafe { webview_set_fullscreen(self.inner.unwrap(), fullscreen as _) };
     }
 
+    /// Enables or disables maximized state.
     pub fn set_maximized(&mut self, maximize: bool) {
         unsafe { webview_set_maximized(self.inner.unwrap(), maximize as _) };
     }
     
+    /// Enables or disables minimized state.
     pub fn set_minimized(&mut self) {
         unsafe { webview_set_minimized(self.inner.unwrap()) };
     }
 
+    /// Adds drag intent on function call, persists until mouse_up recieved.
     pub fn drag_intent(&mut self) {
         unsafe { webview_drag_intent(self.inner.unwrap()) };
     }
