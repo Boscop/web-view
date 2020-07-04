@@ -1,4 +1,5 @@
 #include "webview.h"
+#include <iostream>
 
 #include <atomic>
 #include <cstring>
@@ -277,6 +278,7 @@ public:
                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
     }
+    
     void set_minimized()
     {
         ShowWindow(this->m_window, SW_SHOWMINIMIZED);
@@ -306,6 +308,35 @@ public:
                         this->saved_rect.bottom - this->saved_rect.top,
                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
+        
+    }
+
+    void drag_window(){
+        static tagPOINT pts, diffpts;
+        static tagRECT windowrect;
+        static int width, height;
+
+        SetCursor(LoadCursor(NULL,IDC_SIZEALL));
+        GetWindowRect(this->m_window, &windowrect);
+        GetCursorPos(&diffpts);
+
+        diffpts.x = windowrect.left - diffpts.x;
+        diffpts.y = windowrect.top - diffpts.y;
+        width = windowrect.right - windowrect.left ;
+        height = windowrect.bottom - windowrect.top ;
+
+        while(MK_LBUTTON) {
+            GetCursorPos(&pts);
+            if ((pts.x, pts.y) == (diffpts.x, diffpts.y));
+            MoveWindow(
+                        this->m_window,
+                        pts.x + diffpts.x, pts.y + diffpts.y,
+                        width, height,
+                        true);
+
+            if (GetAsyncKeyState(VK_LBUTTON) >= 0) break;
+        }
+        SetCursor(LoadCursor(NULL,IDC_ARROW));
     }
 
     void set_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
@@ -317,6 +348,7 @@ public:
 
     // protected:
     virtual void resize() {}
+
     HWND m_window;
     DWORD m_main_thread = GetCurrentThreadId();
     msg_cb_t m_cb;
@@ -330,6 +362,8 @@ public:
 
 LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
 {
+    
+    LRESULT return_val;
     auto w = (browser_window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
     switch (msg) {
     case WM_SIZE:
@@ -350,8 +384,18 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_DESTROY:
         w->exit();
         break;
+    // case WM_NCHITTEST:
+    //     std::cout << HIWORD(lp);
+    //     std::cout << "\n";
+    //     if (HIWORD(lp)<=180) {
+    //         POINTS pts = MAKEPOINTS(lp);
+    //         return HTCAPTION;
+    //     }
+    //     return DefWindowProc(hwnd, WM_NCHITTEST, wp, lp);;
+    //     break;
     default:
         return DefWindowProc(hwnd, msg, wp, lp);
+        break;
     }
     return 0;
 }
@@ -498,6 +542,11 @@ WEBVIEW_API void webview_set_maximized(webview_t w, int maximize)
 WEBVIEW_API void webview_set_minimized(webview_t w)
 {
     static_cast<webview::webview*>(w)->set_minimized();
+}
+
+WEBVIEW_API void webview_drag_intent(webview_t w)
+{
+    static_cast<webview::webview*>(w)->drag_window();
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,

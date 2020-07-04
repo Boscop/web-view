@@ -445,6 +445,10 @@ impl<'a, T> WebView<'a, T> {
         unsafe { webview_set_minimized(self.inner.unwrap()) };
     }
 
+    pub fn drag_intent(&mut self) {
+        unsafe { webview_drag_intent(self.inner.unwrap()) };
+    }
+
     /// Returns a builder for opening a new dialog window.
     #[deprecated(
         note = "Please use crates like 'tinyfiledialogs' for dialog handling, see example in examples/dialog.rs"
