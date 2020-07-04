@@ -50,6 +50,11 @@ unsafe extern "C" fn webview_set_fullscreen(webview: *mut WebView, fullscreen: c
 }
 
 #[no_mangle]
+unsafe extern "C" fn webview_set_minimized(webview: *mut WebView) {
+    gtk_window_minimized(mem::transmute((*webview).window));
+}
+
+#[no_mangle]
 unsafe extern "C" fn webview_new(
     title: *const c_char,
     url: *const c_char,

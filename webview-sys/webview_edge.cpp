@@ -277,6 +277,10 @@ public:
                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
     }
+    void set_minimized()
+    {
+        ShowWindow(this->m_window, SW_SHOWMINIMIZED);
+    }
 
     void set_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     {
@@ -457,6 +461,11 @@ WEBVIEW_API void webview_set_title(webview_t w, const char *title)
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen)
 {
     static_cast<webview::webview*>(w)->set_fullscreen(fullscreen);
+}
+
+WEBVIEW_API void webview_set_minimized(webview_t w)
+{
+    static_cast<webview::webview*>(w)->set_minimized();
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,

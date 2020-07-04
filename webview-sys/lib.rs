@@ -35,5 +35,6 @@ extern "C" {
     pub fn webview_eval(this: *mut CWebView, js: *const c_char) -> c_int;
     pub fn webview_set_title(this: *mut CWebView, title: *const c_char);
     pub fn webview_set_fullscreen(this: *mut CWebView, fullscreen: c_int);
+    pub fn webview_set_minimized(this: *mut CWebView);
     pub fn webview_set_color(this: *mut CWebView, red: u8, green: u8, blue: u8, alpha: u8);
 }
