@@ -58,6 +58,11 @@ unsafe extern "C" fn webview_set_maximized(webview: *mut WebView, maximize: c_in
 }
 
 #[no_mangle]
+unsafe extern "C" fn webview_set_minimized(webview: *mut WebView) {
+    gtk_window_iconify(mem::transmute((*webview).window));
+}
+
+#[no_mangle]
 unsafe extern "C" fn webview_new(
     title: *const c_char,
     url: *const c_char,

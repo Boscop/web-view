@@ -26,6 +26,7 @@ WEBVIEW_API int webview_eval(webview_t w, const char *js);
 WEBVIEW_API void webview_set_title(webview_t w, const char *title);
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen);
 WEBVIEW_API void webview_set_maximized(webview_t w, int maximize);
+WEBVIEW_API void webview_set_minimized(webview_t w);
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a);
 WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
