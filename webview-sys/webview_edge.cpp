@@ -289,15 +289,9 @@ public:
         }
         this->is_maximized = !!maximize;
         if (maximize) {
-            MONITORINFO monitor_info;
-            monitor_info.cbSize = sizeof(monitor_info);
-            GetMonitorInfo(MonitorFromWindow(this->m_window, MONITOR_DEFAULTTONEAREST),
-                        &monitor_info);
             RECT r;
-            r.left = monitor_info.rcMonitor.left;
-            r.top = monitor_info.rcMonitor.top;
-            r.right = monitor_info.rcMonitor.right;
-            r.bottom = monitor_info.rcMonitor.bottom;
+
+            SystemParametersInfoW(SPI_GETWORKAREA, 0, &r, 0);
             SetWindowPos(this->m_window, NULL, r.left, r.top, r.right - r.left,
                         r.bottom - r.top,
                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
