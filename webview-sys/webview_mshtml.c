@@ -1134,6 +1134,11 @@ WEBVIEW_API void webview_set_maximized(webview_t w, int maximize) {
         }
 }
 
+WEBVIEW_API void webview_set_minimized(webview_t w){
+  struct mshtml_webview* wv = (struct mshtml_webview*)w;
+  ShowWindow(wv->hwnd, SW_SHOWMINIMIZED);
+}
+
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a) {
   struct mshtml_webview* wv = (struct mshtml_webview*)w;
