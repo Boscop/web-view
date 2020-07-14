@@ -36,6 +36,7 @@ struct mshtml_webview {
   HWND hwnd;
   IOleObject **browser;
   BOOL is_fullscreen;
+  BOOL is_maximized;
   DWORD saved_style;
   DWORD saved_ex_style;
   RECT saved_rect;
@@ -1104,6 +1105,33 @@ WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
                  wv->saved_rect.bottom - wv->saved_rect.top,
                  SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
   }
+}
+
+WEBVIEW_API void webview_set_maximized(webview_t w, int maximize) {
+  struct mshtml_webview* wv = (struct mshtml_webview*)w;
+  if (wv->is_maximized == !!maximize) {
+    return;
+  }
+  if (wv->is_maximized == 0) {
+    wv->saved_style = GetWindowLong(wv->hwnd, GWL_STYLE);
+    wv->saved_ex_style = GetWindowLong(wv->hwnd, GWL_EXSTYLE);
+    GetWindowRect(wv->hwnd, &wv->saved_rect);
+  }
+  wv->is_maximized = !!maximize;
+  if (maximize) {
+            RECT r;
+
+            SystemParametersInfoW(SPI_GETWORKAREA, 0, &r, 0);
+            SetWindowPos(wv->hwnd, NULL, r.left, r.top, r.right - r.left,
+                        r.bottom - r.top,
+                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        } else {
+            SetWindowPos(wv->hwnd, NULL, wv->saved_rect.left,
+                        wv->saved_rect.top,
+                        wv->saved_rect.right - wv->saved_rect.left,
+                        wv->saved_rect.bottom - wv->saved_rect.top,
+                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        }
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
