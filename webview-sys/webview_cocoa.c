@@ -572,6 +572,15 @@ WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen) {
   }
 }
 
+WEBVIEW_API void webview_set_maximized(webview_t w, int maximize) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
+  bool windowZoomStatus = (bool)objc_msgSend(
+      wv->priv.window, sel_registerName("isZoomed"));
+  if (windowZoomStatus != maximize) {
+    objc_msgSend(wv->priv.window, sel_registerName("zoom:"), NULL);
+  }
+}
+
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a) {
   struct cocoa_webview* wv = (struct cocoa_webview*)w;

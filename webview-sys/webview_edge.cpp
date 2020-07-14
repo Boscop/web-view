@@ -278,6 +278,32 @@ public:
         }
     }
 
+    void set_maximized(bool maximize)
+    {
+
+        if (this->is_maximized == maximize) {
+            return;
+        }
+        if (!this->is_maximized) {
+            GetWindowRect(this->m_window, &this->saved_rect);
+        }
+        this->is_maximized = !!maximize;
+        if (maximize) {
+            RECT r;
+
+            SystemParametersInfoW(SPI_GETWORKAREA, 0, &r, 0);
+            SetWindowPos(this->m_window, NULL, r.left, r.top, r.right - r.left,
+                        r.bottom - r.top,
+                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        } else {
+            SetWindowPos(this->m_window, NULL, this->saved_rect.left,
+                        this->saved_rect.top,
+                        this->saved_rect.right - this->saved_rect.left,
+                        this->saved_rect.bottom - this->saved_rect.top,
+                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+        }
+    }
+
     void set_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     {
 
@@ -292,6 +318,7 @@ public:
     msg_cb_t m_cb;
 
     bool is_fullscreen = false;
+    bool is_maximized = false;
     DWORD saved_style = 0;
     DWORD saved_ex_style = 0;
     RECT saved_rect;
@@ -457,6 +484,11 @@ WEBVIEW_API void webview_set_title(webview_t w, const char *title)
 WEBVIEW_API void webview_set_fullscreen(webview_t w, int fullscreen)
 {
     static_cast<webview::webview*>(w)->set_fullscreen(fullscreen);
+}
+
+WEBVIEW_API void webview_set_maximized(webview_t w, int maximize)
+{
+    static_cast<webview::webview*>(w)->set_maximized(maximize);
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,

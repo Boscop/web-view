@@ -49,6 +49,14 @@ unsafe extern "C" fn webview_set_fullscreen(webview: *mut WebView, fullscreen: c
     }
 }
 
+unsafe extern "C" fn webview_set_maximized(webview: *mut WebView, maximize: c_int) {
+    if maximize > 0 {
+        gtk_window_maximize(mem::transmute((*webview).window));
+    } else {
+        gtk_window_unmaximize(mem::transmute((*webview).window));
+    }
+}
+
 #[no_mangle]
 unsafe extern "C" fn webview_new(
     title: *const c_char,
