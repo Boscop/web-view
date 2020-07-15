@@ -371,7 +371,7 @@ WEBVIEW_API int webview_init(webview_t w) {
   CGRect r = CGRectMake(0, 0, wv->width, wv->height);
   unsigned int style;
   if (wv->frameless) {
-    style = NSWindowStyleMaskBorderless;
+    style = NSWindowStyleMaskBorderless | NSWindowStyleMaskMiniaturizable;
   } else {
     style = NSWindowStyleMaskTitled | NSWindowStyleMaskClosable |
                         NSWindowStyleMaskMiniaturizable;
@@ -579,6 +579,11 @@ WEBVIEW_API void webview_set_maximized(webview_t w, int maximize) {
   if (windowZoomStatus != maximize) {
     objc_msgSend(wv->priv.window, sel_registerName("zoom:"), NULL);
   }
+}
+
+WEBVIEW_API void webview_set_minimized(webview_t w) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
+  objc_msgSend(wv->priv.window, sel_registerName("miniaturize:"), NULL);
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
