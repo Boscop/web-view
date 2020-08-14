@@ -50,6 +50,9 @@ unsafe extern "C" fn webview_set_fullscreen(webview: *mut WebView, fullscreen: c
 }
 
 unsafe extern "C" fn webview_set_maximized(webview: *mut WebView, maximize: c_int) {
+    if maximize == gtk_window_is_maximized(mem::transmute((*webview).window)) {
+        return;
+    }
     if maximize > 0 {
         gtk_window_maximize(mem::transmute((*webview).window));
     } else {
@@ -58,8 +61,15 @@ unsafe extern "C" fn webview_set_maximized(webview: *mut WebView, maximize: c_in
 }
 
 #[no_mangle]
-unsafe extern "C" fn webview_set_minimized(webview: *mut WebView) {
-    gtk_window_iconify(mem::transmute((*webview).window));
+unsafe extern "C" fn webview_set_minimized(webview: *mut WebView, minimize: c_int) {
+    if minimize == gtk_window_is_active(mem::transmute((*webview).window)) {
+        return;
+    }
+    if minimize > 0 {
+        gtk_window_iconify(mem::transmute((*webview).window));
+    } else {
+        gtk_window_deiconify(mem::transmute((*webview).window));
+    }
 }
 
 #[no_mangle]

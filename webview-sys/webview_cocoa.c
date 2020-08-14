@@ -581,9 +581,19 @@ WEBVIEW_API void webview_set_maximized(webview_t w, int maximize) {
   }
 }
 
-WEBVIEW_API void webview_set_minimized(webview_t w) {
+WEBVIEW_API void webview_set_minimized(webview_t w, int minimize) {
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
-  objc_msgSend(wv->priv.window, sel_registerName("miniaturize:"), NULL);
+  bool windowMinimizeStatus = (bool)objc_msgSend(
+      wv->priv.window, sel_registerName("isMinimized"));
+  if (minimize == windowMinimizeStatus) {
+    return;
+  }
+  if (minimize) {
+    objc_msgSend(wv->priv.window, sel_registerName("miniaturize:"), NULL);
+  } else {
+    objc_msgSend(wv->priv.window, sel_registerName("deminiaturize:"), NULL);
+  }
+  
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,

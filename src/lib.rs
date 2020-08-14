@@ -443,8 +443,8 @@ impl<'a, T> WebView<'a, T> {
     }
 
     /// Minimizes window
-    pub fn set_minimized(&mut self) {
-        unsafe { webview_set_minimized(self.inner.unwrap()) };
+    pub fn set_minimized(&mut self, minimize: bool) {
+        unsafe { webview_set_minimized(self.inner.unwrap(), minimize as _) };
     }
 
     /// Returns a builder for opening a new dialog window.

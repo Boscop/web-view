@@ -277,34 +277,43 @@ public:
                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
     }
-    void set_minimized()
-    {
-        ShowWindow(this->m_window, SW_SHOWMINIMIZED);
+    void set_minimized(bool minimize)
+    {   
+        bool is_minimized = IsIconic(this->m_window);
+        if (is_minimized == minimize) {
+            set_maximized(true);
+            return;
+        }
+        if (minimize)
+            ShowWindow(this->m_window, SW_MINIMIZE);
+        else
+            ShowWindow(this->m_window, SW_RESTORE);
     }
 
     void set_maximized(bool maximize)
     {
-
-        if (this->is_maximized == maximize) {
+        bool is_maximized = IsZoomed(this->m_window);
+        if (is_maximized == maximize) {
             return;
         }
-        if (!this->is_maximized) {
+        if (!is_maximized) {
             GetWindowRect(this->m_window, &this->saved_rect);
         }
-        this->is_maximized = !!maximize;
         if (maximize) {
             RECT r;
 
             SystemParametersInfoW(SPI_GETWORKAREA, 0, &r, 0);
-            SetWindowPos(this->m_window, NULL, r.left, r.top, r.right - r.left,
+            ShowWindow(this->m_window, SW_MAXIMIZE);
+            SetWindowPos(this->m_window, NULL, 0, 0, r.right - r.left,
                         r.bottom - r.top,
-                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+                        SWP_SHOWWINDOW);
         } else {
+            ShowWindow(this->m_window, SW_RESTORE);
             SetWindowPos(this->m_window, NULL, this->saved_rect.left,
                         this->saved_rect.top,
                         this->saved_rect.right - this->saved_rect.left,
                         this->saved_rect.bottom - this->saved_rect.top,
-                        SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+                        SWP_SHOWWINDOW);
         }
     }
 
@@ -495,9 +504,9 @@ WEBVIEW_API void webview_set_maximized(webview_t w, int maximize)
     static_cast<webview::webview*>(w)->set_maximized(maximize);
 }
 
-WEBVIEW_API void webview_set_minimized(webview_t w)
+WEBVIEW_API void webview_set_minimized(webview_t w, int minimize)
 {
-    static_cast<webview::webview*>(w)->set_minimized();
+    static_cast<webview::webview*>(w)->set_minimized(minimize);
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
