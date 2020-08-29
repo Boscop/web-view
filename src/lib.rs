@@ -110,6 +110,7 @@ pub struct WebViewBuilder<'a, T: 'a, I, C> {
     pub invoke_handler: Option<I>,
     pub user_data: Option<T>,
     pub frameless: bool,
+    pub visible: bool,
 }
 
 impl<'a, T: 'a, I, C> Default for WebViewBuilder<'a, T, I, C>
@@ -133,6 +134,7 @@ where
             invoke_handler: None,
             user_data: None,
             frameless: false,
+            visible: true,
         }
     }
 }
@@ -195,6 +197,14 @@ where
         self
     }
 
+    /// Set the visibility of the WebView window.
+    ///
+    /// defaults to `true`
+    pub fn visible(mut self, visible: bool) -> Self {
+        self.visible = visible;
+        self
+    }
+
     /// Sets the invoke handler callback. This will be called when a message is received from
     /// JavaScript.
     ///
@@ -243,6 +253,7 @@ where
             self.resizable,
             self.debug,
             self.frameless,
+            self.visible,
             user_data,
             invoke_handler,
         )
@@ -298,6 +309,7 @@ impl<'a, T> WebView<'a, T> {
         resizable: bool,
         debug: bool,
         frameless: bool,
+        visible: bool,
         user_data: T,
         invoke_handler: I,
     ) -> WVResult<WebView<'a, T>>
@@ -321,6 +333,7 @@ impl<'a, T> WebView<'a, T> {
                 resizable as _,
                 debug as _,
                 frameless as _,
+                visible as _,
                 Some(ffi_invoke_handler::<T>),
                 user_data_ptr as _,
             );
@@ -445,6 +458,11 @@ impl<'a, T> WebView<'a, T> {
     /// Minimizes window
     pub fn set_minimized(&mut self, minimize: bool) {
         unsafe { webview_set_minimized(self.inner.unwrap(), minimize as _) };
+    }
+
+    /// Set window visibility.
+    pub fn set_visible(&mut self, visible: bool) {
+        unsafe { webview_set_visible(self.inner.unwrap(), visible as _) };
     }
 
     /// Returns a builder for opening a new dialog window.

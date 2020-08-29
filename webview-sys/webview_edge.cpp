@@ -100,7 +100,7 @@ private:
         return 96;
     }
 public:
-    browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable, bool frameless)
+    browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable, bool frameless, bool visible)
         : m_cb(cb)
     {
         HINSTANCE hInstance = GetModuleHandle(nullptr);
@@ -170,7 +170,7 @@ public:
 
         // Set position, size and show window *atomically*.
         SetWindowPos(m_window, HWND_TOP, rect.left, rect.top,
-            rect.right - rect.left, rect.bottom - rect.top, SWP_SHOWWINDOW);
+            rect.right - rect.left, rect.bottom - rect.top, visible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW);
 
         UpdateWindow(m_window);
         SetFocus(m_window);
@@ -317,6 +317,11 @@ public:
         }
     }
 
+    void set_visible(bool visible)
+    {
+        ShowWindow(this->m_window, visible ? SW_SHOW : SW_HIDE);
+    }
+
     void set_color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     {
 
@@ -372,8 +377,8 @@ using namespace Windows::Web::UI::Interop;
 
 class webview : public browser_window {
 public:
-    webview(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, bool resizable, bool debug, bool frameless)
-        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), title, width, height, resizable, frameless)
+    webview(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, bool resizable, bool debug, bool frameless, bool visible)
+        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), title, width, height, resizable, frameless, visible)
         , invoke_cb(invoke_cb)
     {
         init_apartment(winrt::apartment_type::single_threaded);
@@ -509,6 +514,11 @@ WEBVIEW_API void webview_set_minimized(webview_t w, int minimize)
     static_cast<webview::webview*>(w)->set_minimized(minimize);
 }
 
+WEBVIEW_API void webview_set_visible(webview_t w, int visible)
+{
+    static_cast<webview::webview*>(w)->set_visible(visible);
+}
+
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a)
 {
@@ -544,9 +554,9 @@ WEBVIEW_API void* webview_get_user_data(webview_t w)
 
 WEBVIEW_API webview_t webview_new(
     const char* title, const char* url, int width, int height, int resizable, int debug,
-    int frameless, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
+    int frameless, int visible, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
 {
-    auto w = new webview::webview(external_invoke_cb, title, width, height, resizable, debug, frameless);
+    auto w = new webview::webview(external_invoke_cb, title, width, height, resizable, debug, frameless, visible);
     w->set_user_data(userdata);
     w->navigate(url);
 	return w;

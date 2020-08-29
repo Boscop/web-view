@@ -97,7 +97,7 @@ static const TCHAR *classname = "WebView";
 
 WEBVIEW_API webview_t webview_new(
   const char* title, const char* url, int width, int height, int resizable, int debug, 
-  int frameless, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+  int frameless, int visible, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
 
   if (webview_fix_ie_compat_mode() < 0) {
     return NULL;
