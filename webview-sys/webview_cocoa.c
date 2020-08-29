@@ -20,6 +20,7 @@ struct cocoa_webview {
   int resizable;
   int debug;
   int frameless;
+  int visible;
   webview_external_invoke_cb_t external_invoke_cb;
   struct webview_priv priv;
   void *userdata;
@@ -46,6 +47,7 @@ WEBVIEW_API webview_t webview_new(
 	wv->resizable = resizable;
 	wv->debug = debug;
   wv->frameless = frameless;
+  wv->visible = visible;
 	wv->external_invoke_cb = external_invoke_cb;
 	wv->userdata = userdata;
 	if (webview_init(wv) != 0) {
@@ -448,7 +450,10 @@ WEBVIEW_API int webview_init(webview_t w) {
                (NSViewWidthSizable | NSViewHeightSizable));
   objc_msgSend(objc_msgSend(wv->priv.window, sel_registerName("contentView")),
                sel_registerName("addSubview:"), wv->priv.webview);
-  objc_msgSend(wv->priv.window, sel_registerName("orderFrontRegardless"));
+
+  if (wv->visible) {
+    objc_msgSend(wv->priv.window, sel_registerName("orderFrontRegardless"));
+  }
 
   objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
                             sel_registerName("sharedApplication")),
@@ -594,6 +599,16 @@ WEBVIEW_API void webview_set_minimized(webview_t w, int minimize) {
     objc_msgSend(wv->priv.window, sel_registerName("deminiaturize:"), NULL);
   }
   
+}
+
+WEBVIEW_API void webview_set_visible(webview_t w, int visible) {
+  struct cocoa_webview* wv = (struct cocoa_webview*)w;
+
+  if (visible) {
+    objc_msgSend(wv->priv.window, sel_registerName("orderFrontRegardless"));
+  } else {
+    objc_msgSend(wv->priv.window, sel_registerName("orderOut"));
+  }
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
