@@ -195,7 +195,7 @@ WEBVIEW_API webview_t webview_new(
 
   DisplayHTMLPage(wv);
 
-  ShowWindow(wv->hwnd, SW_SHOWDEFAULT);
+  ShowWindow(wv->hwnd, visible ? SW_SHOWDEFAULT : SW_HIDE);
   UpdateWindow(wv->hwnd);
   SetFocus(wv->hwnd);
 
@@ -1144,6 +1144,12 @@ WEBVIEW_API void webview_set_minimized(webview_t w, int minimize){
       ShowWindow(wv->hwnd, SW_MINIMIZE);
   else
       ShowWindow(wv->hwnd, SW_RESTORE);
+}
+
+WEBVIEW_API void webview_set_visible(webview_t w, int visible) {
+  struct mshtml_webview* wv = (struct mshtml_webview*)w;
+
+  ShowWindow(wv->hwnd, visible ? SW_SHOW : SW_HIDE);
 }
 
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
