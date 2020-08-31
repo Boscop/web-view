@@ -21,6 +21,8 @@ struct cocoa_webview {
   int debug;
   int frameless;
   int visible;
+  int min_width;
+  int min_height;
   webview_external_invoke_cb_t external_invoke_cb;
   struct webview_priv priv;
   void *userdata;
@@ -37,7 +39,7 @@ WEBVIEW_API void* webview_get_user_data(webview_t w) {
 
 WEBVIEW_API webview_t webview_new(
   const char* title, const char* url, 
-  int width, int height, int resizable, int debug, int frameless, int visible,
+  int width, int height, int resizable, int debug, int frameless, int visible, int min_width, int min_height,
   webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
 	struct cocoa_webview* wv = (struct cocoa_webview*)calloc(1, sizeof(*wv));
 	wv->width = width;
@@ -48,6 +50,8 @@ WEBVIEW_API webview_t webview_new(
 	wv->debug = debug;
   wv->frameless = frameless;
   wv->visible = visible;
+  wv->min_width = min_width;
+  wv->min_height = min_height;
 	wv->external_invoke_cb = external_invoke_cb;
 	wv->userdata = userdata;
 	if (webview_init(wv) != 0) {
@@ -454,6 +458,8 @@ WEBVIEW_API int webview_init(webview_t w) {
   if (wv->visible) {
     objc_msgSend(wv->priv.window, sel_registerName("orderFrontRegardless"));
   }
+
+  objc_msgSend(wv->priv.window, sel_registerName("setMinSize:"), CGSizeMake(wv->min_width, wv->min_height));
 
   objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
                             sel_registerName("sharedApplication")),
