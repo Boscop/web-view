@@ -23,6 +23,7 @@ struct WebView {
     resizable: c_int,
     debug: c_int,
     frameless: c_int,
+    visible: c_int,
     external_invoke_cb: ExternalInvokeCallback,
     window: *mut GtkWidget,
     scroller: *mut GtkWidget,
@@ -49,6 +50,7 @@ unsafe extern "C" fn webview_set_fullscreen(webview: *mut WebView, fullscreen: c
     }
 }
 
+#[no_mangle]
 unsafe extern "C" fn webview_set_maximized(webview: *mut WebView, maximize: c_int) {
     if maximize == gtk_window_is_maximized(mem::transmute((*webview).window)) {
         return;
@@ -73,6 +75,15 @@ unsafe extern "C" fn webview_set_minimized(webview: *mut WebView, minimize: c_in
 }
 
 #[no_mangle]
+unsafe extern "C" fn webview_set_visible(webview: *mut WebView, visible: c_int) {
+    if visible != 0 {
+        gtk_widget_show_all(mem::transmute((*webview).window));
+    } else {
+        gtk_widget_hide(mem::transmute((*webview).window));
+    }
+}
+
+#[no_mangle]
 unsafe extern "C" fn webview_new(
     title: *const c_char,
     url: *const c_char,
@@ -81,6 +92,7 @@ unsafe extern "C" fn webview_new(
     resizable: c_int,
     debug: c_int,
     frameless: c_int,
+    visible: c_int,
     external_invoke_cb: ExternalInvokeCallback,
     userdata: *mut c_void,
 ) -> *mut WebView {
@@ -92,6 +104,7 @@ unsafe extern "C" fn webview_new(
         resizable,
         debug,
         frameless,
+        visible,
         external_invoke_cb,
         window: ptr::null_mut(),
         scroller: ptr::null_mut(),
@@ -186,7 +199,9 @@ unsafe extern "C" fn webview_new(
         );
     }
 
-    gtk_widget_show_all(window);
+    if visible != 0 {
+        gtk_widget_show_all(window);
+    }
 
     webkit_web_view_run_javascript(
             mem::transmute(webview),
