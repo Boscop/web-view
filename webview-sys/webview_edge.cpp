@@ -100,8 +100,8 @@ private:
         return 96;
     }
 public:
-    browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable, bool frameless, bool visible)
-        : m_cb(cb)
+    browser_window(msg_cb_t cb, const char* title, int width, int height, bool resizable, bool frameless, bool visible, int min_width, int min_height)
+        : m_cb(cb), m_min_width(min_width), m_min_height(min_height)
     {
         HINSTANCE hInstance = GetModuleHandle(nullptr);
 
@@ -329,6 +329,14 @@ public:
         SetClassLongPtr(this->m_window, GCLP_HBRBACKGROUND, (LONG_PTR)brush);
     }
 
+    int get_min_width() {
+        return this->m_min_width;
+    }
+
+    int get_min_height() {
+        return this->m_min_height;
+    }
+
     // protected:
     virtual void resize() {}
     HWND m_window;
@@ -340,6 +348,8 @@ public:
     DWORD saved_style = 0;
     DWORD saved_ex_style = 0;
     RECT saved_rect;
+
+    int m_min_width, m_min_height;
 };
 
 LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -364,6 +374,16 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
     case WM_DESTROY:
         w->exit();
         break;
+    case WM_GETMINMAXINFO: {
+        if (w) {
+            LPMINMAXINFO lpMMI = reinterpret_cast<LPMINMAXINFO>(lp);
+            lpMMI->ptMinTrackSize.x = w->get_min_width();
+            lpMMI->ptMinTrackSize.y = w->get_min_height();
+        }
+        
+        break;
+    }
+
     default:
         return DefWindowProc(hwnd, msg, wp, lp);
     }
@@ -377,8 +397,8 @@ using namespace Windows::Web::UI::Interop;
 
 class webview : public browser_window {
 public:
-    webview(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, bool resizable, bool debug, bool frameless, bool visible)
-        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), title, width, height, resizable, frameless, visible)
+    webview(webview_external_invoke_cb_t invoke_cb, const char* title, int width, int height, bool resizable, bool debug, bool frameless, bool visible, int min_width, int min_height)
+        : browser_window(std::bind(&webview::on_message, this, std::placeholders::_1), title, width, height, resizable, frameless, visible, min_width, min_height)
         , invoke_cb(invoke_cb)
     {
         init_apartment(winrt::apartment_type::single_threaded);
@@ -554,9 +574,9 @@ WEBVIEW_API void* webview_get_user_data(webview_t w)
 
 WEBVIEW_API webview_t webview_new(
     const char* title, const char* url, int width, int height, int resizable, int debug,
-    int frameless, int visible, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
+    int frameless, int visible, int min_width, int min_height, webview_external_invoke_cb_t external_invoke_cb, void* userdata)
 {
-    auto w = new webview::webview(external_invoke_cb, title, width, height, resizable, debug, frameless, visible);
+    auto w = new webview::webview(external_invoke_cb, title, width, height, resizable, debug, frameless, visible, min_width, min_height);
     w->set_user_data(userdata);
     w->navigate(url);
 	return w;

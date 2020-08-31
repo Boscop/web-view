@@ -93,6 +93,8 @@ unsafe extern "C" fn webview_new(
     debug: c_int,
     frameless: c_int,
     visible: c_int,
+    min_width: c_int,
+    min_height: c_int,
     external_invoke_cb: ExternalInvokeCallback,
     userdata: *mut c_void,
 ) -> *mut WebView {
