@@ -458,7 +458,7 @@ WEBVIEW_API int webview_init(webview_t w) {
   if (wv->visible) {
     objc_msgSend(wv->priv.window, sel_registerName("orderFrontRegardless"));
   }
-
+  
   objc_msgSend(wv->priv.window, sel_registerName("setMinSize:"), CGSizeMake(wv->min_width, wv->min_height));
 
   objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
