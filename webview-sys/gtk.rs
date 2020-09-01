@@ -1,6 +1,6 @@
 #![cfg(all(target_family = "unix", not(target_os = "macos")))]
 
-use gdk_sys::{gdk_threads_add_idle, GdkRGBA};
+use gdk_sys::{gdk_threads_add_idle, GdkGeometry, GdkRGBA, GDK_HINT_MIN_SIZE};
 use gio_sys::GAsyncResult;
 use glib_sys::*;
 use gobject_sys::{g_signal_connect_data, GObject};
@@ -24,6 +24,8 @@ struct WebView {
     debug: c_int,
     frameless: c_int,
     visible: c_int,
+    min_width: c_int,
+    min_height: c_int,
     external_invoke_cb: ExternalInvokeCallback,
     window: *mut GtkWidget,
     scroller: *mut GtkWidget,
@@ -107,6 +109,8 @@ unsafe extern "C" fn webview_new(
         debug,
         frameless,
         visible,
+        min_width,
+        min_height,
         external_invoke_cb,
         window: ptr::null_mut(),
         scroller: ptr::null_mut(),
@@ -132,6 +136,28 @@ unsafe extern "C" fn webview_new(
 
     if resizable > 0 {
         gtk_window_set_default_size(mem::transmute(window), width, height);
+
+        let window_properties = GdkGeometry {
+            min_width,
+            min_height,
+
+            max_width: 0,
+            max_height: 0,
+            base_width: 0,
+            base_height: 0,
+            width_inc: 0,
+            height_inc: 0,
+            min_aspect: 0.0,
+            max_aspect: 0.0,
+            win_gravity: 0,
+        };
+
+        gtk_window_set_geometry_hints(
+            mem::transmute(window),
+            ptr::null_mut(),
+            mem::transmute(&window_properties),
+            GDK_HINT_MIN_SIZE,
+        );
     } else {
         gtk_widget_set_size_request(mem::transmute(window), width, height);
     }
