@@ -212,8 +212,7 @@ where
     /// Sets the minimum size of the WebView window.
     ///
     /// Defaults to 300 x 300.
-    pub fn min_size(mut self, size: (i32, i32)) -> Self {
-        let (width, height) = size;
+    pub fn min_size(mut self, width: i32, height: i32) -> Self {
         self.min_width = width;
         self.min_height = height;
         self
