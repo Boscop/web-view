@@ -111,6 +111,8 @@ pub struct WebViewBuilder<'a, T: 'a, I, C> {
     pub user_data: Option<T>,
     pub frameless: bool,
     pub visible: bool,
+    pub min_width: i32,
+    pub min_height: i32,
 }
 
 impl<'a, T: 'a, I, C> Default for WebViewBuilder<'a, T, I, C>
@@ -135,6 +137,8 @@ where
             user_data: None,
             frameless: false,
             visible: true,
+            min_width: 300,
+            min_height: 300,
         }
     }
 }
@@ -205,6 +209,15 @@ where
         self
     }
 
+    /// Sets the minimum size of the WebView window.
+    ///
+    /// Defaults to 300 x 300.
+    pub fn min_size(mut self, width: i32, height: i32) -> Self {
+        self.min_width = width;
+        self.min_height = height;
+        self
+    }
+
     /// Sets the invoke handler callback. This will be called when a message is received from
     /// JavaScript.
     ///
@@ -254,6 +267,8 @@ where
             self.debug,
             self.frameless,
             self.visible,
+            self.min_width,
+            self.min_height,
             user_data,
             invoke_handler,
         )
@@ -310,6 +325,8 @@ impl<'a, T> WebView<'a, T> {
         debug: bool,
         frameless: bool,
         visible: bool,
+        min_width: i32,
+        min_height: i32,
         user_data: T,
         invoke_handler: I,
     ) -> WVResult<WebView<'a, T>>
@@ -334,6 +351,8 @@ impl<'a, T> WebView<'a, T> {
                 debug as _,
                 frameless as _,
                 visible as _,
+                min_width,
+                min_height,
                 Some(ffi_invoke_handler::<T>),
                 user_data_ptr as _,
             );

@@ -31,6 +31,8 @@ struct mshtml_webview {
   int resizable;
   int debug;
   int frameless;
+  int min_width;
+  int min_height;
   webview_external_invoke_cb_t external_invoke_cb;
   void *userdata;
   HWND hwnd;
@@ -97,7 +99,7 @@ static const TCHAR *classname = "WebView";
 
 WEBVIEW_API webview_t webview_new(
   const char* title, const char* url, int width, int height, int resizable, int debug, 
-  int frameless, int visible, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+  int frameless, int visible, int min_width, int min_height, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
 
   if (webview_fix_ie_compat_mode() < 0) {
     return NULL;
@@ -173,6 +175,8 @@ WEBVIEW_API webview_t webview_new(
   wv->resizable = resizable;
   wv->debug = debug;
   wv->frameless = frameless;
+  wv->min_width = min_width;
+  wv->min_height = min_height;
   wv->external_invoke_cb = external_invoke_cb;
   wv->userdata = userdata;
   wv->hwnd =
@@ -942,6 +946,16 @@ LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     void *arg = (void *)lParam;
     (*f)(wv, arg);
     return TRUE;
+  }
+  case WM_GETMINMAXINFO:
+  {
+    if (wv) {
+      LPMINMAXINFO lpMMI = (LPMINMAXINFO)lParam;
+      lpMMI->ptMinTrackSize.x = wv->min_width;
+      lpMMI->ptMinTrackSize.y = wv->min_height;
+    }
+      
+    break;
   }
   }
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
