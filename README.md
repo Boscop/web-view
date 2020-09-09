@@ -88,14 +88,14 @@ As this library can be found as a crate on the [Rust Community Registry](https:/
  
 ```toml
 [dependencies]
-web-view = { version = "0.5.4" }
+web-view = { version = "0.6.3" }
 ```
  
 If you want to make use of **Edge** on Windows environments, you will need to have Windows 10 SDK installed through Visual Studio Installer and you'll need to use the following syntax instead:
  
 ```toml
 [dependencies]
-web-view = { version = "0.5.4", features = ["edge"] }
+web-view = { version = "0.6.3", features = ["edge"] }
 ```
  
 Now let's write some Rust code that makes use of the library. Open up the `main.rs` file in an editor of your choice:
