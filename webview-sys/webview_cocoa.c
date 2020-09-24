@@ -613,7 +613,7 @@ WEBVIEW_API void webview_set_visible(webview_t w, int visible) {
   if (visible) {
     objc_msgSend(wv->priv.window, sel_registerName("orderFrontRegardless"));
   } else {
-    objc_msgSend(wv->priv.window, sel_registerName("orderOut"));
+    objc_msgSend(wv->priv.window, sel_registerName("orderOut:"), NULL);
   }
 }
 
