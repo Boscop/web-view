@@ -147,6 +147,7 @@ public:
         SetWindowLongPtr(m_window, GWLP_USERDATA, (LONG_PTR)this);
         if (frameless)
         {
+            is_frameless = true;
             SetWindowLongPtr(m_window, GWL_STYLE, style);
             static const MARGINS shadow = {1, 1, 1, 1};
             DwmExtendFrameIntoClientArea(m_window, &shadow);
@@ -394,6 +395,7 @@ public:
 
     bool is_fullscreen = false;
     bool is_maximized = false;
+    bool is_frameless = false;
     DWORD saved_style = 0;
     DWORD saved_ex_style = 0;
     RECT saved_rect;
@@ -432,9 +434,14 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         
         break;
     }
-    case WM_NCHITTEST:
-        return (*w).hit_test(POINT{LOWORD(lp), HIWORD(lp)}, hwnd);
+    case WM_NCHITTEST: {
+        if ((*w).is_frameless) {
+            return (*w).hit_test(POINT{LOWORD(lp), HIWORD(lp)}, hwnd);
+        } else {
+            return DefWindowProc(hwnd, msg, wp, lp);
+        }
         break;
+    }
     default:
         return DefWindowProc(hwnd, msg, wp, lp);
     }
