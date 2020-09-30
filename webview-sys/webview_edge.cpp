@@ -15,11 +15,13 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Web.UI.Interop.h>
 #include <winrt/Windows.Foundation.Collections.h>
+#include <dwmapi.h>
 
 #pragma comment(lib, "windowsapp.lib")
 #pragma comment(lib, "user32.lib")
 #pragma comment(lib, "gdi32.lib")
 #pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "Dwmapi.lib")
 
 // Free result with SysFreeString.
 static inline BSTR webview_to_bstr(const char *s) {
@@ -131,7 +133,8 @@ public:
         }
 
         if (frameless) {
-            style &= ~(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+            style &= (WS_POPUP | WS_DLGFRAME);
+            style &= ~(WS_THICKFRAME | WS_CAPTION);
         }
 
         // Create window first, because we need the window to get DPI for the window.
@@ -145,6 +148,12 @@ public:
         if (frameless)
         {
             SetWindowLongPtr(m_window, GWL_STYLE, style);
+            static const MARGINS shadow = {1, 1, 1, 1};
+            DwmExtendFrameIntoClientArea(m_window, &shadow);
+
+            LONG lstyle = GetWindowLong(m_window, GWL_EXSTYLE);
+            lstyle &= ~(WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
+            SetWindowLong(m_window, GWL_EXSTYLE, lstyle);
         }
         this->saved_style = style;
 
@@ -277,6 +286,46 @@ public:
                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
     }
+    auto hit_test(POINT cursor, HWND hwnd) const -> LRESULT {
+        const POINT border{
+            4,
+            4
+        };
+        RECT window;
+        if (!::GetWindowRect(hwnd, &window)) {
+            return HTNOWHERE;
+        }
+
+        const auto drag = true ? HTCAPTION : HTCLIENT;
+
+        enum region_mask {
+            client = 0b0000,
+            left   = 0b0001,
+            right  = 0b0010,
+            top    = 0b0100,
+            bottom = 0b1000,
+        };
+
+        const auto result =
+            left    * (cursor.x <  (window.left   + border.x)) |
+            right   * (cursor.x >= (window.right  - border.x)) |
+            top     * (cursor.y <  (window.top    + border.y)) |
+            bottom  * (cursor.y >= (window.bottom - border.y));
+
+        switch (result) {
+            case left          : return HTLEFT       ;
+            case right         : return HTRIGHT      ;
+            case top           : return HTTOP        ;
+            case bottom        : return HTBOTTOM     ;
+            case top | left    : return HTTOPLEFT    ;
+            case top | right   : return HTTOPRIGHT   ;
+            case bottom | left : return HTBOTTOMLEFT ;
+            case bottom | right: return HTBOTTOMRIGHT;
+            case client        : return drag;
+            default            : return HTNOWHERE;
+        }
+    }
+    
     void set_minimized(bool minimize)
     {   
         bool is_minimized = IsIconic(this->m_window);
@@ -383,7 +432,9 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
         
         break;
     }
-
+    case WM_NCHITTEST:
+        return (*w).hit_test(POINT{LOWORD(lp), HIWORD(lp)}, hwnd);
+        break;
     default:
         return DefWindowProc(hwnd, msg, wp, lp);
     }
@@ -474,7 +525,10 @@ private:
     {
         RECT r;
         GetClientRect(m_window, &r);
-        Rect bounds(r.left, r.top, r.right - r.left, r.bottom - r.top);
+        Rect bounds(r.left + 2,
+                    r.top + 2,
+                    r.right - r.left - 2*2,
+                    r.bottom - r.top - 2*2);
         m_webview.Bounds(bounds);
     }
     WebViewControlProcess m_process;
