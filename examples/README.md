@@ -1,4 +1,4 @@
-# web-view examples
+# Web-display examples
 
 ## minimal
 Just displays the wikipedia homepage.
