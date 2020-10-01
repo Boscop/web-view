@@ -1,4 +1,4 @@
-# Web-display examples
+# Web-outlook examples
 
 ## minimal
 Just displays the wikipedia homepage.
