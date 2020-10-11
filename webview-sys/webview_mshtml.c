@@ -1173,6 +1173,25 @@ WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
   SetClassLongPtr(wv->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)brush);
 }
 
+WEBVIEW_API void webview_set_zoom_level(webview_t w, const float percentage) {
+    int OLECMDID_OPTICAL_ZOOM = 63;
+    int OLECMDEXECOPT_DONTPROMPTUSER = 2;
+
+    IWebBrowser2 *webBrowser;
+    IOleObject *browser = *wv->browser;
+    if (browser->lpVtbl->QueryInterface(browser, iid_unref(&IID_IWebBrowser2),
+                                        (void **)&webBrowser) == S_OK) {
+        webBrowser->lpVtbl->ExecWB(webBrowser, OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &percentage, percentage);
+    }
+}
+
+WEBVIEW_API void webview_set_html(webview_t w, const char *html) {
+    struct mshtml_webview* wv = (struct mshtml_webview*)w;
+    wv->url = html;
+
+    DisplayHTMLPage(wv);
+}
+
 WEBVIEW_API void webview_exit(webview_t w) {
   struct mshtml_webview* wv = (struct mshtml_webview*)w;
   DestroyWindow(wv->hwnd);
