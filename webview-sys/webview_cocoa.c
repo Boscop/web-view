@@ -644,7 +644,7 @@ WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                sel_registerName("setTitlebarAppearsTransparent:"), 1);
 }
 
-WEBVIEW_API void webview_set_zoom_level(webview_t w, const float percentage) {
+WEBVIEW_API void webview_set_zoom_level(webview_t w, const double percentage) {
     // Ignored on Cocoa
 }
 

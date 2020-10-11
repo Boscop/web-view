@@ -1173,7 +1173,7 @@ WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
   SetClassLongPtr(wv->hwnd, GCLP_HBRBACKGROUND, (LONG_PTR)brush);
 }
 
-WEBVIEW_API void webview_set_zoom_level(webview_t w, const float percentage) {
+WEBVIEW_API void webview_set_zoom_level(webview_t w, const double percentage) {
     int OLECMDID_OPTICAL_ZOOM = 63;
     int OLECMDEXECOPT_DONTPROMPTUSER = 2;
 

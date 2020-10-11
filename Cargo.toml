@@ -1,6 +1,6 @@
 [package]
 name = "web-view"
-version = "0.6.3"
+version = "0.6.4"
 authors = ["Boscop", "zxey <r.hozak@seznam.cz>", "Sam Green <sam.green81@gmail.com>"]
 readme = "README.md"
 license = "MIT"

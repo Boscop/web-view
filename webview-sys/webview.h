@@ -30,7 +30,7 @@ WEBVIEW_API void webview_set_minimized(webview_t w, int minimize);
 WEBVIEW_API void webview_set_visible(webview_t w, int minimize);
 WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a);
-WEBVIEW_API void webview_set_zoom_level(webview_t w, const float percentage);
+WEBVIEW_API void webview_set_zoom_level(webview_t w, const double percentage);
 WEBVIEW_API void webview_set_html(webview_t w, const char *html);
 WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
                                   void *arg);
