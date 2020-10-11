@@ -1174,14 +1174,23 @@ WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
 }
 
 WEBVIEW_API void webview_set_zoom_level(webview_t w, const double percentage) {
+    struct mshtml_webview* wv = (struct mshtml_webview*)w;
+
     int OLECMDID_OPTICAL_ZOOM = 63;
     int OLECMDEXECOPT_DONTPROMPTUSER = 2;
+
+    VARIANT vPercentage;
+
+    VariantInit(&vPercentage);
+
+    vPercentage.vt = VT_R8;
+    vPercentage.dblVal = percentage;
 
     IWebBrowser2 *webBrowser;
     IOleObject *browser = *wv->browser;
     if (browser->lpVtbl->QueryInterface(browser, iid_unref(&IID_IWebBrowser2),
                                         (void **)&webBrowser) == S_OK) {
-        webBrowser->lpVtbl->ExecWB(webBrowser, OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &percentage, percentage);
+        webBrowser->lpVtbl->ExecWB(webBrowser, OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vPercentage, &vPercentage);
     }
 }
 
