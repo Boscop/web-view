@@ -232,12 +232,12 @@ unsafe extern "C" fn webview_new(
     }
 
     webkit_web_view_run_javascript(
-            mem::transmute(webview),
-            CStr::from_bytes_with_nul_unchecked(b"window.external={invoke:function(x){window.webkit.messageHandlers.external.postMessage(x);}}\0").as_ptr(),
-            ptr::null_mut(),
-            None,
-            ptr::null_mut(),
-        );
+        mem::transmute(webview),
+        CStr::from_bytes_with_nul_unchecked(b"window.external={invoke:function(x){window.webkit.messageHandlers.external.postMessage(x);}}\0").as_ptr(),
+        ptr::null_mut(),
+        None,
+        ptr::null_mut(),
+    );
 
     g_signal_connect_data(
         mem::transmute(window),
@@ -311,7 +311,11 @@ unsafe extern "C" fn webview_set_zoom_level(webview: *mut WebView, percentage: c
 
 #[no_mangle]
 unsafe extern "C" fn webview_set_html(webview: *mut WebView, html: *const c_char) {
-    webkit_web_view_load_html(mem::transmute((*webview).webview), html, CStr::from_bytes_with_nul_unchecked(b"").as_ptr());
+    webkit_web_view_load_html(
+        mem::transmute((*webview).webview),
+        html,
+        CStr::from_bytes_with_nul_unchecked(b"").as_ptr(),
+    );
 }
 
 unsafe extern "C" fn webview_load_changed_cb(
