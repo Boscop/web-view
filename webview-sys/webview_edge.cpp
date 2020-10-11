@@ -277,6 +277,7 @@ public:
                         SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         }
     }
+
     void set_minimized(bool minimize)
     {   
         bool is_minimized = IsIconic(this->m_window);
@@ -327,6 +328,11 @@ public:
 
         HBRUSH brush = CreateSolidBrush(RGB(r, g, b));
         SetClassLongPtr(this->m_window, GCLP_HBRBACKGROUND, (LONG_PTR)brush);
+    }
+
+    void set_html(const char* html)
+    {
+        m_webview.NavigateToString(winrt::to_hstring(html.c_str()));
     }
 
     int get_min_width() {
@@ -543,6 +549,14 @@ WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
                                    uint8_t b, uint8_t a)
 {
     static_cast<webview::webview*>(w)->set_color(r, g, b, a);
+}
+
+WEBVIEW_API void webview_set_zoom_level(webview_t w, const float percentage) {
+    // Ignored on EdgeHTML
+}
+
+WEBVIEW_API void webview_set_html(webview_t w, const char *html) {
+    static_cast<webview::webview*>(w)->set_html(html);
 }
 
 WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,

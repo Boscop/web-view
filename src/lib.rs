@@ -451,6 +451,24 @@ impl<'a, T> WebView<'a, T> {
         unsafe { webview_set_color(self.inner.unwrap(), color.r, color.g, color.b, color.a) }
     }
 
+    /// Sets the page native browser zoom level.
+    pub fn set_zoom_level(&mut self, percentage: f32) {
+        unsafe { webview_set_zoom_level(self.inner.unwrap(), percentage) }
+    }
+
+    /// Sets the page HTML directly.
+    ///
+    /// # Errors
+    ///
+    /// If `html` contain a nul byte, returns [`Error::NulByte`].
+    ///
+    /// [`Error::NulByte`]: enum.Error.html#variant.NulByte
+    pub fn set_html(&mut self, html: &str) -> WVResult {
+        let html = CString::new(html)?;
+        unsafe { webview_set_html(self.inner.unwrap(), html.as_ptr()) }
+        Ok(())
+    }
+
     /// Sets the title displayed at the top of the window.
     ///
     /// # Errors
