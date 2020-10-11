@@ -452,7 +452,7 @@ impl<'a, T> WebView<'a, T> {
     }
 
     /// Sets the page native browser zoom level.
-    pub fn set_zoom_level(&mut self, percentage: f32) {
+    pub fn set_zoom_level(&mut self, percentage: f64) {
         unsafe { webview_set_zoom_level(self.inner.unwrap(), percentage) }
     }
 

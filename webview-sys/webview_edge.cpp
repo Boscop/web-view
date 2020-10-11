@@ -551,7 +551,7 @@ WEBVIEW_API void webview_set_color(webview_t w, uint8_t r, uint8_t g,
     static_cast<webview::webview*>(w)->set_color(r, g, b, a);
 }
 
-WEBVIEW_API void webview_set_zoom_level(webview_t w, const float percentage) {
+WEBVIEW_API void webview_set_zoom_level(webview_t w, const double percentage) {
     // Ignored on EdgeHTML
 }
 
