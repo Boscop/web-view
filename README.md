@@ -79,25 +79,25 @@ process didn't exit successfully: `/home/username/rust-projects/my-project/targe
 --- stderr
 thread 'main' panicked at 'called `Result::unwrap()` on an `Err` value: Command { command: "\"pkg-config\" \"--libs\" \"--cflags\" \"webkit2gtk-4.0\" \"webkit2gtk-4.0 >= 2.8\"", cause: Os { code: 2, kind: NotFound, message: "No such file or directory" } }', src/libcore/result.rs:1165:5
 ```
- 
+
 ## Installation and Configuration
 
 Let's start off with the basic Rust application. Run `cargo new my-project` in a shell of your choice and change into the `my-project` directory.
 
 As this library can be found as a crate on the [Rust Community Registry](https://crates.io/crates/web-view) all you have to do to add this as a dependency is update your `Cargo.toml` file to have the following under its dependencies section:
- 
+
 ```toml
 [dependencies]
-web-view = { version = "0.6.3" }
+web-view = { version = "0.7" }
 ```
- 
+
 If you want to make use of **Edge** on Windows environments, you will need to have Windows 10 SDK installed through Visual Studio Installer and you'll need to use the following syntax instead:
- 
+
 ```toml
 [dependencies]
-web-view = { version = "0.6.3", features = ["edge"] }
+web-view = { version = "0.7", features = ["edge"] }
 ```
- 
+
 Now let's write some Rust code that makes use of the library. Open up the `main.rs` file in an editor of your choice:
 
 ```bash
