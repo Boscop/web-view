@@ -1,6 +1,6 @@
 [package]
 name = "web-view"
-version = "0.7.0"
+version = "0.7.1"
 authors = ["Boscop", "zxey <r.hozak@seznam.cz>", "Sam Green <sam.green81@gmail.com>"]
 readme = "README.md"
 license = "MIT"
@@ -11,10 +11,10 @@ categories = ["gui", "web-programming", "api-bindings", "rendering", "visualizat
 exclude = ["examples/todo-ps/dist/**/*", "examples/elm-counter/index.html"]
 
 [dependencies]
-urlencoding = "1.0"
+urlencoding = "1.1"
 webview-sys = { path = "webview-sys", version = "0.6" }
 boxfnonce = "0.1"
-tinyfiledialogs = "3.3.9"
+tinyfiledialogs = "3.3"
 
 [features]
 edge = ["webview-sys/edge"]
