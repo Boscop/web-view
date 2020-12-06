@@ -519,7 +519,7 @@ WEBVIEW_API int webview_init(webview_t w) {
 
   title = objc_msgSend(get_nsstring("Quit "),
                        sel_registerName("stringByAppendingString:"), appName);
-  item = create_menu_item(title, "terminate:", "q");
+  item = create_menu_item(title, wv->frameless ? "terminate:" : "close", "q");
   objc_msgSend(appMenu, sel_registerName("addItem:"), item);
 
   objc_msgSend(objc_msgSend((id)objc_getClass("NSApplication"),
