@@ -4,9 +4,20 @@ extern crate pkg_config;
 use std::env;
 
 fn main() {
-    let mut build = cc::Build::new();
-
     let target = env::var("TARGET").unwrap();
+
+    if target.contains("linux") || target.contains("bsd") {
+        // linux or bsd need to link to webkit2gtk library only,
+        // there is no C/C++ code to compile as in other platforms
+        pkg_config::Config::new()
+            .atleast_version("2.8")
+            .probe("webkit2gtk-4.0")
+            .unwrap();
+
+        return;
+    }
+
+    let mut build = cc::Build::new();
 
     build
         .include("webview.h")
@@ -37,11 +48,6 @@ fn main() {
                 println!("cargo:rustc-link-lib={}", lib);
             }
         }
-    } else if target.contains("linux") || target.contains("bsd") {
-        pkg_config::Config::new()
-            .atleast_version("2.8")
-            .probe("webkit2gtk-4.0")
-            .unwrap();
     } else if target.contains("apple") {
         build
             .file("webview_cocoa.c")
