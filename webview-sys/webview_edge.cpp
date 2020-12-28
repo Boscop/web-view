@@ -106,10 +106,10 @@ public:
         HINSTANCE hInstance = GetModuleHandle(nullptr);
 
         HICON winresIcon = (HICON)LoadImage(
-            hInstance, 
-            (LPWSTR)(1), 
-            IMAGE_ICON, 
-            0, 
+            hInstance,
+            (LPWSTR)(1),
+            IMAGE_ICON,
+            0,
             0,
             LR_DEFAULTSIZE
         );
@@ -279,7 +279,7 @@ public:
     }
 
     void set_minimized(bool minimize)
-    {   
+    {
         bool is_minimized = IsIconic(this->m_window);
         if (is_minimized == minimize) {
             set_maximized(true);
@@ -328,11 +328,6 @@ public:
 
         HBRUSH brush = CreateSolidBrush(RGB(r, g, b));
         SetClassLongPtr(this->m_window, GCLP_HBRBACKGROUND, (LONG_PTR)brush);
-    }
-
-    void set_html(const char* html)
-    {
-        m_webview.NavigateToString(winrt::to_hstring(html.c_str()));
     }
 
     int get_min_width() {
@@ -386,7 +381,7 @@ LRESULT CALLBACK WebviewWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
             lpMMI->ptMinTrackSize.x = w->get_min_width();
             lpMMI->ptMinTrackSize.y = w->get_min_height();
         }
-        
+
         break;
     }
 
@@ -446,6 +441,10 @@ public:
             Uri uri(winrt::to_hstring(url));
             m_webview.Navigate(uri);
         }
+    }
+    void set_html(const char* html)
+    {
+        m_webview.NavigateToString(winrt::to_hstring(html));
     }
     void init(const char* js)
     {
