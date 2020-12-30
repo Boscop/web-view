@@ -433,7 +433,6 @@ public:
 
     void navigate(const char* url)
     {
-
         std::string html = html_from_uri(url);
         if (html != "") {
             m_webview.NavigateToString(winrt::to_hstring(html.c_str()));
@@ -583,6 +582,11 @@ WEBVIEW_API void webview_print_log(const char *s)
 WEBVIEW_API void* webview_get_user_data(webview_t w)
 {
     return static_cast<webview::webview*>(w)->get_user_data();
+}
+
+WEBVIEW_API void* webview_get_window_handle(webview_t w)
+{
+    return static_cast<webview::webview*>(w)->window();
 }
 
 WEBVIEW_API webview_t webview_new(

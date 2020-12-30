@@ -406,6 +406,11 @@ impl<'a, T> WebView<'a, T> {
         &mut self.user_data_wrapper_mut().inner
     }
 
+    /// Window handle (Windows only)
+    pub fn window_handle(&self) -> *mut c_void {
+        unsafe { webview_get_window_handle(self.inner.unwrap()) as _ }
+    }
+
     #[deprecated(note = "Please use exit instead")]
     pub fn terminate(&mut self) {
         self.exit();
