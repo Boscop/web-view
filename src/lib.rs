@@ -518,7 +518,7 @@ impl<'a, T> WebView<'a, T> {
     /// Iterates the event loop. Returns `None` if the view has been closed or terminated.
     pub fn step(&mut self) -> Option<WVResult> {
         unsafe {
-            match webview_loop(self.inner.unwrap(), 0) {
+            match webview_loop(self.inner.unwrap(), 1) {
                 0 => {
                     let closure_result = &mut self.user_data_wrapper_mut().result;
                     match closure_result {
