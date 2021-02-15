@@ -292,6 +292,7 @@ unsafe extern "C" fn webview_loop(webview: *mut WebView, blocking: c_int) -> c_i
     gtk_main_iteration_do(blocking);
     if (*webview).should_exit != 0 {
         gtk_window_close((*webview).window as *mut GtkWindow);
+        gtk_main_iteration_do(0);
     }
     (*webview).should_exit
 }
@@ -413,7 +414,7 @@ unsafe extern "C" fn webview_destroy_cb(_widget: *mut GtkWidget, arg: gpointer) 
 #[no_mangle]
 unsafe extern "C" fn webview_exit(webview: *mut WebView) {
     (*webview).should_exit = 1;
-    webview_loop(webview, 0);
+    webview_loop(webview, 0); // pump the event loop to apply
 }
 
 #[no_mangle]
