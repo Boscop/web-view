@@ -26,6 +26,7 @@ struct WebView {
     visible: c_int,
     min_width: c_int,
     min_height: c_int,
+    hide_instead_of_close: c_int,
     external_invoke_cb: ExternalInvokeCallback,
     window: *mut GtkWidget,
     scroller: *mut GtkWidget,
@@ -97,6 +98,7 @@ unsafe extern "C" fn webview_new(
     visible: c_int,
     min_width: c_int,
     min_height: c_int,
+    hide_instead_of_close: c_int,
     external_invoke_cb: ExternalInvokeCallback,
     userdata: *mut c_void,
 ) -> *mut WebView {
@@ -111,6 +113,7 @@ unsafe extern "C" fn webview_new(
         visible,
         min_width,
         min_height,
+        hide_instead_of_close,
         external_invoke_cb,
         window: ptr::null_mut(),
         scroller: ptr::null_mut(),
@@ -247,6 +250,10 @@ unsafe extern "C" fn webview_new(
         None,
         0,
     );
+
+    if hide_instead_of_close != 0 {
+        gtk_widget_hide_on_delete(window);
+    }
 
     w
 }
@@ -408,7 +415,10 @@ unsafe extern "C" fn webview_dispatch(webview: *mut WebView, func: DispatchFn, a
 
 #[no_mangle]
 unsafe extern "C" fn webview_destroy_cb(_widget: *mut GtkWidget, arg: gpointer) {
-    webview_exit(mem::transmute(arg));
+    let webview: *mut WebView = mem::transmute(arg);
+    if webview.is_null() || (*webview).hide_instead_of_close == 0 {
+        webview_exit(webview);
+    }
 }
 
 #[no_mangle]

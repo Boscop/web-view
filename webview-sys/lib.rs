@@ -28,6 +28,7 @@ extern "C" {
         visible: c_int,
         min_width: c_int,
         min_height: c_int,
+        hide_instead_of_close: c_int,
         external_invoke_cb: Option<ErasedExternalInvokeFn>,
         userdata: *mut c_void,
     ) -> *mut CWebView;

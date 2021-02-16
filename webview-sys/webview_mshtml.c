@@ -33,6 +33,7 @@ struct mshtml_webview {
   int frameless;
   int min_width;
   int min_height;
+  int hide_instead_of_close;
   webview_external_invoke_cb_t external_invoke_cb;
   void *userdata;
   HWND hwnd;
@@ -104,7 +105,7 @@ static const TCHAR *classname = "WebView";
 
 WEBVIEW_API webview_t webview_new(
   const char* title, const char* url, int width, int height, int resizable, int debug,
-  int frameless, int visible, int min_width, int min_height, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
+  int frameless, int visible, int min_width, int min_height, int hide_instead_of_close, webview_external_invoke_cb_t external_invoke_cb, void* userdata) {
 
   if (webview_fix_ie_compat_mode() < 0) {
     return NULL;
@@ -182,6 +183,7 @@ WEBVIEW_API webview_t webview_new(
   wv->frameless = frameless;
   wv->min_width = min_width;
   wv->min_height = min_height;
+  wv->hide_instead_of_close = hide_instead_of_close;
   wv->external_invoke_cb = external_invoke_cb;
   wv->userdata = userdata;
   wv->hwnd =
@@ -962,7 +964,16 @@ LRESULT CALLBACK wndproc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
     break;
   }
+  case WM_CLOSE:
+    if (wv->hide_instead_of_close) {
+      ShowWindow(hwnd, SW_HIDE);
+    } else {
+      DestroyWindow(hwnd);
+    }
+
+    return TRUE;
   }
+  
   return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 

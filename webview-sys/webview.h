@@ -40,7 +40,7 @@ WEBVIEW_API void webview_print_log(const char *s);
 
 WEBVIEW_API void* webview_get_user_data(webview_t w);
 WEBVIEW_API void* webview_get_window_handle(webview_t w);
-WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, int frameless, int visible, int min_width, int min_height, webview_external_invoke_cb_t external_invoke_cb, void* userdata);
+WEBVIEW_API webview_t webview_new(const char* title, const char* url, int width, int height, int resizable, int debug, int frameless, int visible, int min_width, int min_height, int hide_instead_of_close, webview_external_invoke_cb_t external_invoke_cb, void* userdata);
 WEBVIEW_API void webview_free(webview_t w);
 WEBVIEW_API void webview_destroy(webview_t w);
 

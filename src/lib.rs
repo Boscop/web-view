@@ -113,6 +113,7 @@ pub struct WebViewBuilder<'a, T: 'a, I, C> {
     pub visible: bool,
     pub min_width: i32,
     pub min_height: i32,
+    pub hide_instead_of_close: bool,
 }
 
 impl<'a, T: 'a, I, C> Default for WebViewBuilder<'a, T, I, C>
@@ -139,6 +140,7 @@ where
             visible: true,
             min_width: 300,
             min_height: 300,
+            hide_instead_of_close: false,
         }
     }
 }
@@ -218,6 +220,14 @@ where
         self
     }
 
+    /// Sets behavior of the window when closed.
+    ///
+    /// default to `false`
+    pub fn hide_instead_of_close(mut self, value: bool) -> Self {
+        self.hide_instead_of_close = value;
+        self
+    }
+
     /// Sets the invoke handler callback. This will be called when a message is received from
     /// JavaScript.
     ///
@@ -269,6 +279,7 @@ where
             self.visible,
             self.min_width,
             self.min_height,
+            self.hide_instead_of_close,
             user_data,
             invoke_handler,
         )
@@ -327,6 +338,7 @@ impl<'a, T> WebView<'a, T> {
         visible: bool,
         min_width: i32,
         min_height: i32,
+        hide_instead_of_close: bool,
         user_data: T,
         invoke_handler: I,
     ) -> WVResult<WebView<'a, T>>
@@ -353,6 +365,7 @@ impl<'a, T> WebView<'a, T> {
                 visible as _,
                 min_width,
                 min_height,
+                hide_instead_of_close as _,
                 Some(ffi_invoke_handler::<T>),
                 user_data_ptr as _,
             );
