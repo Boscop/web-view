@@ -10,6 +10,7 @@ categories = ["gui", "web-programming", "api-bindings", "rendering", "visualizat
 build = "build.rs"
 links = "webview"
 edition = "2018"
+exclude = ["Cargo.lock"]
 
 [lib]
 name = "webview_sys"
