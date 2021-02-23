@@ -671,9 +671,37 @@ WEBVIEW_API void webview_dispatch(webview_t w, webview_dispatch_fn fn,
   dispatch_async_f(dispatch_get_main_queue(), context, webview_dispatch_cb);
 }
 
+id read_object_property(id obj, const char* property) {
+  Class cls = object_getClass(obj);
+  if (cls == NULL) { return NULL; }
+  objc_property_t prop = class_getProperty(cls, property);
+  if (prop == NULL) { return NULL; }
+  const char* getter = property_copyAttributeValue(prop, "G");
+  if (getter == NULL) {
+    return objc_msgSend(obj, sel_registerName(property));
+  } else {
+    return objc_msgSend(obj, sel_registerName(getter));
+  }
+}
+
 WEBVIEW_API void webview_exit(webview_t w) {
   struct cocoa_webview* wv = (struct cocoa_webview*)w;
   wv->external_invoke_cb = NULL;
+  /*
+    This will try to read webview->configuration->userContentController and clear
+    the associated webview which is set in the init function. It is necessary
+    to avoid zombie callbacks where the controller invokes external_invoke_cb
+    of a dead webview and causes a segfault (external_invoke_cb of a dead webview
+    can become non-null if the memory previously owned by the webview
+    is re-allocated to something else).
+  */
+  id config = read_object_property(wv->priv.webview, "configuration");
+  if (config != NULL) {
+    id controller = read_object_property(config, "userContentController");
+    if (controller != NULL) {
+      objc_setAssociatedObject(controller, "webview", NULL, OBJC_ASSOCIATION_ASSIGN);
+    }
+  }
   objc_msgSend(wv->priv.window, sel_registerName("close"));
 }
 
