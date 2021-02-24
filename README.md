@@ -19,7 +19,7 @@ This library provides a Rust binding to the original implementation of [webview]
 
 <p align="center"><img alt="screenshot" src="https://i.imgur.com/Z3c2zwD.png"></p>
 
-Two-way binding between your Rust and JavaScript code is made simple via the `external` JS object and `webview.eval` Rust function. We have full [working examples](https://github.com/Boscop/web-view/tree/master/examples), but the core is as follows:
+Two-way binding between your Rust and JavaScript code is made simple via the `external` JS object and `webview.eval` Rust function. We have full [working examples](https://github.com/Boscop/web-view/tree/master/webview-examples/examples), but the core is as follows:
  
 ```rust
 // ... Simplified for the sake of brevity.
@@ -144,7 +144,7 @@ Assuming you get a successful build all you have to do now is run it with: `carg
 
 <p align="center"><img alt="screenshot" src="https://i.imgur.com/vQrS2p2.png"></p>
 
-For more usage info please check out the [examples](https://github.com/Boscop/web-view/tree/master/examples) and the [original README](https://github.com/zserge/webview/blob/master/README.md).
+For more usage info please check out the [examples](https://github.com/Boscop/web-view/tree/master/webview-examples/examples) and the [original README](https://github.com/zserge/webview/blob/master/README.md).
 
 ## Known Issues and Limitations
  
