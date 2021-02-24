@@ -50,11 +50,17 @@ jobs:
           profile: minimal
           override: true
 
-      - name: cargo test --all
+      - name: cargo test --workspace --all-targets
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all
+          args: --workspace --all-targets
+
+      - name: cargo test --workspace --doc
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace --doc
 
   test-nightly:
     runs-on: ${{ matrix.os }}
@@ -78,11 +84,17 @@ jobs:
           profile: minimal
           override: true
 
-      - name: cargo test --all
+      - name: cargo test --workspace --all-targets
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all
+          args: --workspace --all-targets
+
+      - name: cargo test --workspace --doc
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --workspace --doc
 
   check-docs:
     name: Docs
@@ -110,4 +122,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: doc
-          args: --document-private-items
+          args: --workspace --document-private-items
