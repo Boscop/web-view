@@ -127,7 +127,7 @@ public:
 
         DWORD style = WS_OVERLAPPEDWINDOW;
         if (!resizable) {
-            style &= ~(WS_SIZEBOX);
+            style &= ~(WS_SIZEBOX | WS_MAXIMIZEBOX);
         }
 
         if (frameless) {
