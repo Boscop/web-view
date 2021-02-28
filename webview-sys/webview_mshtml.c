@@ -145,7 +145,7 @@ WEBVIEW_API webview_t webview_new(
 
   DWORD style = WS_OVERLAPPEDWINDOW;
   if (!resizable) {
-      style &= ~(WS_SIZEBOX);
+      style &= ~(WS_SIZEBOX | WS_MAXIMIZEBOX);
   }
   if (frameless) {
     style &= ~(WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
