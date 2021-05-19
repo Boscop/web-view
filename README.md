@@ -205,7 +205,6 @@ For more usage info please check out the [examples](https://github.com/Boscop/we
 - [Compactor](https://github.com/Freaky/Compactor) - Windows 10 filesystem compression utility
 - [neutrino](https://github.com/alexislozano/neutrino/) - A GUI frontend in Rust based on web-view
 - [SOUNDSENSE-RS](https://github.com/prixt/soundsense-rs) - Sound-engine tool for Dwarf Fortress
-- [Tauri](https://github.com/tauri-apps/tauri) - Bringing security into webstack GUIs, with strong support for your favorite JS frameworks
 - [WV Linewise](https://github.com/forbesmyester/wv-linewise) - Add your own interactive HTML/CSS/JS in the middle of your UNIX pipelines
 - [Bloop](https://github.com/Blakeinstein/Bloop) - A light weight aesthetic scratchpad for developers.
 
