@@ -1,14 +1,6 @@
 #![windows_subsystem = "windows"]
 
-extern crate actix_rt;
-extern crate actix_web;
-extern crate futures;
-extern crate mime_guess;
-extern crate rust_embed;
-extern crate web_view;
-
-use actix_web::{body::Body, web, App, HttpRequest, HttpResponse, HttpServer};
-use futures::future::Future;
+use actix_web::{body::Body, dev::Server, rt, web, App, HttpRequest, HttpResponse, HttpServer};
 use mime_guess::from_path;
 use rust_embed::RustEmbed;
 use std::{borrow::Cow, sync::mpsc, thread};
@@ -42,17 +34,12 @@ fn assets(req: HttpRequest) -> HttpResponse {
     }
 }
 
-fn main() {
-    let (server_tx, server_rx) = mpsc::channel();
-    let (port_tx, port_rx) = mpsc::channel();
+fn run_actix(server_tx: mpsc::Sender<Server>, port_tx: mpsc::Sender<u16>) -> std::io::Result<()> {
+    let server = rt::System::new();
 
-    // start actix web server in separate thread
-    thread::spawn(move || {
-        let sys = actix_rt::System::new("actix-example");
-
-        let server = HttpServer::new(|| App::new().route("*", web::get().to(assets)))
-            .bind("127.0.0.1:0")
-            .unwrap();
+    server.block_on(async {
+        let server = HttpServer::new(|| App::new().service(web::resource("*").to(assets)))
+            .bind("127.0.0.1:0")?;
 
         // we specified the port to be 0,
         // meaning the operating system
@@ -61,12 +48,20 @@ fn main() {
         // get the first bound address' port,
         // so we know where to point webview at
         let port = server.addrs().first().unwrap().port();
-        let server = server.start();
+        port_tx.send(port).unwrap();
 
-        let _ = port_tx.send(port);
-        let _ = server_tx.send(server);
-        let _ = sys.run();
-    });
+        let server = server.run();
+        server_tx.send(server.clone()).unwrap();
+        server.await
+    })
+}
+
+fn main() {
+    let (server_tx, server_rx) = mpsc::channel();
+    let (port_tx, port_rx) = mpsc::channel();
+
+    // start actix web server in separate thread
+    thread::spawn(move || run_actix(server_tx, port_tx).unwrap());
 
     let port = port_rx.recv().unwrap();
     let server = server_rx.recv().unwrap();
@@ -86,5 +81,5 @@ fn main() {
         .unwrap();
 
     // gracefully shutdown actix web server
-    let _ = server.stop(true).wait();
+    rt::System::new().block_on(server.stop(true));
 }
