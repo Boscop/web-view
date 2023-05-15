@@ -29,6 +29,8 @@ struct cocoa_webview {
   void *userdata;
 };
 
+WEBVIEW_API int webview_init(webview_t w);
+
 WEBVIEW_API void webview_free(webview_t w) {
 	free(w);
 }
